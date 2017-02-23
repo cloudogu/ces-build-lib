@@ -8,9 +8,9 @@ import static groovy.util.GroovyTestCase.assertEquals
 class MavenTest {
 
     @After
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
-        Maven.metaClass = null;
+        Maven.metaClass = null
     }
 
     @Test
@@ -21,5 +21,13 @@ class MavenTest {
         }
         def result = mvn "test"
         assertEquals("test", result)
+    }
+
+    @Test
+    void testGetVersion() {
+        String expectedVersion="1.0.0"
+        def scripMock= [readFile: { "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>" }] as Object
+        Maven mvn = new Maven(scripMock, null, null)
+        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
 }
