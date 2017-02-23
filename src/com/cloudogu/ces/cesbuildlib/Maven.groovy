@@ -1,4 +1,4 @@
-package com.cloudogu.ces.buildlib
+package com.cloudogu.ces.cesbuildlib
 
 class Maven implements Serializable {
     def mvnHome

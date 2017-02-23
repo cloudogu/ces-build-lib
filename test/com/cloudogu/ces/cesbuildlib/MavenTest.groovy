@@ -1,4 +1,4 @@
-package com.cloudogu.ces.buildlib
+package com.cloudogu.ces.cesbuildlib
 
 import org.junit.After
 import org.junit.Test

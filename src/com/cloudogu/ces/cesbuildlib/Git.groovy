@@ -1,4 +1,4 @@
-package com.cloudogu.ces.buildlib
+package com.cloudogu.ces.cesbuildlib
 
 class Git implements Serializable {
     def script
