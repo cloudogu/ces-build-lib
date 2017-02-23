@@ -13,6 +13,8 @@ node() {
 
     def mvnHome = tool 'M3'
     def javaHome = tool 'JDK8'
+    def sonarQube = 'ces-sonar'
+
 
     Maven mvn = new Maven(this, mvnHome, javaHome)
     Git git = new Git(this)
