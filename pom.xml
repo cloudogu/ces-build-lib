@@ -9,6 +9,11 @@
     <name>ces-build-lib</name>
     <version>0.1.0-SNAPSHOT</version>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jacoco.version>0.7.8</jacoco.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.cloudbees</groupId>
@@ -93,4 +98,35 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <!-- profile is active on every jenkins build -->
+            <id>jenkins</id>
+
+            <activation>
+                <property>
+                    <name>env.BUILD_URL</name>
+                </property>
+            </activation>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
