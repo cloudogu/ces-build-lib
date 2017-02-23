@@ -34,6 +34,14 @@ node() {
         stage('Unit Test') {
             mvn 'test'
         }
+
+        stage('SonarQube') {
+            withSonarQubeEnv(sonarQube) {
+                mvn "$SONAR_MAVEN_GOAL -Dsonar.host.url=$SONAR_HOST_URL " +
+                        //exclude generated code in target folder
+                        "-Dsonar.exclusions=target/**"
+            }
+        }
     }
 
     // Archive Unit and integration test results, if any
