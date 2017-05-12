@@ -7,16 +7,29 @@ package com.cloudogu.ces.cesbuildlib
  * as well as some convenience methods.
  */
 class Docker implements Serializable {
+    @Delegate Serializable docker
     def script
 
     Docker(script) {
         this.script = script
+        this.docker = this.script.docker
     }
 
     def methodMissing(String name, args) {
-        // TODO delegate missingMethods to this.script.docker
-        //this.script.docker
+        // Leads to java.lang.UnsupportedOperationException
+        // * - Spread operator for dynamic arguments
         return this.script.docker."$name"(*args)
+        // Leads to MissingMethodException: No signature of method: org.jenkinsci.plugins.docker.workflow.Docker.image() is applicable for argument types: ([Ljava.lang.Object;) values: [[postgres:9.6]]
+        //return this.script.docker."$name"(args)
+
+        // Does not find all methods
+        //this.script.docker.getClass().getMethods().each { method ->
+/*        this.script.docker.metaClass.metaMethods.each { method ->
+            this.script.echo "${method.name}"
+            if (method.name == name) {
+                return method.invoke(this.script.docker."$name", args)
+            }
+        }*/
     }
 
     /**
