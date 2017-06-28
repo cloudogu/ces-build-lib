@@ -25,9 +25,49 @@ class MavenTest {
 
     @Test
     void testGetVersion() {
-        String expectedVersion="1.0.0"
-        def scripMock= [readFile: { "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>" }] as Object
+        String expectedVersion = "1.0.0"
+        def scripMock = [readFile: {
+            "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>"
+        }] as Object
         Maven mvn = new Maven(scripMock, null, null)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+    }
+
+    @Test
+    void testGetVersionMissing() {
+        String expectedVersion = ""
+        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
+        Maven mvn = new Maven(scripMock, null, null)
+        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+    }
+
+
+    @Test
+    void testGetMavenProperty() {
+        String expectedPropertyKey = "expectedPropertyKey"
+        String expectedPropertyValue = "expectedValue"
+        def scripMock = [readFile: {
+            "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey></properties></project>"
+        }] as Object
+        Maven mvn = new Maven(scripMock, null, null)
+        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+    }
+
+    @Test
+    void testGetMavenPropertyNoProperties() {
+        String expectedPropertyKey = "expectedPropertyKey"
+        String expectedPropertyValue = ""
+        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
+        Maven mvn = new Maven(scripMock, null, null)
+        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+    }
+
+    @Test
+    void testGetMavenPropertyNoProperty() {
+        String expectedPropertyKey = "expectedPropertyKey"
+        String expectedPropertyValue = ""
+        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
+        Maven mvn = new Maven(scripMock, null, null)
+        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
 }

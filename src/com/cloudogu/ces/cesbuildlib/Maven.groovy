@@ -35,6 +35,11 @@ class Maven implements Serializable {
 
     String getVersion() {
         def matcher = script.readFile('pom.xml') =~ '<version>(.+)</version>'
-        matcher ? matcher[0][1] : null
+        matcher ? matcher[0][1] : ""
+    }
+
+    String getMavenProperty(String propertyKey) {
+        def matcher = script.readFile('pom.xml') =~ "<properties>.*<$propertyKey>(.+)</$propertyKey>.*</properties>"
+        matcher ? matcher[0][1] : ""
     }
 }
