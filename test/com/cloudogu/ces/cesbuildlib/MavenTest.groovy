@@ -6,6 +6,7 @@ import org.junit.Test
 import static groovy.util.GroovyTestCase.assertEquals
 
 class MavenTest {
+    private static final String EOL = System.getProperty("line.separator");
 
     @After
     void tearDown() throws Exception {
@@ -47,7 +48,11 @@ class MavenTest {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = "expectedValue"
         def scripMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey></properties></project>"
+            "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties>" +
+                    EOL +
+                    "<dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey>" +
+                    EOL +
+                    "</properties></project>"
         }] as Object
         Maven mvn = new Maven(scripMock, null, null)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
