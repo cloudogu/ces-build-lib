@@ -6,7 +6,7 @@ import org.junit.Test
 import static groovy.util.GroovyTestCase.assertEquals
 
 class MavenTest {
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.getProperty("line.separator")
 
     @After
     void tearDown() throws Exception {
@@ -27,10 +27,10 @@ class MavenTest {
     @Test
     void testGetVersion() {
         String expectedVersion = "1.0.0"
-        def scripMock = [readFile: {
+        def scriptMock = [readFile: {
             "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>"
         }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new Maven(scriptMock, null, null)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
 
