@@ -27,9 +27,9 @@ class MavenInDocker extends Maven {
         writeDockerFile(dockerImageVersion)
 
         script.withEnv(["HOME=${script.pwd()}"]) {
-            script.docker.image("maven:$dockerImageVersion")
+            script.docker.build("ces-build-lib/maven/$dockerImageVersion", "build/$dockerImageVersion")
                     .inside("--volume=\"${jenkinsHome}/.m2/repository:${script.pwd()}/.m2/repository:rw\"") {
-                script.sh "mvn ${commandLineArgs} -Duser.home=\"${script.pwd()}\" -s \"${script.pwd()}/.m2/settings.xml\""
+                script.sh "mvn ${commandLineArgs} -Duser.home=\"${script.pwd()}\""
             }
         }
     }
@@ -38,7 +38,7 @@ class MavenInDocker extends Maven {
         String dockerfile = "FROM maven:$dockerImageVersion\n" +
                 'RUN echo \"jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash\" >> /etc/passwd\n' +
                 'USER JENKINS'
-        def dockerfilePath = "${script.pwd()}/.jenkins/build/Dockerfile"
+        def dockerfilePath = "${script.pwd()}/.jenkins/build/$dockerImageVersion/Dockerfile"
         script.writeFile file: dockerfilePath, text: "${dockerfile}"
         return dockerfilePath
     }
