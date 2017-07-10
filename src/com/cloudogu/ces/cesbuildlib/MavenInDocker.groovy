@@ -11,6 +11,7 @@ import groovy.text.Template
  * The builds base on the official maven containers from https://hub.docker.com/_/maven/
  */
 class MavenInDocker extends Maven {
+
     private static final DOCKERFILE_TEMPLATE =
             'FROM maven:$dockerImageVersion\n' +
             'RUN echo \"jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash\" >> /etc/passwd\n' +
@@ -23,7 +24,7 @@ class MavenInDocker extends Maven {
      * @param dockerImageVersion the version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8}
      */
     MavenInDocker(script, String dockerImageVersion) {
-        super(script, null, null)
+        super(script)
         this.dockerImageVersion = dockerImageVersion
     }
 

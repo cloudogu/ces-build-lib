@@ -1,29 +1,20 @@
 package com.cloudogu.ces.cesbuildlib
 
-class Maven implements Serializable {
-    def mvnHome
-    def javaHome
+abstract class Maven implements Serializable {
     def script
 
     // Args added to each mvn call
     String additionalArgs = ""
 
-    Maven(script, mvnHome, javaHome) {
+    Maven(script) {
         this.script = script
-        this.mvnHome = mvnHome
-        this.javaHome = javaHome
     }
 
     def call(args) {
         mvn(args)
     }
 
-    def mvn(String args) {
-        // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
-        script.withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${script.env.JAVA_HOME}/bin"]) {
-            script.sh "${mvnHome}/bin/mvn ${createCommandLineArgs(args)}"
-        }
-    }
+    abstract def mvn(String args)
 
     String createCommandLineArgs(String args) {
         // Apache Maven related side notes:
