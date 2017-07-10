@@ -7,6 +7,10 @@ import static junit.framework.TestCase.assertTrue
 
 class MavenInDockerTest {
 
+
+    public static
+    final String EXPECTED_JENKINS_USER_FROM_ETC_PASSWD = "jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
+
     @Test
     void testWriteDockerFile() {
         def scriptMock = new ScriptMock()
@@ -18,6 +22,8 @@ class MavenInDockerTest {
         String actualDockerfile =  scriptMock.writeFileParams.get(0).get("text")
         assertTrue("Expected version $expectedVersion not contained in actual file: $actualDockerfile",
                 actualDockerfile.contains(expectedVersion))
+        assertTrue("Expected version $expectedVersion not contained in actual file: $actualDockerfile",
+                actualDockerfile.contains("RUN echo \"$EXPECTED_JENKINS_USER_FROM_ETC_PASSWD\" >> /etc/passwd"))
         String actualDockerfilePath =  scriptMock.writeFileParams.get(0).get("file")
         assertEquals("/.jenkins/build/$expectedVersion/Dockerfile", actualDockerfilePath)
     }
@@ -32,5 +38,12 @@ class MavenInDockerTest {
         void writeFile(Map<String, String> params) {
             writeFileParams.add(params)
         }
+
+        String sh(Map<String, String> params) {
+            // Add some whitespaces
+            return EXPECTED_JENKINS_USER_FROM_ETC_PASSWD + "  \n  "
+        }
+
+        void echo (String arg) {}
     }
 }
