@@ -19,7 +19,7 @@ class MavenInDockerTest {
         assertTrue("Expected version $expectedVersion not contained in actual file: $actualDockerfile",
                 actualDockerfile.contains(expectedVersion))
         String actualDockerfilePath =  scriptMock.writeFileParams.get(0).get("file")
-        assertEquals("/.jenkins/build/Dockerfile", actualDockerfilePath)
+        assertEquals("/.jenkins/build/$expectedVersion/Dockerfile", actualDockerfilePath)
     }
 
     class ScriptMock {
