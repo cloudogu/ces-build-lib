@@ -19,6 +19,13 @@ class Maven implements Serializable {
     }
 
     def mvn(String args) {
+        // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
+        script.withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${script.env.JAVA_HOME}/bin"]) {
+            script.sh "${mvnHome}/bin/mvn ${createCommandLineArgs(args)}"
+        }
+    }
+
+    protected String createCommandLineArgs(String args) {
         // Apache Maven related side notes:
         // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
         // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
@@ -27,10 +34,7 @@ class Maven implements Serializable {
         // -Dsurefire.useFile=false : useful in CI. Displays test errors in the logs directly (instead of
         //                            having to crawl the workspace files to see the cause).
 
-        // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
-        script.withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${script.env.JAVA_HOME}/bin"]) {
-            script.sh "${mvnHome}/bin/mvn --batch-mode -V -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs}"
-        }
+        "--batch-mode -V -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs}"
     }
 
     String getVersion() {
