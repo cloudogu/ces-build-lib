@@ -1,8 +1,4 @@
 package com.cloudogu.ces.cesbuildlib
-
-import groovy.text.SimpleTemplateEngine
-import groovy.text.Template
-
 /**
  * Run maven in a docker container.
  * This can be helpful, when constants ports are bound during the build and concurrent builds cause port conflicts.
@@ -11,11 +7,6 @@ import groovy.text.Template
  * The builds base on the official maven containers from https://hub.docker.com/_/maven/
  */
 class MavenInDocker extends Maven {
-
-    private static final DOCKERFILE_TEMPLATE =
-            'FROM maven:$dockerImageVersion\n' +
-            'RUN echo \"jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash\" >> /etc/passwd\n' +
-            'USER JENKINS'
 
     String dockerImageVersion
 
@@ -44,11 +35,11 @@ class MavenInDocker extends Maven {
     }
 
     def writeDockerFile(String dockerImageVersion) {
-        Template template = new SimpleTemplateEngine().createTemplate(DOCKERFILE_TEMPLATE)
-        def variableBindingsForTemplate = ['dockerImageVersion' : dockerImageVersion]
-        Writable dockerfile = template.make(variableBindingsForTemplate)
+        String dockerfile = "FROM maven:$dockerImageVersion\n" +
+                'RUN echo \"jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash\" >> /etc/passwd\n' +
+                'USER JENKINS'
         def dockerfilePath = "${script.pwd()}/.jenkins/build/Dockerfile"
-        script.writeFile file: dockerfilePath, text: "${dockerfile.toString()}"
+        script.writeFile file: dockerfilePath, text: "${dockerfile}"
         return dockerfilePath
     }
 }
