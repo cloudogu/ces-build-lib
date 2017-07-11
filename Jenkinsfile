@@ -1,5 +1,5 @@
 #!groovy
-@Library('github.com/cloudogu/ces-build-lib@')
+@Library('github.com/cloudogu/ces-build-lib@8df52a9')
 import com.cloudogu.ces.cesbuildlib.*
 
 node() {
@@ -11,11 +11,9 @@ node() {
             disableConcurrentBuilds()
     ])
 
-    def mvnHome = tool 'M3'
-    def javaHome = tool 'JDK8'
     def sonarQube = 'ces-sonar'
 
-    Maven mvn = new Maven(this)
+    Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
     Git git = new Git(this)
 
     // TODO refactor this in an object-oriented way and move to build-lib
