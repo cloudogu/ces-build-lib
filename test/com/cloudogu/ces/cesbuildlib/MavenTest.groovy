@@ -6,7 +6,7 @@ import org.junit.Test
 import static groovy.util.GroovyTestCase.assertEquals
 
 class MavenTest {
-    private static final String EOL = System.getProperty("line.separator");
+    private static final String EOL = System.getProperty("line.separator")
 
     @After
     void tearDown() throws Exception {
@@ -16,7 +16,7 @@ class MavenTest {
 
     @Test
     void testCall() throws Exception {
-        Maven mvn = new Maven(null, null, null)
+        Maven mvn = new MavenForTest(null)
         mvn.metaClass.mvn = { String args ->
             return args
         }
@@ -27,10 +27,10 @@ class MavenTest {
     @Test
     void testGetVersion() {
         String expectedVersion = "1.0.0"
-        def scripMock = [readFile: {
+        def scriptMock = [readFile: {
             "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>"
         }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
 
@@ -38,7 +38,7 @@ class MavenTest {
     void testGetVersionMissing() {
         String expectedVersion = ""
         def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new MavenForTest(scripMock)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
 
@@ -54,7 +54,7 @@ class MavenTest {
                     EOL +
                     "</properties></project>"
         }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new MavenForTest(scripMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
 
@@ -63,7 +63,7 @@ class MavenTest {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = ""
         def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new MavenForTest(scripMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
 
@@ -72,7 +72,18 @@ class MavenTest {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = ""
         def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
-        Maven mvn = new Maven(scripMock, null, null)
+        Maven mvn = new MavenForTest(scripMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+    }
+    
+    static class MavenForTest extends Maven {
+
+        MavenForTest(Object script) {
+            super(script)
+        }
+
+        def mvn(String args) {
+            return args
+        }
     }
 }
