@@ -35,8 +35,11 @@ class MavenInDocker extends Maven {
         script.withEnv(["HOME=${script.pwd()}"]) {
             script.docker.build("ces-build-lib/maven/$dockerImageVersion", createDockerfilePath())
                     .inside(createDockerRunArgs()) {
-                script.sh "mvn -Duser.home=\"${script.pwd()}\" -s \"${script.pwd()}/.m2/settings.xml\"  " +
-                        "${createCommandLineArgs(args)}"
+                script.sh ("mvn -Duser.home='${script.pwd()}' -s '${script.pwd()}/.m2/settings.xml' " +
+                        // Make sure that jvms forked during build (surefire/failsafe) also use the maven repo in workspace
+                        // Not doing this might result in failing tests that use shrinkwrap or jboss.modules.maven
+                        " -DargLine=\" -Duser.home='${script.pwd()}' -Dmaven.repo.local=${createLocalRepoPath()}\" " +
+                        "${createCommandLineArgs(args)}")
             }
         }
     }
@@ -55,8 +58,12 @@ class MavenInDocker extends Maven {
     void writeSettingsXml() {
         script.writeFile file: "${script.pwd()}/.m2/settings.xml", text: """
             <settings>
-                <localRepository>${script.pwd()}/.m2/repository</localRepository>
+                <localRepository>${createLocalRepoPath()}</localRepository>
             </settings>"""
+    }
+
+    String createLocalRepoPath() {
+        "${script.pwd()}/.m2/repository"
     }
 
     /**
