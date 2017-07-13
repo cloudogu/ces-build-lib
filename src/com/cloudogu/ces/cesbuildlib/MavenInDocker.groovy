@@ -38,7 +38,7 @@ class MavenInDocker extends Maven {
                 script.sh ("mvn -Duser.home='${script.pwd()}' -s '${script.pwd()}/.m2/settings.xml' " +
                         // Make sure that jvms forked during build (surefire/failsafe) also use the maven repo in workspace
                         // Not doing this might result in failing tests that use shrinkwrap or jboss.modules.maven
-                        " -DargLine=\" -Duser.home='${script.pwd()}' -Dmaven.repo.local=${createLocalRepoPath()}\" " +
+                        " -DargLine='-Duser.home='${script.pwd()} -Dmaven.repo.local=${createLocalRepoPath()}' " +
                         "${createCommandLineArgs(args)}")
             }
         }
@@ -46,7 +46,7 @@ class MavenInDocker extends Maven {
 
     String createDockerRunArgs() {
         if (enableDockerHost) {
-            "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()}"
+            "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()} -e HOME=${script.pwd()}"
         } else {
             ""
         }
