@@ -30,7 +30,12 @@ node() {
     catchError {
         stage('Checkout') {
             checkout scm
-            git.clean("")
+            /* Don't remove folders starting in "." like
+             * .m2 (maven)
+             * .npm
+             * .cache, .local (bower)
+             */
+            git.clean('".*/"')
         }
 
         stage('Build') {
