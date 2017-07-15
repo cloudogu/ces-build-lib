@@ -12,58 +12,46 @@ package com.cloudogu.ces.cesbuildlib
  */
 class MavenInDocker extends Maven {
 
-    String dockerImageVersion
+    /** The version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8} **/
+    String dockerBaseImageVersion
+
     /** Setting this to {@code true} allows the maven build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
 
     /**
      * @param script the Jenkinsfile instance ({@code this} in Jenkinsfile)
-     * @param dockerImageVersion the version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8}
+     * @param dockerBaseImageVersion the version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8}
      */
-    MavenInDocker(script, String dockerImageVersion) {
+    MavenInDocker(script, String dockerBaseImageVersion) {
         super(script)
-        this.dockerImageVersion = dockerImageVersion
+        this.dockerBaseImageVersion = dockerBaseImageVersion
     }
 
     @Override
     def mvn(String args) {
-        writeSettingsXml()
         writeDockerFile()
 
-        // Jenkins docker plugin automatically mounts current workspace as working dir of container
-        // So, set it consistently as env var and system property
-        script.withEnv(["HOME=${script.pwd()}"]) {
-            script.docker.build("ces-build-lib/maven/$dockerImageVersion", createDockerfilePath())
-                    .inside(createDockerRunArgs()) {
-                script.sh ("mvn -Duser.home='${script.pwd()}' -s '${script.pwd()}/.m2/settings.xml' " +
-                        // Make sure that jvms forked during build (surefire/failsafe) also use the maven repo in workspace
-                        // Not doing this might result in failing tests that use shrinkwrap or jboss.modules.maven
-                        " -DargLine='-Duser.home=${script.pwd()} -Dmaven.repo.local=${createLocalRepoPath()}' " +
-                        "${createCommandLineArgs(args)}")
-            }
+        script.docker.build(createDockerImageName(), createDockerfilePath()).inside(createDockerRunArgs()) {
+            script.sh("mvn ${createCommandLineArgs(args)}")
         }
+    }
+
+    String createDockerImageName() {
+        // Encode the maven version and the workspace name in the image name,
+        // because the image changes if any of those change.
+
+        // e.g. /home/jenkins/workspace/NAME -> NAME
+        def workspaceName = script.env.WORKSPACE.substring(script.env.WORKSPACE.lastIndexOf("/") + 1)
+        // docker images must always be lower case
+        "ces-build-lib/maven/${dockerBaseImageVersion}${workspaceName}".toLowerCase()
     }
 
     String createDockerRunArgs() {
         if (enableDockerHost) {
-            "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()} -e HOME=\"${script.pwd()}\""
+            "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()}"
         } else {
             ""
         }
-    }
-
-    /**
-     * Create settings.xml in workspace, pointing to .m2 repo ins workspace
-     */
-    void writeSettingsXml() {
-        script.writeFile file: "${script.pwd()}/.m2/settings.xml", text: """
-            <settings>
-                <localRepository>${createLocalRepoPath()}</localRepository>
-            </settings>"""
-    }
-
-    String createLocalRepoPath() {
-        "${script.pwd()}/.m2/repository"
     }
 
     /**
@@ -74,8 +62,8 @@ class MavenInDocker extends Maven {
 
         /* Add jenkins user. This is necessary for some commands such as npm.
            Add docker group. This is necessary to access Docker host from maven.*/
-        script.writeFile file: dockerfilePath, text:  """
-            FROM maven:$dockerImageVersion
+        script.writeFile file: dockerfilePath, text: """
+            FROM maven:$dockerBaseImageVersion
             RUN echo \\"${readJenkinsUserFromEtcPasswd()}\\" >> /etc/passwd \
             && echo \\"${readDockerGroupFromEtcGroup()}\\" >> /etc/group"""
         return dockerfilePath
@@ -109,10 +97,14 @@ class MavenInDocker extends Maven {
             script.echo "WARN: Unable to parse user jenkins from /etc/passwd. Maven build will fail."
             // It would be wonderful if we could use exceptions in Jenkins Shared libraries...
         }
-        jenkinsUserFromEtcPasswd
+
+        // java seems to read "user.home" frome here. So replace it.
+        // This will cause maven and all forked JVMs to use the jenkins workspace as local repo
+        // However, this will make this docker image specific to this workspace
+        jenkinsUserFromEtcPasswd.replace("/home/jenkins", "${script.pwd()}")
     }
 
     private String createDockerfilePath() {
-        ".jenkins/build/$dockerImageVersion"
+        ".jenkins/build/$dockerBaseImageVersion"
     }
 }
