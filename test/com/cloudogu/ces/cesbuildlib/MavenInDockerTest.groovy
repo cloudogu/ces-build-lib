@@ -56,8 +56,9 @@ class MavenInDockerTest {
     void testCreateDockerRunArgsDockerHostEnabled() {
         mavenInDocker.enableDockerHost = true
 
-        // TODO
-        // assertEquals("", mavenInDocker.createDockerRunArgs())
+        def expectedDockerRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID
+
+        assertEquals(expectedDockerRunArgs, mavenInDocker.createDockerRunArgs())
     }
 
     class ScriptMock {
