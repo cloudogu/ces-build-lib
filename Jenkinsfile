@@ -1,5 +1,5 @@
 #!groovy
-@Library('github.com/cloudogu/ces-build-lib@feature/mailIfStatusChanged')
+@Library('github.com/cloudogu/ces-build-lib@develop')
 import com.cloudogu.ces.cesbuildlib.*
 
 node() {
