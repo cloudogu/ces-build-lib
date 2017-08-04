@@ -1,5 +1,5 @@
 #!groovy
-@Library('github.com/cloudogu/ces-build-lib@develop')
+@Library('github.com/cloudogu/ces-build-lib@feature/mailIfStatusChanged')
 import com.cloudogu.ces.cesbuildlib.*
 
 node() {
@@ -60,5 +60,5 @@ node() {
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
-    mailIfStatusChanged(recipients: emailRecipients)
+    mailIfStatusChanged(emailRecipients)
 }
