@@ -60,6 +60,5 @@ node() {
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
-    // email on fail
-    step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: emailRecipients, sendToIndividuals: true])
+    mailIfStatusChanged(recipients: emailRecipients)
 }
