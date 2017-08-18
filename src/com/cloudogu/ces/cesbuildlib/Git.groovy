@@ -7,6 +7,10 @@ class Git implements Serializable {
         this.script = script
     }
 
+    def call(args) {
+        script.git args
+    }
+
     void clean(String excludes) {
         String excludesParam = ""
         if (excludes != null && "" != excludes) {
