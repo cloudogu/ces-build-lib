@@ -33,7 +33,7 @@ class Git implements Serializable {
     }
 
     /**
-     * @return the part of the branch name after the last slash
+     * @return the part of the branch name after the  slash
      */
     String getSimpleBranchName() {
         return branchName.substring(branchName.lastIndexOf('/') + 1)
@@ -42,31 +42,31 @@ class Git implements Serializable {
     /**
      * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
      */
-    String getLastCommitAuthorComplete() {
+    String getCommitAuthorComplete() {
         return script.sh (
                 script: "git --no-pager show -s --format='%an <%ae>' HEAD", returnStdout: true)
     }
 
-    String getLastCommitAuthorName() {
-        return getLastCommitAuthorComplete().replaceAll(" <.*", "")
+    String getCommitAuthorName() {
+        return getCommitAuthorComplete().replaceAll(" <.*", "")
     }
 
-    String getLastCommitAuthorEmail() {
-        def matcher = getLastCommitAuthorComplete() =~ "<(.*?)>"
+    String getCommitAuthorEmail() {
+        def matcher = getCommitAuthorComplete() =~ "<(.*?)>"
         matcher ? matcher[0][1] : ""
     }
 
-    String getLastCommitMessage() {
+    String getCommitMessage() {
         return script.sh (
                 script: "git log -1 --pretty=%B", returnStdout: true)
     }
 
-    String getLastCommitHash() {
+    String getCommitHash() {
         return script.sh (
                 script: "git rev-parse HEAD", returnStdout: true)
     }
 
-    String getLastCommitHashShort() {
+    String getCommitHashShort() {
         return script.sh (
                 script: "git rev-parse --short HEAD", returnStdout: true)
     }
