@@ -44,15 +44,30 @@ class GitTest {
         assertEquals("https://repoUrl", result)
     }
 
+    @Test
+    void testGetSimpleBranchName() {
+        String expectedSimpleBranchName = "simpleName"
+        def scriptMock = new ScriptMock()
+        scriptMock.env= new Object() {
+            String BRANCH_NAME = "feature/$expectedSimpleBranchName"
+        }
+        Git git = new Git(scriptMock)
+
+        def actualSimpleBranchName = git.getSimpleBranchName()
+
+        assertEquals(expectedSimpleBranchName, actualSimpleBranchName)
+    }
+
     static class ScriptMock {
         List<String> shArgs = new LinkedList<>()
+        def env
 
         void sh(String args) {
             shArgs.add(args)
         }
 
         def git(def args) {
-            return args;
+            return args
         }
     }
 }

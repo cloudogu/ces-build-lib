@@ -21,4 +21,21 @@ class Git implements Serializable {
         //Clear all unstaged changes
         script.sh 'git checkout -- .'
     }
+
+    /**
+     * This is just a convenience wrapper around {@code env.BRANCH_NAME}, provided by jenkins.
+     * <b>Only works for multi-branch projects!</b>
+     *
+     * @return name of the current branch.
+     */
+    String getBranchName() {
+        script.env.BRANCH_NAME
+    }
+
+    /**
+     * @return the part of the branch name after the last slash
+     */
+    String getSimpleBranchName() {
+        return branchName.substring(branchName.lastIndexOf('/') + 1)
+    }
 }
