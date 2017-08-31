@@ -77,21 +77,21 @@ class GitTest {
     @Test
     void getCommitMessage() {
         String expectedReturnValue = "commit msg"
-        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
         assertEquals(expectedReturnValue, git.commitMessage)
     }
 
     @Test
     void getCommitHash() {
         String expectedReturnValue = "fb1c8820df462272011bca5fddbe6933e91d69ed"
-        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
         assertEquals(expectedReturnValue, git.commitHash)
     }
 
     @Test
     void getCommitHashShort() {
         String expectedReturnValue = "1674930"
-        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
         assertEquals(expectedReturnValue, git.commitHashShort)
     }
 

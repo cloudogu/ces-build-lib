@@ -57,17 +57,21 @@ class Git implements Serializable {
     }
 
     String getCommitMessage() {
-        return script.sh (
-                script: "git log -1 --pretty=%B", returnStdout: true)
+        return shReturnStdout("git log -1 --pretty=%B")
     }
 
     String getCommitHash() {
-        return script.sh (
-                script: "git rev-parse HEAD", returnStdout: true)
+        return shReturnStdout("git rev-parse HEAD")
     }
 
     String getCommitHashShort() {
-        return script.sh (
-                script: "git rev-parse --short HEAD", returnStdout: true)
+        return shReturnStdout("git rev-parse --short HEAD")
+    }
+
+    String shReturnStdout(String shScript) {
+        // Trim to remove trailing line breaks, which result in unwanted behavior in Jenkinsfiles:
+        // E.g. when using output in other sh() calls leading to executing the sh command after the line breaks,
+        // possibly discarding additional arguments
+        return script.sh (script: shScript, returnStdout: true).trim()
     }
 }
