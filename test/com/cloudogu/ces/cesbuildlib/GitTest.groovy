@@ -58,7 +58,54 @@ class GitTest {
         assertEquals(expectedSimpleBranchName, actualSimpleBranchName)
     }
 
-    static class ScriptMock {
+    @Test
+    void getAuthorEmail() {
+        Git git = new Git(createMockedScriptReturnOnSh( "User Name <user.name@doma.in>"))
+        assertEquals("user.name@doma.in", git.lastCommitAuthorEmail)
+    }
+
+    @Test
+    void getAuthorEmailNoMatch() {
+        Git git = new Git(createMockedScriptReturnOnSh("does not contain an email"))
+        assertEquals("", git.lastCommitAuthorEmail)
+    }
+
+    @Test
+    void getAuthorName() {
+        Git git = new Git(createMockedScriptReturnOnSh("User Name <user.name@doma.in>"))
+        assertEquals("User Name", git.lastCommitAuthorName)
+    }
+
+    @Test
+    void getLastCommitMessage() {
+        String expectedReturnValue = "commit msg"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        assertEquals(expectedReturnValue, git.lastCommitMessage)
+    }
+
+    @Test
+    void getLastCommitHash() {
+        String expectedReturnValue = "fb1c8820df462272011bca5fddbe6933e91d69ed"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        assertEquals(expectedReturnValue, git.lastCommitHash)
+    }
+
+    @Test
+    void getLastCommitHashShort() {
+        String expectedReturnValue = "1674930"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue))
+        assertEquals(expectedReturnValue, git.lastCommitHashShort)
+    }
+
+    private static Map<String, Closure> createMockedScriptReturnOnSh(String returnedBySh) {
+        return [
+                sh: { Map<String, String> args ->
+                    return returnedBySh
+                }
+        ]
+    }
+
+    private static class ScriptMock {
         List<String> shArgs = new LinkedList<>()
         def env
 

@@ -38,4 +38,36 @@ class Git implements Serializable {
     String getSimpleBranchName() {
         return branchName.substring(branchName.lastIndexOf('/') + 1)
     }
+
+    /**
+     * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
+     */
+    String getLastCommitAuthorComplete() {
+        return script.sh (
+                script: "git --no-pager show -s --format='%an <%ae>' HEAD", returnStdout: true)
+    }
+
+    String getLastCommitAuthorName() {
+        return getLastCommitAuthorComplete().replaceAll(" <.*", "")
+    }
+
+    String getLastCommitAuthorEmail() {
+        def matcher = getLastCommitAuthorComplete() =~ "<(.*?)>"
+        matcher ? matcher[0][1] : ""
+    }
+
+    String getLastCommitMessage() {
+        return script.sh (
+                script: "git log -1 --pretty=%B", returnStdout: true)
+    }
+
+    String getLastCommitHash() {
+        return script.sh (
+                script: "git rev-parse HEAD", returnStdout: true)
+    }
+
+    String getLastCommitHashShort() {
+        return script.sh (
+                script: "git rev-parse --short HEAD", returnStdout: true)
+    }
 }
