@@ -11,11 +11,9 @@ node() {
             disableConcurrentBuilds()
     ])
 
-    def mvnHome = tool 'M3'
-    def javaHome = tool 'JDK8'
     def sonarQube = 'ces-sonar'
 
-    Maven mvn = new Maven(this, mvnHome, javaHome)
+    Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
     Git git = new Git(this)
 
     // TODO refactor this in an object-oriented way and move to build-lib
@@ -24,7 +22,7 @@ node() {
         currentBuild.description = mvn.getVersion()
     } else if (!"develop".equals(env.BRANCH_NAME)) {
         // run SQ analysis in specific project for feature, hotfix, etc.
-        mvn.additionalArgs = "-Dsonar.branch=" + script.env.BRANCH_NAME
+        mvn.additionalArgs = "-Dsonar.branch=" + env.BRANCH_NAME
     }
 
     String emailRecipients = env.EMAIL_RECIPIENTS
@@ -32,7 +30,12 @@ node() {
     catchError {
         stage('Checkout') {
             checkout scm
-            git.clean("")
+            /* Don't remove folders starting in "." like
+             * .m2 (maven)
+             * .npm
+             * .cache, .local (bower)
+             */
+            git.clean('".*/"')
         }
 
         stage('Build') {
@@ -57,6 +60,5 @@ node() {
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
-    // email on fail
-    step([$class: 'Mailer', notifyEveryUnstableBuild: true, recipients: emailRecipients, sendToIndividuals: true])
+    mailIfStatusChanged(emailRecipients)
 }

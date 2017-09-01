@@ -1,24 +1,22 @@
 package com.cloudogu.ces.cesbuildlib
 
-class Maven implements Serializable {
-    def mvnHome
-    def javaHome
+abstract class Maven implements Serializable {
     def script
 
     // Args added to each mvn call
     String additionalArgs = ""
 
-    Maven(script, mvnHome, javaHome) {
+    Maven(script) {
         this.script = script
-        this.mvnHome = mvnHome
-        this.javaHome = javaHome
     }
 
     def call(args) {
         mvn(args)
     }
 
-    def mvn(String args) {
+    abstract def mvn(String args)
+
+    String createCommandLineArgs(String args) {
         // Apache Maven related side notes:
         // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
         // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
@@ -27,10 +25,7 @@ class Maven implements Serializable {
         // -Dsurefire.useFile=false : useful in CI. Displays test errors in the logs directly (instead of
         //                            having to crawl the workspace files to see the cause).
 
-        // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
-        script.withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${script.env.JAVA_HOME}/bin"]) {
-            script.sh "${mvnHome}/bin/mvn --batch-mode -V -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs}"
-        }
+        "--batch-mode -V -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs}"
     }
 
     String getVersion() {
@@ -39,7 +34,8 @@ class Maven implements Serializable {
     }
 
     String getMavenProperty(String propertyKey) {
-        def matcher = script.readFile('pom.xml') =~ "<properties>.*<$propertyKey>(.+)</$propertyKey>.*</properties>"
+        // Match multi line = (?s)
+        def matcher = script.readFile('pom.xml') =~ "(?s)<properties>.*<$propertyKey>(.+)</$propertyKey>.*</properties>"
         matcher ? matcher[0][1] : ""
     }
 }

@@ -1,19 +1,107 @@
 #![Cloudogu logo](https://cloudogu.com/images/logo.png)
 # ces-build-lib
-https://cloudogu.com
 
-This is the Jenkins build library that can be reused (not only) for the repositories of the cloudogu ecosystem.
+Jenkins Pipeline Shared library, that contains additional features for Git, Maven, etc. in an object-oriented manner as well as some additional pipeline steps.
 
----
-### What is Cloudogu?
-Cloudogu is an open platform, which lets you choose how and where your team creates great software. Each service or tool is delivered as a [Dōgu](https://translate.google.com/?text=D%26%23x014d%3Bgu#ja/en/%E9%81%93%E5%85%B7), a Docker container, that can be easily integrated in your environment just by pulling it from our registry. We have a growing number of ready-to-use Dōgus, e.g. SCM-Manager, Jenkins, Nexus, SonarQube, Redmine and many more. Every Dōgu can be tailored to your specific needs. You can even bring along your own Dōgus! Take advantage of a central authentication service, a dynamic navigation, that lets you easily switch between the web UIs and a smart configuration magic, which automatically detects and responds to dependencies between Dōgus. Cloudogu is open source and it runs either on-premise or in the cloud. Cloudogu is developed by Cloudogu GmbH under [MIT License](https://cloudogu.com/license.html) and it runs either on-premise or in the cloud.
+# Usage
 
-### How to get in touch?
-Want to talk to the Cloudogu team? Need help or support? There are several ways to get in touch with us:
+* Install [Pipeline: GitHub Groovy Libraries](https://wiki.jenkins.io/display/JENKINS/Pipeline+GitHub+Library+Plugin)
+* Use the Library in any Jenkinsfile like so
+```
+@Library('github.com/cloudogu/ces-build-lib@6cd41e0')
+import com.cloudogu.ces.cesbuildlib.*
+```
+* Best practice: Use a defined version (e.g. a commit, such as `6cd41e0` in the example above) and not a branch such as `develop`. Otherwise your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 
-* [Website](https://cloudogu.com)
-* [Mailing list](https://groups.google.com/forum/#!forum/cloudogu)
-* [Email hello@cloudogu.com](mailto:hello@cloudogu.com)
+# Maven
 
----
-&copy; 2016 Cloudogu GmbH - MADE WITH :heart: FOR DEV ADDICTS. [Legal notice / Impressum](https://cloudogu.com/imprint.html)
+## Maven from local Jenkins tool
+
+Run maven from a local tool installation on Jenkins.
+
+See [MavenLocal](src/com/cloudogu/ces/cesbuildlib/MavenLocal.groovy)
+
+```
+def mvnHome = tool 'M3'
+def javaHome = tool 'JDK8'
+Maven mvn = new Maven(this, mvnHome, javaHome)
+
+stage('Build') {
+    mvn 'clean install'
+}
+```
+
+## Maven in Docker
+
+Run maven in a docker container. This can be helpful, 
+* when constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running integration tests, unit tests that use infrastructure that binds to ports or
+* when one maven repo per builds is required For example when concurrent builds of multi module project install the same snapshot versions. 
+
+The build are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
+
+See [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
+
+```
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
+
+stage('Build') {
+    mvn 'clean install'
+}
+```
+
+If you run Docker from your maven build, because you use the [docker-maven-plugin](https://github.com/fabric8io/docker-maven-plugin) for example, you can connect the docker socket through to your docker in maven like so:
+
+```
+stage('Unit Test') {
+    // The UI module build runs inside a docker container, so pass the docker host to the maven container
+    mvn.enableDockerHost = true
+
+    mvn docker:start 
+
+    // Don't expose docker host more than necessary
+    mvn.enableDockerHost = false
+}
+```
+Note that this mounts the docker socket into the container. Use this wisely. [Some people](https://dzone.com/articles/never-expose-docker-sockets-period) say, you shouldn't do this at all! 
+
+
+## Maven Utilities
+
+Available from both local Maven and Maven in Docker.
+
+* `mvn.getVersion()`
+* `mvn.getProperty('project.build.sourceEncoding')`
+
+See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
+
+# Git
+
+
+```
+Git git = new Git(this)
+
+stage('Checkout') {
+  git 'https://your.repo'
+  /* Don't remove folders starting in "." like .m2 (maven), .npm, .cache, .local (bower), etc. */
+  git.clean('".*/"')
+}
+```
+
+# Steps
+
+## mailIfStatusChanged
+
+Provides the functionality of the Jenkins Post-build Action "E-mail Notification".
+
+```
+catchError {
+ // Stages and steps
+}
+mailIfStatusChanged('a@b.cd,123@xy.z')
+```
+See [mailIfStatusChanged](vars/mailIfStatusChanged.groovy)
+
+# Examples
+  * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
+  * [cloudugo/cas](https://github.com/cloudogu/cas)
+  * [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus)
