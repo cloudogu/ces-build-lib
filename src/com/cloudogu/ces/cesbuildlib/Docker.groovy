@@ -1,5 +1,4 @@
 package com.cloudogu.ces.cesbuildlib
-
 /**
  * Basic abstraction for docker.
  *
@@ -7,29 +6,47 @@ package com.cloudogu.ces.cesbuildlib
  * as well as some convenience methods.
  */
 class Docker implements Serializable {
-    @Delegate Serializable docker
     def script
 
     Docker(script) {
         this.script = script
-        this.docker = this.script.docker
     }
 
-    def methodMissing(String name, args) {
-        // Leads to java.lang.UnsupportedOperationException
-        // * - Spread operator for dynamic arguments
-        return this.script.docker."$name"(*args)
-        // Leads to MissingMethodException: No signature of method: org.jenkinsci.plugins.docker.workflow.Docker.image() is applicable for argument types: ([Ljava.lang.Object;) values: [[postgres:9.6]]
-        //return this.script.docker."$name"(args)
+    /* Define methods of global docker variable again.
+       Using methodMissing(String name, args) is not possible, because we would need the spread operator for dynamic
+       arguments (*) which is not supported by Jenkins Pipeline
 
-        // Does not find all methods
-        //this.script.docker.getClass().getMethods().each { method ->
-/*        this.script.docker.metaClass.metaMethods.each { method ->
-            this.script.echo "${method.name}"
-            if (method.name == name) {
-                return method.invoke(this.script.docker."$name", args)
-            }
-        }*/
+        def methodMissing(String name, args) {
+            return this.script.docker."$name"(*args)
+        }
+
+       Leads to UnsupportedOperationException.
+
+       Instead ust delegate all methods manually. See
+       https://github.com/jenkinsci/docker-workflow-plugin/blob/master/src/main/resources/org/jenkinsci/plugins/docker/workflow/Docker.groovy
+     */
+
+    // TODO copy doc from Jenkins and add some examples for calling
+
+
+    def withRegistry(String url, String credentialsId = null, Closure body) {
+        return this.script.docker.withRegistry( url, credentialsId, body)
+    }
+
+    def withServer(String uri, String credentialsId = null, Closure body) {
+        return this.script.docker.withServer(uri, credentialsId, body)
+    }
+
+    def withTool(String toolName, Closure body) {
+        return this.script.docker.withTool(toolName, body)
+    }
+
+    def image(String id) {
+        return this.script.docker.image(id)
+    }
+
+    def build(String image, String args = '.') {
+        return this.script.docker.build(image, args)
     }
 
     /**
