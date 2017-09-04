@@ -2,9 +2,11 @@ package com.cloudogu.ces.cesbuildlib
 
 class Git implements Serializable {
     def script
+    Sh sh
 
     Git(script) {
         this.script = script
+        this.sh = new Sh(script)
     }
 
     def call(args) {
@@ -57,21 +59,14 @@ class Git implements Serializable {
     }
 
     String getCommitMessage() {
-        return shReturnStdout("git log -1 --pretty=%B")
+        sh "git log -1 --pretty=%B"
     }
 
     String getCommitHash() {
-        return shReturnStdout("git rev-parse HEAD")
+        sh "git rev-parse HEAD"
     }
 
     String getCommitHashShort() {
-        return shReturnStdout("git rev-parse --short HEAD")
-    }
-
-    String shReturnStdout(String shScript) {
-        // Trim to remove trailing line breaks, which result in unwanted behavior in Jenkinsfiles:
-        // E.g. when using output in other sh() calls leading to executing the sh command after the line breaks,
-        // possibly discarding additional arguments
-        return script.sh (script: shScript, returnStdout: true).trim()
+        sh "git rev-parse --short HEAD"
     }
 }

@@ -4,6 +4,7 @@ import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
 
 class DockerTest {
 
@@ -116,6 +117,13 @@ class DockerTest {
         assertEquals(".", args[1])
     }
 
+    @Test
+    void findIp() {
+        String containerId = '93a401b14684'
+        Docker docker = new Docker( [ sh: { Map<String, String> args -> return args['script'] } ])
+        def actualIp = docker.findIp([id: containerId])
+        assertTrue(actualIp.contains(containerId))
+    }
 
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [

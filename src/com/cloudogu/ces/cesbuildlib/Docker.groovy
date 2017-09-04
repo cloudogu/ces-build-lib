@@ -1,4 +1,5 @@
 package com.cloudogu.ces.cesbuildlib
+
 /**
  * Basic abstraction for docker.
  *
@@ -7,9 +8,11 @@ package com.cloudogu.ces.cesbuildlib
  */
 class Docker implements Serializable {
     def script
+    Sh sh
 
     Docker(script) {
         this.script = script
+        this.sh = new Sh(script)
     }
 
     /* Define methods of global docker variable again.
@@ -90,11 +93,7 @@ class Docker implements Serializable {
      * @param container docker container instance
      * @return the IP address for a docker container instance
      */
-    String hostIp(container) {
-        String ip =
-                script.sh(returnStdout: true,
-                        script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}")
-                        .trim()
-        return ip
+    String findIp(container) {
+        sh "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
     }
 }
