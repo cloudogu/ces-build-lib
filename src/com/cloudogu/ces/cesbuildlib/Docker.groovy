@@ -104,4 +104,8 @@ class Docker implements Serializable {
     String findEnv(container) {
         sh "docker exec ${container.id} env"
     }
+
+    boolean isRunning(container) {
+        return Boolean.valueOf(sh("docker inspect -f {{.State.Running}} ${container.id}"))
+    }
 }

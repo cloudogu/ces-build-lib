@@ -125,13 +125,19 @@ class DockerTest {
         assertTrue(ip.contains(containerId))
     }
 
-
     @Test
     void findEnv() {
         String containerId = '93a401b14684'
         Docker docker = new Docker( [ sh: { Map<String, String> args -> return args['script'] } ])
         def evn = docker.findEnv([id: containerId])
         assertTrue(evn.contains(containerId))
+    }
+
+    @Test
+    void isRunning() {
+        String containerId = '93a401b14684'
+        Docker docker = new Docker( [ sh: { Map<String, String> args -> return "true" } ])
+        assertTrue(docker.isRunning([id: containerId]))
     }
 
     private Docker create(Map<String, Closure> mockedMethod) {
