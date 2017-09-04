@@ -7,10 +7,10 @@ import static groovy.util.GroovyTestCase.assertEquals
 class ShTest {
 
     @Test
-    void testCall() throws Exception {
+    void testReturnStdOut() throws Exception {
         Sh sh = new Sh( [ sh: { Map<String, String> args -> return args['script'] } ])
 
-        def result = sh 'echo abc \n '
+        def result = sh.returnStdOut 'echo abc \n '
         assertEquals('echo abc', result)
     }
 }

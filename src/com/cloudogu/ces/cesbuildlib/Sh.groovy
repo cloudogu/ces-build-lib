@@ -13,7 +13,7 @@ class Sh implements Serializable {
     /**
      * @return the trimmed stdout of the shell call
      */
-    String call(args) {
+    String returnStdOut(args) {
         return script.sh(returnStdout: true, script: args)
                 // Trim to remove trailing line breaks, which result in unwanted behavior in Jenkinsfiles:
                 // E.g. when using output in other sh() calls leading to executing the sh command after the line breaks,

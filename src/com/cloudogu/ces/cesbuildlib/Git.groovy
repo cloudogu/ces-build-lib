@@ -59,14 +59,14 @@ class Git implements Serializable {
     }
 
     String getCommitMessage() {
-        sh "git log -1 --pretty=%B"
+        sh.returnStdOut "git log -1 --pretty=%B"
     }
 
     String getCommitHash() {
-        sh "git rev-parse HEAD"
+        sh.returnStdOut "git rev-parse HEAD"
     }
 
     String getCommitHashShort() {
-        sh "git rev-parse --short HEAD"
+        sh.returnStdOut "git rev-parse --short HEAD"
     }
 }

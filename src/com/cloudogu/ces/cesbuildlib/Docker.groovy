@@ -94,7 +94,7 @@ class Docker implements Serializable {
      * @return the IP address for a docker container instance
      */
     String findIp(container) {
-        sh "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
+        sh.returnStdOut "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
     }
 
     /**
@@ -102,10 +102,10 @@ class Docker implements Serializable {
      * @return the environment variables set within the docker container as string
      */
     String findEnv(container) {
-        sh "docker exec ${container.id} env"
+        sh.returnStdOut "docker exec ${container.id} env"
     }
 
     boolean isRunning(container) {
-        return Boolean.valueOf(sh("docker inspect -f {{.State.Running}} ${container.id}"))
+        return Boolean.valueOf(sh.returnStdOut("docker inspect -f {{.State.Running}} ${container.id}"))
     }
 }
