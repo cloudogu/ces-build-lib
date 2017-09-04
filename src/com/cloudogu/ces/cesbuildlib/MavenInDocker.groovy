@@ -18,6 +18,8 @@ class MavenInDocker extends Maven {
     /** Setting this to {@code true} allows the maven build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
 
+    Docker docker
+
     /**
      * @param script the Jenkinsfile instance ({@code this} in Jenkinsfile)
      * @param dockerBaseImageVersion the version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8}
@@ -25,13 +27,14 @@ class MavenInDocker extends Maven {
     MavenInDocker(script, String dockerBaseImageVersion) {
         super(script)
         this.dockerBaseImageVersion = dockerBaseImageVersion
+        this.docker = new Docker(script)
     }
 
     @Override
     def mvn(String args) {
         writeDockerFile()
 
-        script.docker.build(createDockerImageName(), createDockerfilePath()).inside(createDockerRunArgs()) {
+        docker.build(createDockerImageName(), createDockerfilePath()).inside(createDockerRunArgs()) {
             script.sh("mvn ${createCommandLineArgs(args)}")
         }
     }
