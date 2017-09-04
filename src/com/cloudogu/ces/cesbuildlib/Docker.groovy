@@ -96,4 +96,12 @@ class Docker implements Serializable {
     String findIp(container) {
         sh "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
     }
+
+    /**
+     * @param container docker container instance
+     * @return the environment variables set within the docker container as string
+     */
+    String findEnv(container) {
+        sh "docker exec ${container.id} env"
+    }
 }
