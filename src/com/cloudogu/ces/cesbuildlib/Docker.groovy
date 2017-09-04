@@ -105,6 +105,10 @@ class Docker implements Serializable {
         sh.returnStdOut "docker exec ${container.id} env"
     }
 
+    /**
+     * @param container docker container instance
+     * @return {@code true} if the container is in state running, otherwise {@code false}
+     */
     boolean isRunning(container) {
         return Boolean.valueOf(sh.returnStdOut("docker inspect -f {{.State.Running}} ${container.id}"))
     }

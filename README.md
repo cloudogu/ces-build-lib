@@ -76,7 +76,6 @@ See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 # Git
 
-
 ```
 Git git = new Git(this)
 
@@ -85,6 +84,57 @@ stage('Checkout') {
   /* Don't remove folders starting in "." like .m2 (maven), .npm, .cache, .local (bower), etc. */
   git.clean('".*/"')
 }
+```
+
+# Docker
+
+Provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
+ 
+ * `withRegistry(url, credentialsId = null, Closure body)`: Specifies a registry URL such as `https://docker.mycorp.com/`, plus an optional credentials ID to connect to it.   
+   Example:
+     ```groovy
+     def dockerImage = docker.build("image/name:1.0", "folderOfDockfile")
+     docker.withRegistry("https://your.registry", 'credentialsId') {
+       dockerImage.push()
+     }
+     ```
+ * `withServer(uri, credentialsId = null, Closure body)`: Specifies a server URI such as `tcp://swarm.mycorp.com:2376`, plus an optional credentials ID to connect to it.
+ * `withTool(toolName, Closure body)`: Specifies the name of a Docker installation to use, if any are defined in Jenkins global configuration. 
+    If unspecified, docker is assumed to be in the `$PATH` of the Jenkins agent.
+ * `image(id)`: Creates an Image object with a specified name or ID.   
+    Example:
+     ```groovy
+      docker.image('google/cloud-sdk:164.0.0').inside("-e HOME=${pwd()}") {
+           sh "echo something"
+        }
+      ```
+ * `build(image, args)`: Runs docker build to create and tag the specified image from a Dockerfile in the current directory.
+    Additional args may be added, such as `'-f Dockerfile.other --pull --build-arg http_proxy=http://192.168.1.1:3128 .'`.
+    Like docker build, args must end with the build context.  
+    Example:
+     ```groovy
+     def dockerContainer = docker.build("image/name:1.0", "folderOfDockfile").run("-e HOME=${pwd()}")
+     ```
+
+## Docker Utilities
+
+The `Docker` class provides additional convenience features:
+
+ * `String findIp(container)` returns the IP address for a docker container instance
+ * `String findEnv(container)` returns the environment variables set within the docker container as string
+ * `boolean isRunning(container)` return `true` if the container is in state running, otherwise `false`
+ 
+ Example from Jenkinsfile:
+ ```groovy
+ Docker docker = new Docker(this)
+ def dockerContainer = docker.build("image/name:1.0").run()
+ waitUntil {
+     sleep(time: 10, unit: 'SECONDS')
+     return docker.isRunning(dockerContainer)
+ }
+ echo docker.findIp(dockerContainer)
+ echo docker.findEnv(dockerContainer)
+ 
 ```
 
 # Steps
