@@ -9,9 +9,24 @@ class Build {
     }
 
     /**
+     * Determines if nightly build by hour of day to avoid script approval, as need in {@link #isTimeTriggeredBuild()}.
+     *
+     * @return {@code true} if this build runs between midnight an 3am (within the timezone configured on the Jenkins server).
+     */
+    boolean isNightly() {
+        return Calendar.instance.get(Calendar.HOUR_OF_DAY) in 0..3
+    }
+
+    /**
      * Note that this requires the following script approvals by your jenkins administrator
+     * (via https://JENKINS-URL/scriptApproval/):
+     * <br/>
      * {@code method hudson.model.Run getCauses}
-     * {@code method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild}
+     * {@code method org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper getRawBuild}.
+     * <br/><br/>
+     * Note that that the pending script approvals only appear if this method is called <b>outside a {@code node}</b>
+     * within the pipeline!
+     *
      * @return {@code true} if the build was time triggered, otherwise {@code false}
      */
     boolean isTimeTriggeredBuild() {
