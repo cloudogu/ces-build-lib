@@ -21,6 +21,13 @@
             <version>1.11</version>
         </dependency>
 
+<!--        <dependency>
+            <groupId>org.eclipse.hudson</groupId>
+            <artifactId>hudson-core</artifactId>
+            <version>3.3.3</version>
+            <scope>provided</scope>
+        </dependency>-->
+
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
@@ -52,7 +59,7 @@
 
     <build>
         <sourceDirectory>src</sourceDirectory>
-        <!--<scriptSourceDirectory>vars</scriptSourceDirectory>-->
+        <scriptSourceDirectory>vars</scriptSourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
         <resources>
             <resource>
