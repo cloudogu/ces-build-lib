@@ -141,7 +141,7 @@ The `Docker` class provides additional convenience features:
 
 ## mailIfStatusChanged
 
-Provides the functionality of the Jenkins Post-build Action "E-mail Notification".
+Provides the functionality of the Jenkins Post-build Action "E-mail Notification" known from freestyle projects.
 
 ```
 catchError {
