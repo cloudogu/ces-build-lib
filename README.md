@@ -1,4 +1,4 @@
-#![Cloudogu logo](https://cloudogu.com/images/logo.png)
+![Cloudogu logo](https://cloudogu.com/images/logo.png)
 # ces-build-lib
 
 Jenkins Pipeline Shared library, that contains additional features for Git, Maven, etc. in an object-oriented manner as well as some additional pipeline steps.
