@@ -64,6 +64,14 @@ stage('Unit Test') {
 ```
 Note that this mounts the docker socket into the container. Use this wisely. [Some people](https://dzone.com/articles/never-expose-docker-sockets-period) say, you shouldn't do this at all! 
 
+If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
+```
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
+mvn.useLocalRepoFromJenkins = true
+```
+
+This speed speeds up the first build and uses less memory. 
+However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
 ## Maven Utilities
 

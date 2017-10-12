@@ -20,8 +20,8 @@ class MavenInDocker extends Maven {
 
     /** Setting this to {@code true} makes Maven use Jenkin's local maven repo instead of one in the build's workspace
      * Using the Jenkins speeds up the first build and uses less memory. However, concurrent builds of multi module
-     * project building the same (e.g. SNAPSHOT) version, might overwrite their dependencies, causing non-deterministic
-     * build failures.*/
+     * projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing
+     * non-deterministic build failures.*/
     boolean useLocalRepoFromJenkins = false
 
     Docker docker
