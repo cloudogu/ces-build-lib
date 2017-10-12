@@ -66,7 +66,7 @@ class MavenInDocker extends Maven {
         if (useLocalRepoFromJenkins) {
             // If Jenkin's local maven repo does not exist, make sure it is created by the user "jenkins"
             // Otherwise, if not existing, this folder is create as root, which denies permission to jenkins
-            script.sh returnStatus: true, script: "mkdir -p ${script.env.HOME}/.m2"
+            script.sh returnStatus: true, script: 'mkdir -p $HOME/.m2'
 
             // Mount Jenkin's local maven repo as local maven repo within the container
             runArgs += " -v ${script.env.HOME}/.m2:${script.pwd()}/.m2"
