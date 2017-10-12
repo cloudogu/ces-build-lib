@@ -70,7 +70,7 @@ class MavenInDockerTest {
         def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
 
         assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
-        assert scriptMock.shParams ==  "mkdir -p /home/jenkins/.m2"
+        assert scriptMock.shParams.script
     }
 
 
@@ -83,7 +83,7 @@ class MavenInDockerTest {
         def expectedRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID + " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
 
         assert mavenInDocker.createDockerRunArgs().contains(expectedRunArgs)
-        assert scriptMock.shParams ==  "mkdir -p /home/jenkins/.m2"
+        assert scriptMock.shParams.script ==  "mkdir -p /home/jenkins/.m2"
     }
 
     class ScriptMock {
@@ -108,10 +108,6 @@ class MavenInDockerTest {
                 return EXPECTED_GROUP_ID
             }
             ""
-        }
-
-        def sh(String params) {
-            shParams = params
         }
     }
 
