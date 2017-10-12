@@ -55,6 +55,11 @@ class MavenInDocker extends Maven {
         } else {
             ""
         }
+        // If Jenkin's local maven repo should be used instead of the one within the job's workspace, add the following:
+        // "-v ${script.env.HOME}/.m2:${script.pwd()}/.m2"
+        // If so consider executing the following before starting the docker container
+        // script.sh "mkdir -p ${script.env.HOME}/.m2" // Creates e.g /home/jenkins/.m2 if not existing
+        // Otherwise, this repo is create as root, which denies permission to jenkins
     }
 
     /**
