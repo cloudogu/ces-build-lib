@@ -39,7 +39,7 @@ class MavenInDockerTest {
 
     @Test
     void testCreateDockerImageName() {
-        String workspaceName = "NAME";
+        String workspaceName = "NAME"
         scriptMock.env.WORKSPACE = "/home/jenkins/workspace/$workspaceName"
         def actualImageName = mavenInDocker.createDockerImageName()
         def expectedImageName = "ces-build-lib/maven/${expectedVersion}${workspaceName.toLowerCase()}"
@@ -48,7 +48,7 @@ class MavenInDockerTest {
     }
 
     @Test
-    void testCreateDockerRunArgsNoDockerHost() {
+    void testCreateDockerRunArgsDefault() {
         assertEquals("", mavenInDocker.createDockerRunArgs())
     }
 
@@ -61,7 +61,33 @@ class MavenInDockerTest {
         assertEquals(expectedDockerRunArgs, mavenInDocker.createDockerRunArgs())
     }
 
+    @Test
+    void testCreateDockerRunArgsUseLocalRepoFromJenkins() {
+        scriptMock.env.HOME = "/home/jenkins"
+        mavenInDocker.useLocalRepoFromJenkins = true
+
+
+        def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
+
+        assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
+        assert scriptMock.shParams ==  "mkdir -p /home/jenkins/.m2"
+    }
+
+
+    @Test
+    void testCreateDockerRunArgsDockerHostEnabledUseLocalRepoFromJenkins() {
+        scriptMock.env.HOME = "/home/jenkins"
+        mavenInDocker.enableDockerHost = true
+        mavenInDocker.useLocalRepoFromJenkins = true
+
+        def expectedRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID + " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
+
+        assert mavenInDocker.createDockerRunArgs().contains(expectedRunArgs)
+        assert scriptMock.shParams ==  "mkdir -p /home/jenkins/.m2"
+    }
+
     class ScriptMock {
+        def shParams
         List<Map<String, String>> writeFileParams = new LinkedList<>()
 
         String pwd() { EXPECTED_PWD }
@@ -71,6 +97,7 @@ class MavenInDockerTest {
         }
 
         String sh(Map<String, String> params) {
+            shParams = params
             // Add some whitespaces
             String script = params.get("script")
             if (script == "cat /etc/passwd | grep jenkins") {
@@ -82,11 +109,16 @@ class MavenInDockerTest {
             }
             ""
         }
+
+        def sh(String params) {
+            shParams = params
+        }
     }
 
     void echo(String arg) {}
 
     def env = new Object() {
         String WORKSPACE = ""
+        String HOME = ""
     }
 }

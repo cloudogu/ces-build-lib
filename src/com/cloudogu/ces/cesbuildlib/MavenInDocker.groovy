@@ -18,6 +18,12 @@ class MavenInDocker extends Maven {
     /** Setting this to {@code true} allows the maven build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
 
+    /** Setting this to {@code true} makes Maven use Jenkin's local maven repo instead of one in the build's workspace
+     * Using the Jenkins speeds up the first build and uses less memory. However, concurrent builds of multi module
+     * project building the same (e.g. SNAPSHOT) version, might overwrite their dependencies, causing non-deterministic
+     * build failures.*/
+    boolean useLocalRepoFromJenkins = false
+
     Docker docker
 
     /**
@@ -50,16 +56,23 @@ class MavenInDocker extends Maven {
     }
 
     String createDockerRunArgs() {
+        String runArgs
         if (enableDockerHost) {
-            "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()}"
+            runArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add ${readDockerGroupId()}"
         } else {
-            ""
+            runArgs = ""
         }
-        // If Jenkin's local maven repo should be used instead of the one within the job's workspace, add the following:
-        // "-v ${script.env.HOME}/.m2:${script.pwd()}/.m2"
-        // If so consider executing the following before starting the docker container
-        // script.sh "mkdir -p ${script.env.HOME}/.m2" // Creates e.g /home/jenkins/.m2 if not existing
-        // Otherwise, this repo is create as root, which denies permission to jenkins
+
+        if (useLocalRepoFromJenkins) {
+            // If Jenkin's local maven repo does not exist, make sure it is created by the user "jenkins"
+            // Otherwise, this repo is create as root, which denies permission to jenkins
+            script.sh "mkdir -p ${script.env.HOME}/.m2" // Creates e.g /home/jenkins/.m2 if not existing
+
+            // Mount Jenkin's local maven repo as local maven repo within the container
+            runArgs += " -v ${script.env.HOME}/.m2:${script.pwd()}/.m2"
+        }
+
+        return runArgs
     }
 
     /**
