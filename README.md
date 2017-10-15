@@ -62,7 +62,8 @@ stage('Unit Test') {
     mvn.enableDockerHost = false
 }
 ```
-Note that this mounts the docker socket into the container. Use this wisely. [Some people](https://dzone.com/articles/never-expose-docker-sockets-period) say, you shouldn't do this at all! 
+Note that this mounts the docker socket into the container. Use this wisely. [Some people say](https://dzone.com/articles/never-expose-docker-sockets-period), you shouldn't do this at all.  
+On the other hand, the alternative would be to run a real docker host in docker a docker container, aka "docker in docker" or "dind" (which [is possible](https://blog.docker.com/2013/09/docker-can-now-run-within-docker/). On this, however, [other people say](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/), you shouldn't do this at all. So lets stick to mounting the socket, which seems to cause less problems.
 
 If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
 ```
