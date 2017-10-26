@@ -28,7 +28,7 @@ class MavenTest {
     void testGetVersion() {
         String expectedVersion = "1.0.0"
         def scriptMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version></project>"
+            "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version><dependencies><dependency><groupId>grp</groupId><artifactId>groovy-cps</artifactId><version>unexpected</version></dependency></dependencies></project>"
         }] as Object
         Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
@@ -41,7 +41,6 @@ class MavenTest {
         Maven mvn = new MavenForTest(scripMock)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
-
 
     @Test
     void testGetMavenProperty() {

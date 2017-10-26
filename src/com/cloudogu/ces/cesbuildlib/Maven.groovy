@@ -29,7 +29,7 @@ abstract class Maven implements Serializable {
     }
 
     String getVersion() {
-        def matcher = script.readFile('pom.xml') =~ '<version>(.+)</version>'
+        def matcher = script.readFile('pom.xml') =~ '<version>(.+?)</version>'
         matcher ? matcher[0][1] : ""
     }
 
