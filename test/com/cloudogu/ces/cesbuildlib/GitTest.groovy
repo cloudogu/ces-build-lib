@@ -95,6 +95,41 @@ class GitTest {
         assertEquals(expectedReturnValue, git.commitHashShort)
     }
 
+    @Test
+    void getRepositoryUrl() {
+        String expectedReturnValue = "https://github.com/orga/repo.git"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals(expectedReturnValue, git.repositoryUrl)
+    }
+
+    @Test
+    void getGitHubRepositoryName() {
+        String expectedReturnValue = "https://github.com/orga/repo"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals('orga/repo', git.gitHubRepositoryName)
+    }
+
+    @Test
+    void getGitHubRepositoryNameEndingInGit() {
+        String expectedReturnValue = "https://github.com/orga/repo.git"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals('orga/repo', git.gitHubRepositoryName)
+    }
+
+    @Test
+    void getGitHubRepositoryNameNotContainsDotGitSomewhere() {
+        String expectedReturnValue = "https://a.git.github.com/orga/repo"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals('orga/repo', git.gitHubRepositoryName)
+    }
+
+    @Test
+    void getGitHubRepositoryNameNonGitHub() {
+        String expectedReturnValue = "https://notGH.info/orga/repo"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals('', git.gitHubRepositoryName)
+    }
+
     private static Map<String, Closure> createMockedScriptReturnOnSh(String returnedBySh) {
         return [
                 sh: { Map<String, String> args ->

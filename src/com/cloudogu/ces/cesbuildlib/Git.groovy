@@ -69,4 +69,26 @@ class Git implements Serializable {
     String getCommitHashShort() {
         sh.returnStdOut "git rev-parse --short HEAD"
     }
+
+    /**
+     * @return the URL of the Git repository, e.g. {@code https://github.com/orga/repo.git}
+     */
+    String getRepositoryUrl() {
+        sh.returnStdOut "git config --get remote.origin.url"
+    }
+
+    /**
+     * @return the name of the GitHub Repository e.g. {@code repository/url}
+     */
+    String getGitHubRepositoryName() {
+        String repoUrl = repositoryUrl
+        if (!repoUrl.contains('github.com')) {
+            return ''
+        }
+        def potentialRepoName = repoUrl.substring(repositoryUrl.indexOf('github.com') + 'github.com'.length() + 1)
+        if (potentialRepoName.endsWith('.git')) {
+            return potentialRepoName.substring(0, potentialRepoName.length() - 4)
+        }
+        return potentialRepoName
+    }
 }
