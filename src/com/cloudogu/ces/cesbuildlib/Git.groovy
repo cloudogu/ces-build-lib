@@ -78,7 +78,7 @@ class Git implements Serializable {
     }
 
     /**
-     * @return the name of the GitHub Repository e.g. {@code repository/url}
+     * @return the name of the GitHub Repository e.g. {@code repository/url} or empty String, if no GitHub repo.
      */
     String getGitHubRepositoryName() {
         String repoUrl = repositoryUrl
