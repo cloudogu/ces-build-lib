@@ -16,20 +16,67 @@ class SonarQubeTest {
 
     @Test
     void analyzeWith() throws Exception {
-        scriptMock.metaClass.SONAR_MAVEN_GOAL = 'sonar:sonar'
-        scriptMock.metaClass.SONAR_HOST_URL = 'host'
-        scriptMock.metaClass.SONAR_AUTH_TOKEN = 'auth'
-        scriptMock.metaClass.SONAR_EXTRA_PROPS = '-DextraKey=extraValue'
+        scriptMock.env = [
+                SONAR_MAVEN_GOAL : 'sonar:sonar',
+                SONAR_HOST_URL : 'host',
+                SONAR_AUTH_TOKEN: 'auth',
+                SONAR_EXTRA_PROPS: '-DextraKey=extraValue',
+                BRANCH_NAME : 'develop'
+        ]
 
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
 
-        assert mavenMock.args == 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
+        assert mavenMock.args ==
+                'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
+        assert mavenMock.additionalArgs == '-Dsonar.branch=develop'
         assert scriptMock.sonarQubeEnv == 'sqEnv'
     }
 
     @Test
+    void analyzeWithPaidVersion() throws Exception {
+        scriptMock.env = [
+                BRANCH_NAME : 'develop'
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        sonarQube.usingPaidVersion = true
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs == '-Dsonar.branch.name=develop -Dsonar.branch.target=master'
+    }
+
+    @Test
+    void analyzePullRequest() throws Exception {
+        scriptMock.isPullRequest = true
+        scriptMock.env = [
+                CHANGE_ID : 'PR-42'
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs == '-Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 '
+    }
+
+    @Test
+    void analyzePullRequestUpdateGitHub() throws Exception {
+        scriptMock.isPullRequest = true
+        scriptMock.env = [
+                CHANGE_ID : 'PR-42',
+                PASSWORD : 'oauthToken'
+        ]
+        scriptMock.shRetValue = 'github.com/owner/repo'
+
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        sonarQube.updateAnalysisResultOfPullRequestsToGitHub('ghCredentials')
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs ==
+                '-Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 -Dsonar.github.repository=owner/repo -Dsonar.github.oauth=oauthToken '
+    }
+
+    @Test
     void waitForQualityGate() throws Exception {
-        scriptMock.isPullRequest = false
         scriptMock.qGate = [ status : 'OK']
 
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGate()
@@ -39,7 +86,6 @@ class SonarQubeTest {
 
     @Test
     void waitForQualityGateNotOk() throws Exception {
-        scriptMock.isPullRequest = false
         scriptMock.qGate = [ status : 'SOMETHING ELSE']
 
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGate()
@@ -56,8 +102,14 @@ class SonarQubeTest {
 
     private class ScriptMock {
         String sonarQubeEnv
-        boolean isPullRequest
+        boolean isPullRequest = false
         def qGate
+        def env = [ : ]
+        def shRetValue
+
+        String sh(Map<String, String> params) {
+            shRetValue
+        }
 
         boolean isPullRequest() {
             return isPullRequest
@@ -75,6 +127,12 @@ class SonarQubeTest {
             this.sonarQubeEnv = sonarQubeEnv
             closure.call()
         }
+
+        void withCredentials(List args, Closure closure) {
+            closure.call()
+        }
+
+        void string(Map args) {}
 
         void echo(String msg) {}
     }

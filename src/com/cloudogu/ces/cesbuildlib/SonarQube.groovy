@@ -9,16 +9,31 @@ class SonarQube implements Serializable {
     def script
 
     String sonarQubeEnv
+    // If enabled uses the branch plugin, available for developer edition and up
+    boolean usingPaidVersion = false
+    private String gitHubRepoName = ""
+    private String gitHubCredentials = ""
 
     SonarQube(script, String sonarQubeEnv) {
         this.script = script
         this.sonarQubeEnv = sonarQubeEnv
     }
 
+    /**
+     * Executes a SonarQube analysis using maven.
+     *
+     * When building a PullRequest, only a preview analysis is done. The result of this analysis can be added to the PR,
+     * see {@link #updateAnalysisResultOfPullRequestsToGitHub(java.lang.String)}.
+     *
+     * The current branch name is added to the SonarQube project name. Paid versions of GitHub offer the branch plugin.
+     * If available set {@link #usingPaidVersion} to {@code true}.
+     *
+     */
     void analyzeWith(Maven mvn) {
+        initMaven(mvn)
         script.withSonarQubeEnv(sonarQubeEnv) {
-            mvn "${script.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.SONAR_HOST_URL} " +
-                    "-Dsonar.login=${script.SONAR_AUTH_TOKEN} ${script.SONAR_EXTRA_PROPS} " +
+            mvn "${script.env.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.env.SONAR_HOST_URL} " +
+                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${script.env.SONAR_EXTRA_PROPS} " +
                     //exclude generated code in target folder in order to avoid duplicates and issues in code that cannot be changed.
                     "-Dsonar.exclusions=target/**"
         }
@@ -57,5 +72,54 @@ class SonarQube implements Serializable {
             }
         }
         return isQualityGateSucceeded
+    }
+
+    /**
+     * SonarQube can update the Build status of a commit within a PullRequest at GitHub.
+     *
+     * To do so, it needs a GitHub access token, which should be passed via a Jenkins credential.
+     *
+     * See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
+     */
+    void updateAnalysisResultOfPullRequestsToGitHub(String gitHubCredentials) {
+        this.gitHubCredentials = gitHubCredentials
+        this.gitHubRepoName = new Git(script).gitHubRepositoryName
+    }
+
+    private initMaven(Maven mvn) {
+        if (script.isPullRequest()) {
+            initMavenForPullRequest(mvn)
+        } else {
+            initMavenForRegularAnalysis(mvn)
+        }
+    }
+
+    private void initMavenForRegularAnalysis(Maven mvn) {
+        script.echo "SonarQube analyzing branch ${script.env.BRANCH_NAME}"
+
+        // Run SQ analysis in specific project for feature, hotfix, etc.
+        // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
+        // However, the alternative (the branch plugin is paid version only)
+        // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
+        if (usingPaidVersion) {
+            mvn.additionalArgs = "-Dsonar.branch.name=${script.env.BRANCH_NAME} -Dsonar.branch.target=master"
+        } else {
+            mvn.additionalArgs = "-Dsonar.branch=${script.env.BRANCH_NAME}"
+        }
+    }
+
+    private void initMavenForPullRequest(Maven mvn) {
+        script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
+
+        // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
+        mvn.additionalArgs = "-Dsonar.analysis.mode=preview "
+        mvn.additionalArgs += "-Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
+
+        if (gitHubCredentials != null && !gitHubCredentials.isEmpty()) {
+            mvn.additionalArgs += "-Dsonar.github.repository=$gitHubRepoName "
+            script.withCredentials([script.string(credentialsId: gitHubCredentials, variable: 'PASSWORD')]) {
+                mvn.additionalArgs += "-Dsonar.github.oauth=${script.env.PASSWORD} "
+            }
+        }
     }
 }
