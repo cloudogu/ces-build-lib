@@ -160,6 +160,18 @@ mailIfStatusChanged('a@b.cd,123@xy.z')
 ```
 See [mailIfStatusChanged](vars/mailIfStatusChanged.groovy)
 
+## isPullRequest
+
+Returns <code>true</code> if the current build is a pull request. Tested with GitHub.
+
+```
+stage('SomethingToSkipWhenInPR') {
+    if (!isPullRequest()) {
+      // ...
+    }
+}
+```
+
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
   * [cloudugo/cas](https://github.com/cloudogu/cas)
