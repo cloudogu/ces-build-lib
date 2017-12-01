@@ -2,6 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 /**
  * Abstraction for SonarQube. Use in conjunction with the SonarQube plugin for Jenkins:
+ *
  * https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin and
  * https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline
  */
@@ -10,7 +11,7 @@ class SonarQube implements Serializable {
 
     String sonarQubeEnv
     // If enabled uses the branch plugin, available for developer edition and up
-    boolean usingPaidVersion = false
+    boolean isUsingBranchPlugin = false
     private String gitHubRepoName = ""
     private String gitHubCredentials = ""
 
@@ -26,7 +27,7 @@ class SonarQube implements Serializable {
      * see {@link #updateAnalysisResultOfPullRequestsToGitHub(java.lang.String)}.
      *
      * The current branch name is added to the SonarQube project name. Paid versions of GitHub offer the branch plugin.
-     * If available set {@link #usingPaidVersion} to {@code true}.
+     * If available set {@link #isUsingBranchPlugin} to {@code true}.
      *
      */
     void analyzeWith(Maven mvn) {
@@ -41,7 +42,6 @@ class SonarQube implements Serializable {
 
     /**
      * Blocks until a webhook is called on Jenkins that signalizes finished SonarQube QualityGate evaluation.
-     * If the Quality Gate fails the build status is set to {@code buildResultOnQualityGateFailure}.
      *
      * It's good practice to execute this outside of a build executor/node, in order not to block it while waiting.
      * However, if the webhook is set in most cases the result will be returned in a couple of seconds.
@@ -59,7 +59,7 @@ class SonarQube implements Serializable {
      *
      * @return {@code true} if the result of the quality is 'OK' or if a Pull Request is built. Otherwise {@code false}.
      */
-    boolean waitForQualityGate() {
+    boolean waitForQualityGateWebhookToBeCalled() {
         boolean isQualityGateSucceeded = true
         // Pull Requests are analyzed locally, so no calling of the QGate webhook
         if (!script.isPullRequest()) {
@@ -101,7 +101,7 @@ class SonarQube implements Serializable {
         // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
         // However, the alternative (the branch plugin is paid version only)
         // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
-        if (usingPaidVersion) {
+        if (isUsingBranchPlugin) {
             mvn.additionalArgs = "-Dsonar.branch.name=${script.env.BRANCH_NAME} -Dsonar.branch.target=master"
         } else {
             mvn.additionalArgs = "-Dsonar.branch=${script.env.BRANCH_NAME}"

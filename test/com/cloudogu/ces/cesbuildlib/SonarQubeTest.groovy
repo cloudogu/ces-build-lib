@@ -39,7 +39,7 @@ class SonarQubeTest {
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
-        sonarQube.usingPaidVersion = true
+        sonarQube.isUsingBranchPlugin = true
         sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.additionalArgs == '-Dsonar.branch.name=develop -Dsonar.branch.target=master'
@@ -79,7 +79,7 @@ class SonarQubeTest {
     void waitForQualityGate() throws Exception {
         scriptMock.qGate = [ status : 'OK']
 
-        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGate()
+        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
 
         assert qualityGate
     }
@@ -88,7 +88,7 @@ class SonarQubeTest {
     void waitForQualityGateNotOk() throws Exception {
         scriptMock.qGate = [ status : 'SOMETHING ELSE']
 
-        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGate()
+        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
 
         assert !qualityGate
     }
@@ -96,7 +96,7 @@ class SonarQubeTest {
     @Test
     void waitForQualityGatePullRequest() throws Exception {
         scriptMock.isPullRequest = true
-        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGate()
+        def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
         assert qualityGate
     }
 
