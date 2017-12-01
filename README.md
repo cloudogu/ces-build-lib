@@ -146,6 +146,65 @@ The `Docker` class provides additional convenience features:
  
 ```
 
+# SonarQube
+
+The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin) provides utility
+steps for Jenkins Pipelines. However, analysing and checking the Quality Goal includes some challenges that are solved 
+using ces-build-lib's `SonarQube` class:
+
+* Setting the branch name
+* Preview analysis for PullRequests
+* Updating commit status in GitHub for PullRequests
+* Using the SonarQube branch plugin (SonarQube 6.x, developer edition and sonarcloud.io)
+
+The most simple setup will look like this:
+
+For now, `SonarQube` can only analyze using `Maven`. Extending this to use the plain SonarQube Runner in future, should be easy, however.
+
+```groovy
+stage('Statical Code Analysis') {
+  def sonarQube = new SonarQube(this, 'sonarQubeServerSetupInJenkins')
+
+  sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
+
+  if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
+    currentBuild.result ='UNSTABLE'
+  }
+}
+```
+Note that
+ 
+* this requires a SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: `https://yourJenkinsInstance/configure`.
+* Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server, that notifies Jenkins. See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
+* Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job, i.e. `analyzeWith()` has been called.
+
+## Branches
+
+By default, the `SonarQube` class uses the old logic, of passing the branch name to SonarQube, which will create on project per branch. This is deprecated from SonarQube 6.x, but the alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
+You can enable the branch plugin like so:
+
+```groovy
+sonarQube.isUsingBranchPlugin = true
+sonarQube.analyzeWith(mvn)
+```
+
+## PullRequests
+
+If `isPullRequest()` is true, `SonarQube.analyzeWith()` will only perform a preview analysis. That is, the results are not sent to the server.
+When using the [GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin), you can add the results to the PullRequest.
+To do so, `SonarQube` needs credentials for the GitHub repo, defined in Jenkins. Please see [here](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) how to create those in GitHub.
+Then save the GitHub access token as secret text in Jenkins at
+
+* `https://yourJenkinsInstance/credentials/` or
+* `https://yourJenkinsInstance/job/yourJob/credentials/`.
+
+Finally pass the credentialsId to `SonarQube` in your pipleine like so
+
+```groovy
+sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh')
+sonarQube.analyzeWith(mvn)
+```
+
 # Steps
 
 ## mailIfStatusChanged
@@ -162,7 +221,8 @@ See [mailIfStatusChanged](vars/mailIfStatusChanged.groovy)
 
 ## isPullRequest
 
-Returns <code>true</code> if the current build is a pull request. Tested with GitHub.
+Returns <code>true</code> if the current build is a pull request (when the `CHANGE_ID`environment variable is set) 
+Tested with GitHub.
 
 ```
 stage('SomethingToSkipWhenInPR') {
