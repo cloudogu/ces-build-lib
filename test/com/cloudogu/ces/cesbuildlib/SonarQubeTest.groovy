@@ -33,6 +33,15 @@ class SonarQubeTest {
     }
 
     @Test
+    void analyzeIgnoreBranches() throws Exception {
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        sonarQube.isIgnoringBranches = true
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs == ''
+    }
+
+    @Test
     void analyzeWithPaidVersion() throws Exception {
         scriptMock.env = [
                 BRANCH_NAME : 'develop'

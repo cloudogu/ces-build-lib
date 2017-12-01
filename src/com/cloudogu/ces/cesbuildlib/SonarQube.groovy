@@ -10,8 +10,9 @@ class SonarQube implements Serializable {
     def script
 
     String sonarQubeEnv
-    // If enabled uses the branch plugin, available for developer edition and up
+    // If enabled uses the branch plugin, available for developer edition and above
     boolean isUsingBranchPlugin = false
+    boolean isIgnoringBranches = false
     private String gitHubRepoName = ""
     private String gitHubCredentials = ""
 
@@ -96,6 +97,10 @@ class SonarQube implements Serializable {
 
     private void initMavenForRegularAnalysis(Maven mvn) {
         script.echo "SonarQube analyzing branch ${script.env.BRANCH_NAME}"
+
+        if (isIgnoringBranches) {
+            return
+        }
 
         // Run SQ analysis in specific project for feature, hotfix, etc.
         // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
