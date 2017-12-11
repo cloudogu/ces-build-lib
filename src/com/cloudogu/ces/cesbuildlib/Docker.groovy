@@ -1,5 +1,4 @@
 package com.cloudogu.ces.cesbuildlib
-
 /**
  * Basic abstraction for docker.
  *
@@ -59,7 +58,7 @@ class Docker implements Serializable {
      * Example:
      * <pre>
      *   def dockerImage = docker.build("image/name:1.0", "folderOfDockfile")
-     *   docker.withRegistry("https://your.registry", 'credentialsId') {*       dockerImage.push()
+     *   docker.withRegistry("https://your.registry", 'credentialsId') {*       dockerimage().push()
      *}*  </pre>
      */
     def withRegistry(String url, String credentialsId = null, Closure body) {
@@ -113,17 +112,45 @@ class Docker implements Serializable {
 
         private final script
         private image
-        /** The image name with optional tag (mycorp/myapp, mycorp/myapp:latest) or ID (hexadecimal hash).  **/
-        String id
+        // Don't mix this up with Jenkins docker.image.id, which is an ImageNameTokens object
+        // See getId()
+        private String imageIdString
+        Sh sh
 
-        private Image(script, String id) {
+        /**
+         * Provides the user that executes the Build within docker container.
+         * This is necessary for some commands such as npm.
+         *
+         * Creates {@code passwd} file that is mounted into a container started from this image().
+         * This {@code passwd} file contains the username, UID, GID of the user that executes the build and also sets
+         * the current workspace as HOME within the docker container.
+         *
+         * @return an instance of this image, for a fluent API.
+         */
+        boolean mountJenkinsUser = false
+
+        Image(script, String id) {
+            imageIdString = id
             this.script = script
-            image = script.docker.image(id)
-            this.id = image.id
+            this.sh = new Sh(script)
+        }
+
+        // Creates an image instance. Can't be called from constructor because of CpsCallableInvocation
+        // See https://issues.jenkins-ci.org/browse/JENKINS-26313
+        private def image() {
+            if (!image) {
+                image = script.docker.image(imageIdString)
+            }
+            return image
         }
 
         String imageName() {
-            return image.imageName()
+            return image().imageName()
+        }
+
+        /** The image name with optional tag (mycorp/myapp, mycorp/myapp:latest) or ID (hexadecimal hash).  **/
+        String getId() {
+            return image().id
         }
 
         /**
@@ -132,7 +159,8 @@ class Docker implements Serializable {
          * directory (normally a Jenkins agent workspace), which means that the Docker server must be on localhost.
          */
         def inside(String args = '', Closure body) {
-            return image.inside(args, body)
+            def extendedArgs = extendArgs(args)
+            return image().inside(extendedArgs, body)
         }
 
         /**
@@ -145,33 +173,82 @@ class Docker implements Serializable {
         /**
          *  Uses docker run to run the image, and returns a Container which you could stop later. Additional args may
          *  be added, such as '-p 8080:8080 --memory-swap=-1'. Optional command is equivalent to Docker command
-         *  specified after the image. Records a run fingerprint in the build.
+         *  specified after the image(). Records a run fingerprint in the build.
          */
         def run(String args = '', String command = "") {
-            return image.run(args, command)
+            def extendedArgs = extendArgs(args)
+            return image().run(extendedArgs, command)
         }
 
         /**
          * Like run but stops the container as soon as its body exits, so you do not need a try-finally block.
          */
         def withRun(String args = '', String command = "", Closure body) {
-            return image.withRun(args, command, body)
+            def extendedArgs = extendArgs(args)
+            return image().withRun(extendedArgs, command, body)
         }
 
         /**
          * Runs docker tag to record a tag of this image (defaulting to the tag it already has). Will rewrite an
          * existing tag if one exists.
          */
-        void tag(String tagName = image.parsedId.tag, boolean force = true) {
-            image.tag(tagName, force)
+        void tag(String tagName = image().parsedId.tag, boolean force = true) {
+            image().tag(tagName, force)
         }
 
         /**
-         * Pushes an image to the registry after tagging it as with the tag method. For example, you can use image.push
+         * Pushes an image to the registry after tagging it as with the tag method. For example, you can use image().push
          * 'latest' to publish it as the latest version in its repository.
          */
-        void push(String tagName = image.parsedId.tag, boolean force = true) {
-            image.push(tagName, force)
+        void push(String tagName = image().parsedId.tag, boolean force = true) {
+            image().push(tagName, force)
+        }
+
+        private extendArgs(String args) {
+            String extendedArgs = args
+            if (mountJenkinsUser) {
+                String passwdPath = writePasswd()
+                extendedArgs += " -v ${script.pwd()}/${passwdPath}:/etc/passwd:ro"
+            }
+            return extendedArgs
+        }
+
+        String writePasswd() {
+            def passwdPath = '.jenkins/passwd'
+
+            // e.g. "jenkins:x:1000:1000::/home/jenkins:/bin/sh"
+            String passwd = readJenkinsUserFromEtcPasswdCutOffAfterGroupId() + ":${script.pwd()}:/bin/sh"
+
+            script.writeFile file: passwdPath, text: passwd
+            return passwdPath
+        }
+
+        /**
+         * Return from /etc/passwd (for user that executes build) only username, pw, UID and GID.
+         * e.g. "jenkins:x:1000:1000:"
+         */
+        private String readJenkinsUserFromEtcPasswdCutOffAfterGroupId() {
+            def regexMatchesUntilFourthColon = '(.*?:){4}'
+
+            def etcPasswd = readJenkinsUserFromEtcPasswd()
+
+            // Storing matcher in a variable might lead to java.io.NotSerializableException: java.util.regex.Matcher
+            if (!(etcPasswd =~ regexMatchesUntilFourthColon)) {
+                script.error '/etc/passwd entry for current user does not match user:x:uid:gid:'
+            }
+            return (etcPasswd =~ regexMatchesUntilFourthColon)[0][0]
+        }
+
+        private String readJenkinsUserFromEtcPasswd() {
+            // Query current jenkins user string, e.g. "jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
+            // An alternative (dirtier) approach: https://github.com/cloudogu/docker-golang/blob/master/Dockerfile
+            // TODO use System.properties. 'user.name' instead of jenkins (#6)
+            String jenkinsUserFromEtcPasswd = sh.returnStdOut 'cat /etc/passwd | grep jenkins'
+
+            if (jenkinsUserFromEtcPasswd.isEmpty()) {
+                script.error 'Unable to parse user jenkins from /etc/passwd.'
+            }
+            return jenkinsUserFromEtcPasswd
         }
     }
 }

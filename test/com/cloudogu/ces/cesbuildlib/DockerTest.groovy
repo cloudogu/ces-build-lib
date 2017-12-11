@@ -2,9 +2,15 @@ package com.cloudogu.ces.cesbuildlib
 
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.Assert.*
 
 class DockerTest {
+
+    def expectedImage = 'google/cloud-sdk:164.0.0'
+    def expectedHome = '/home/jenkins'
+    def actualPasswd = 'jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash'
+    Map<String, String> actualWriteFileArgs = [:]
 
     @Test
     void findIp() {
@@ -18,8 +24,8 @@ class DockerTest {
     void findEnv() {
         String containerId = '93a401b14684'
         Docker docker = new Docker([sh: { Map<String, String> args -> return args['script'] }])
-        def evn = docker.findEnv([id: containerId])
-        assertTrue(evn.contains(containerId))
+        def env = docker.findEnv([id: containerId])
+        assertTrue(env.contains(containerId))
     }
 
     @Test
@@ -129,9 +135,7 @@ class DockerTest {
 
     @Test
     void imageInside() {
-        def expectedImage = 'google/cloud-sdk:164.0.0'
-
-        Docker docker = createWithImage(expectedImage,
+        Docker docker = createWithImage(
                 [inside: { String param1, Closure param2 ->
                     return [param1, param2]
                 }])
@@ -144,9 +148,7 @@ class DockerTest {
 
     @Test
     void imageId() {
-        def expectedImage = 'google/cloud-sdk:164.0.0'
-
-        Docker docker = createWithImage(expectedImage, [imageName: { expectedImage }])
+        Docker docker = createWithImage([imageName: { expectedImage }])
 
         def args = docker.image(expectedImage).id
 
@@ -155,9 +157,7 @@ class DockerTest {
 
     @Test
     void imageName() {
-        def expectedImage = 'google/cloud-sdk:164.0.0'
-
-        Docker docker = createWithImage(expectedImage, [imageName: { expectedImage }])
+        Docker docker = createWithImage([imageName: { expectedImage }])
 
         def args = docker.image(expectedImage).imageName()
 
@@ -166,9 +166,7 @@ class DockerTest {
 
     @Test
     void imageRun() {
-        def expectedImage = 'google/cloud-sdk:164.0.0'
-
-        Docker docker = createWithImage(expectedImage,
+        Docker docker = createWithImage(
                 [run: { String param1, String param2 ->
                     return [param1, param2]
                 }])
@@ -181,9 +179,7 @@ class DockerTest {
 
     @Test
     void imageWithRun() {
-        def expectedImage = 'google/cloud-sdk:164.0.0'
-
-        Docker docker = createWithImage(expectedImage,
+        Docker docker = createWithImage(
                 [withRun: { String param1, String param2, Closure param3 ->
                     return [param1, param2, param3]
                 }])
@@ -195,6 +191,67 @@ class DockerTest {
         assertEquals('expectedClosure', args[2].call())
     }
 
+    @Test
+    void imageInsideMountJenkinsUser() {
+        Docker docker = createWithImage(
+                [inside: { String param1, Closure param2 ->
+                    return [param1, param2]
+                }])
+
+        def image = docker.image(expectedImage)
+        image.mountJenkinsUser = true
+        def args = image.inside('-v a:b') { return 'expectedClosure' }
+
+        assertEquals('-v a:b -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
+        assertEquals('expectedClosure', args[1].call())
+        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+    }
+
+    @Test
+    void imageRunMountJenkinsUser() {
+        Docker docker = createWithImage(
+                [run: { String param1, String param2 ->
+                    return [param1, param2]
+                }])
+
+        def image = docker.image(expectedImage)
+        image.mountJenkinsUser = true
+        def args = image.run('arg', 'cmd')
+
+        assertEquals('arg -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
+        assertEquals('cmd', args[1])
+        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+    }
+
+    @Test
+    void imageWithRunMountJenkinsUser() {
+        Docker docker = createWithImage(
+                [withRun: { String param1, String param2, Closure param3 ->
+                    return [param1, param2, param3]
+                }])
+
+        def image = docker.image(expectedImage)
+        image.mountJenkinsUser = true
+        def args = image.withRun('arg', 'cmd')  { return 'expectedClosure' }
+
+        assertEquals('arg -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
+        assertEquals('cmd', args[1])
+        assertEquals('expectedClosure', args[2].call())
+        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+    }
+
+    @Test
+    void imageMountJenkinsUserUnexpectedPasswd() {
+        testForInvaildPasswd('jenkins:x:1000:1000',
+                '/etc/passwd entry for current user does not match user:x:uid:gid:')
+    }
+
+    @Test
+    void imageMountJenkinsUserPasswdEmpty() {
+        testForInvaildPasswd('',
+                'Unable to parse user jenkins from /etc/passwd.')
+    }
+
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [
                 docker: mockedMethod
@@ -202,7 +259,7 @@ class DockerTest {
         return new Docker(mockedScript)
     }
 
-    private Docker createWithImage(String expectedImage, Map<String, Closure> mockedMethod) {
+    private Docker createWithImage(Map<String, Closure> mockedMethod) {
 
         def mockedScript = [
                 docker: [image: { String id ->
@@ -212,6 +269,28 @@ class DockerTest {
                 }
                 ]
         ]
+        mockedScript.put('sh', { Map<String, String> args -> return actualPasswd })
+        mockedScript.put('pwd', { return expectedHome })
+        mockedScript.put('writeFile', { Map<String, String> args -> actualWriteFileArgs = args})
+        mockedScript.put('error', { String arg -> throw new RuntimeException(arg) })
+
         return new Docker(mockedScript)
+    }
+
+    private void testForInvaildPasswd(String invalidPasswd, String expectedError) {
+        Docker docker = createWithImage(
+                [run: { String param1, String param2 ->
+                    return [param1, param2]
+                }])
+
+        actualPasswd = invalidPasswd
+
+        def image = docker.image(expectedImage)
+        image.mountJenkinsUser = true
+        def exception = shouldFail {
+            image.run('arg', 'cmd')
+        }
+
+        assertEquals(expectedError, exception.getMessage())
     }
 }
