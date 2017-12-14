@@ -11,7 +11,7 @@ class Sh implements Serializable {
     }
 
     /**
-     * @return the trimmed stdout of the shell call
+     * @return the trimmed stdout of the shell call. Most likeley never {@code null}
      */
     String returnStdOut(args) {
         return script.sh(returnStdout: true, script: args)

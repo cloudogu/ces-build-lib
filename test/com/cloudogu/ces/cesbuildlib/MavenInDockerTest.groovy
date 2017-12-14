@@ -3,7 +3,8 @@ package com.cloudogu.ces.cesbuildlib
 import org.junit.Test
 
 import static junit.framework.TestCase.assertEquals
-import static junit.framework.TestCase.assertTrue
+import static org.mockito.ArgumentMatchers.anyBoolean
+import static org.mockito.Mockito.*
 
 class MavenInDockerTest {
     static final ORIGINAL_USER_HOME = "/home/jenkins"
@@ -22,43 +23,28 @@ class MavenInDockerTest {
     def mavenInDocker = new MavenInDocker(scriptMock, expectedVersion)
 
     @Test
-    void testWriteDockerFile() {
-
-        mavenInDocker.writeDockerFile()
-
-        assertTrue("script.writeFile() not called", scriptMock.getWriteFileParams().size() > 0)
-        String actualDockerfile = scriptMock.writeFileParams.get(0).get("text")
-        assertTrue("Expected version $expectedVersion not contained in actual dockerfile: $actualDockerfile",
-                actualDockerfile.contains(expectedVersion))
-        def expected_jenkins_user = EXPECTED_JENKINS_USER_FROM_ETC_PASSWD.replace(ORIGINAL_USER_HOME, EXPECTED_PWD)
-        assertTrue("Expected user \"${expected_jenkins_user}\" not contained in actual dockerfile: $actualDockerfile",
-                actualDockerfile.contains(expected_jenkins_user))
-        String actualDockerfilePath = scriptMock.writeFileParams.get(0).get("file")
-        assertEquals("$EXPECTED_PWD/.jenkins/build/$expectedVersion/Dockerfile", actualDockerfilePath)
-    }
-
-    @Test
-    void testCreateDockerImageName() {
-        String workspaceName = "NAME"
-        scriptMock.env.WORKSPACE = "/home/jenkins/workspace/$workspaceName"
-        def actualImageName = mavenInDocker.createDockerImageName()
-        def expectedImageName = "ces-build-lib/maven/${expectedVersion}${workspaceName.toLowerCase()}"
-
-        assertEquals(expectedImageName, actualImageName)
-    }
-
-    @Test
     void testCreateDockerRunArgsDefault() {
         assertEquals("", mavenInDocker.createDockerRunArgs())
     }
 
     @Test
-    void testCreateDockerRunArgsDockerHostEnabled() {
+    void testDockerHostEnabled() {
         mavenInDocker.enableDockerHost = true
+        Docker dockerMock = mock(Docker.class)
+        Docker.Image imageMock = mock(Docker.Image.class)
+        when(dockerMock.image('maven:3.5.0-jdk8')).thenReturn(imageMock)
+        when(imageMock.mountJenkinsUser(anyBoolean())).thenReturn(imageMock)
+        when(imageMock.mountDockerSocket(anyBoolean())).thenReturn(imageMock)
+        mavenInDocker.docker = dockerMock
+
 
         def expectedDockerRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID
 
-        assertEquals(expectedDockerRunArgs, mavenInDocker.createDockerRunArgs())
+        mavenInDocker 'test'
+
+        verify(imageMock).mountDockerSocket(true)
+        verify(imageMock).mountJenkinsUser(true)
+        //assertEquals(expectedDockerRunArgs, mavenInDocker.createDockerRunArgs())
     }
 
     @Test
@@ -70,19 +56,6 @@ class MavenInDockerTest {
         def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
 
         assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
-        assert scriptMock.shParams.script ==  'mkdir -p $HOME/.m2'
-    }
-
-
-    @Test
-    void testCreateDockerRunArgsDockerHostEnabledUseLocalRepoFromJenkins() {
-        scriptMock.env.HOME = "/home/jenkins"
-        mavenInDocker.enableDockerHost = true
-        mavenInDocker.useLocalRepoFromJenkins = true
-
-        def expectedRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID + " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
-
-        assert mavenInDocker.createDockerRunArgs().contains(expectedRunArgs)
         assert scriptMock.shParams.script ==  'mkdir -p $HOME/.m2'
     }
 
