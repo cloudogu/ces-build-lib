@@ -269,7 +269,9 @@ class DockerTest {
                 }
                 ]
         ]
-        mockedScript.put('sh', { Map<String, String> args -> return actualPasswd })
+        mockedScript.put('sh', { Map<String, String> args ->
+            assert args['script'].contains(System.properties.'user.name')
+            return actualPasswd })
         mockedScript.put('pwd', { return expectedHome })
         mockedScript.put('writeFile', { Map<String, String> args -> actualWriteFileArgs = args})
         mockedScript.put('error', { String arg -> throw new RuntimeException(arg) })

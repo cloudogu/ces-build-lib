@@ -242,8 +242,8 @@ class Docker implements Serializable {
         private String readJenkinsUserFromEtcPasswd() {
             // Query current jenkins user string, e.g. "jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
             // An alternative (dirtier) approach: https://github.com/cloudogu/docker-golang/blob/master/Dockerfile
-            // TODO use System.properties. 'user.name' instead of jenkins (#6)
-            String jenkinsUserFromEtcPasswd = sh.returnStdOut 'cat /etc/passwd | grep jenkins'
+            def userName = System.properties.'user.name'
+            String jenkinsUserFromEtcPasswd = sh.returnStdOut "cat /etc/passwd | grep $userName"
 
             if (jenkinsUserFromEtcPasswd.isEmpty()) {
                 script.error 'Unable to parse user jenkins from /etc/passwd.'
