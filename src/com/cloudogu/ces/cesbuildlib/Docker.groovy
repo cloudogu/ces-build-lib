@@ -111,21 +111,32 @@ class Docker implements Serializable {
     static class Image implements Serializable {
 
         private final script
+
+        // The wrapped image object
         private image
+
         // Don't mix this up with Jenkins docker.image.id, which is an ImageNameTokens object
         // See getId()
         private String imageIdString
+
         Sh sh
 
         /**
-         * Provides the user that executes the Build within docker container.
-         * This is necessary for some commands such as npm.
+         * Provides the user that executes the build within docker container's /etc/passwd.
+         * This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors without
+         * a user present.
          *
-         * Creates {@code passwd} file that is mounted into a container started from this image().
+         * Why?
+         * Note that Jenkins starts Docker containers in the pipeline with the -u parameter (e.g. -u 1042:1043).
+         * That is, the container does not run as root (which is a good thing from a security point of view).
+         * However, the userID/UID (e.g. 1042) and the groupID/GID (e.g. 1043) will most likely not be present within the
+         * container which causes errors in some executables.
+         *
+         * How?
+         * Setting this will cause the creation of a {@code passwd} file that is mounted into a container started
+         * from this image() (triggered by run(), withRun() and inside() methods).
          * This {@code passwd} file contains the username, UID, GID of the user that executes the build and also sets
          * the current workspace as HOME within the docker container.
-         *
-         * @return an instance of this image, for a fluent API.
          */
         boolean mountJenkinsUser = false
 

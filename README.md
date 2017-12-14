@@ -97,7 +97,9 @@ stage('Checkout') {
 
 # Docker
 
-Provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
+The `Docker`class provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
+
+## `Docker` methods provided by the docker plugin
  
  * `withRegistry(url, credentialsId = null, Closure body)`: Specifies a registry URL such as `https://docker.mycorp.com/`, plus an optional credentials ID to connect to it.   
    Example:
@@ -117,6 +119,7 @@ Provides the default methods of the global docker variable provided by [docker p
            sh "echo something"
         }
       ```
+     The image returned by the `Docker` class has additional features see bellow.
  * `build(image, args)`: Runs docker build to create and tag the specified image from a Dockerfile in the current directory.
     Additional args may be added, such as `'-f Dockerfile.other --pull --build-arg http_proxy=http://192.168.1.1:3128 .'`.
     Like docker build, args must end with the build context.  
@@ -124,8 +127,7 @@ Provides the default methods of the global docker variable provided by [docker p
      ```groovy
      def dockerContainer = docker.build("image/name:1.0", "folderOfDockfile").run("-e HOME=${pwd()}")
      ```
-
-## Docker Utilities
+## Additional features provided by the `Docker` class
 
 The `Docker` class provides additional convenience features:
 
@@ -146,6 +148,51 @@ The `Docker` class provides additional convenience features:
  
 ```
 
+## `Docker.Image` methods provided by the docker plugin
+
+* `id`: The image name with optional tag (mycorp/myapp, mycorp/myapp:latest) or ID (hexadecimal hash).
+* `inside(String args = '', Closure body) `: Like `withRun` this starts a container for the duration of the body, but
+  all external commands (sh) launched by the body run inside the container rather than on the host. These commands run in
+  the same working directory (normally a Jenkins agent workspace), which means that the Docker server must be on localhost.
+* `pull`: Runs docker pull. Not necessary before `run`, `withRun`, or `inside`.
+* `run(String args = '', String command = "")`:  Uses `docker run` to run the image, and returns a Container which you 
+  could stop later. Additional args may be added, such as `'-p 8080:8080 --memory-swap=-1'`. Optional command is 
+  equivalent to Docker command specified after the `image()`. Records a run fingerprint in the build.
+* `withRun(String args = '', String command = "", Closure body)`:  Like `run` but stops the container as soon as its 
+   body exits, so you do not need a try-finally block.
+* `tag(String tagName = image().parsedId.tag, boolean force = true)`: Runs docker tag to record a tag of this image 
+  (defaulting to the tag it already has). Will rewrite an existing tag if one exists.
+* `push(String tagName = image().parsedId.tag, boolean force = true)`: Pushes an image to the registry after tagging it 
+  as with the tag method. For example, you can use `image().push 'latest'` to publish it as the latest version in its 
+  repository.
+
+## Additional features provided by the `Docker.Image` class
+
+* `mountJenkinsUser = true`: Provides the user that executes the build within docker container's `/etc/passwd`.
+  This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors withouta user 
+  present.
+    
+  Why?  
+  Note that Jenkins starts Docker containers in the pipeline with the -u parameter (e.g. `-u 1042:1043`).
+  That is, the container does not run as root (which is a good thing from a security point of view).
+  However, the userID/UID (e.g. `1042`) and the groupID/GID (e.g. `1043`) will most likely not be present within the
+  container which causes errors in some executables. 
+    
+  How?  
+  Setting this will cause the creation of a `passwd` file that is mounted into a container started from this `image()`
+  (triggered by `run()`, `withRun()` and `inside()` methods). This `passwd` file contains the username, UID, GID of the
+  user that executes the build and also sets the current workspace as `HOME` within the docker container.  
+  Example:
+  ```groovy
+  def image = new Docker(this).image('williamyeh/ansible:master-debian8')
+  image.mountJenkinsUser = true
+  image.inside() {
+      sh 'whoami'
+      sh 'id' // This would fail without mountJenkinsUser = true
+      sh 'cat /etc/passwd'
+  }
+  ```
+  
 # SonarQube
 
 The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin) provides utility
