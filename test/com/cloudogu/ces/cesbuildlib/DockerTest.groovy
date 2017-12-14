@@ -9,7 +9,10 @@ class DockerTest {
 
     def expectedImage = 'google/cloud-sdk:164.0.0'
     def expectedHome = '/home/jenkins'
-    def actualPasswd = 'jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash'
+    def actualUser = 'jenkins'
+    def actualPasswd = "$actualUser:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
+    def actualDockerGroupId = "999"
+    def actualDockerGroup = "docker:x:$actualDockerGroupId:jenkins"
     Map<String, String> actualWriteFileArgs = [:]
 
     @Test
@@ -184,7 +187,7 @@ class DockerTest {
                     return [param1, param2, param3]
                 }])
 
-        def args = docker.image(expectedImage).withRun('arg', 'cmd')  { return 'expectedClosure' }
+        def args = docker.image(expectedImage).withRun('arg', 'cmd') { return 'expectedClosure' }
 
         assertEquals('arg', args[0])
         assertEquals('cmd', args[1])
@@ -192,64 +195,102 @@ class DockerTest {
     }
 
     @Test
-    void imageInsideMountJenkinsUser() {
+    void imageInsideExtendedArgs() {
         Docker docker = createWithImage(
                 [inside: { String param1, Closure param2 ->
                     return [param1, param2]
                 }])
 
-        def image = docker.image(expectedImage)
-        image.mountJenkinsUser = true
-        def args = image.inside('-v a:b') { return 'expectedClosure' }
+        def args = docker.image(expectedImage)
+                .mountJenkinsUser()
+                .mountDockerSocket()
+                .inside('-v a:b') { return 'expectedClosure' }
 
-        assertEquals('-v a:b -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
-        assertEquals('expectedClosure', args[1].call())
-        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+        // inside() params
+        assert args[0].contains('-v a:b ')
+        assert 'expectedClosure' == args[1].call()
+
+        // extended arg mounts
+        assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
+        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+
+        // Written files
+        assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
+        assert actualDockerGroup == actualWriteFileArgs['.jenkins/etc/group']
     }
 
     @Test
-    void imageRunMountJenkinsUser() {
+    void imageRunExtendedArgs() {
         Docker docker = createWithImage(
                 [run: { String param1, String param2 ->
                     return [param1, param2]
                 }])
 
-        def image = docker.image(expectedImage)
-        image.mountJenkinsUser = true
-        def args = image.run('arg', 'cmd')
+        def args = docker.image(expectedImage)
+                .mountJenkinsUser()
+                .mountDockerSocket()
+                .run('arg', 'cmd')
 
-        assertEquals('arg -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
-        assertEquals('cmd', args[1])
-        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+        // run() params
+        assert args[0].contains('arg ')
+        assert 'cmd' == args[1]
+
+        // extended arg mounts
+        assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
+        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+
+        // Written files
+        assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
+        assert actualDockerGroup == actualWriteFileArgs['.jenkins/etc/group']
     }
 
     @Test
-    void imageWithRunMountJenkinsUser() {
+    void imageWithRunExtendedArgs() {
         Docker docker = createWithImage(
                 [withRun: { String param1, String param2, Closure param3 ->
                     return [param1, param2, param3]
                 }])
 
-        def image = docker.image(expectedImage)
-        image.mountJenkinsUser = true
-        def args = image.withRun('arg', 'cmd')  { return 'expectedClosure' }
+        def args = docker.image(expectedImage)
+                .mountJenkinsUser()
+                .mountDockerSocket()
+                .withRun('arg', 'cmd') { return 'expectedClosure' }
 
-        assertEquals('arg -v /home/jenkins/.jenkins/passwd:/etc/passwd:ro', args[0])
-        assertEquals('cmd', args[1])
-        assertEquals('expectedClosure', args[2].call())
-        assertEquals('jenkins:x:1000:1000::/home/jenkins:/bin/sh', actualWriteFileArgs['text'])
+        // withRun() params
+        assert 'cmd' == args[1]
+        assert 'expectedClosure' == args[2].call()
+
+        // extended arg mounts
+        assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
+        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+
+        // Written files
+        assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
+        assert actualDockerGroup == actualWriteFileArgs['.jenkins/etc/group']
     }
 
     @Test
     void imageMountJenkinsUserUnexpectedPasswd() {
-        testForInvaildPasswd('jenkins:x:1000:1000',
+        actualPasswd = 'jenkins:x:1000:1000'
+        testForInvaildPasswd(
+                { image -> image.mountJenkinsUser() },
                 '/etc/passwd entry for current user does not match user:x:uid:gid:')
     }
 
     @Test
     void imageMountJenkinsUserPasswdEmpty() {
-        testForInvaildPasswd('',
+        actualPasswd = ''
+        testForInvaildPasswd(
+                { image -> image.mountJenkinsUser() },
                 'Unable to parse user jenkins from /etc/passwd.')
+    }
+
+    @Test
+    void imageMountDockerSocketPasswdEmpty() {
+        actualDockerGroup = ''
+        testForInvaildPasswd(
+                { image -> image.mountDockerSocket() },
+                'Unable to parse group docker from /etc/group. Docker host will not be accessible for container.')
     }
 
     private Docker create(Map<String, Closure> mockedMethod) {
@@ -259,6 +300,7 @@ class DockerTest {
         return new Docker(mockedScript)
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     private Docker createWithImage(Map<String, Closure> mockedMethod) {
 
         def mockedScript = [
@@ -270,26 +312,32 @@ class DockerTest {
                 ]
         ]
         mockedScript.put('sh', { Map<String, String> args ->
-            assert args['script'].contains(System.properties.'user.name')
-            return actualPasswd })
+            String script = args['script']
+            if (script.contains('cat /etc/passwd ')) {
+                assert script.contains(actualUser)
+            }
+            if (script == 'whoami') return actualUser
+            if (script == 'cat /etc/group | grep docker') return actualDockerGroup
+            if (script.contains(actualDockerGroup)) return actualDockerGroupId
+            if (script.contains('cat /etc/passwd | grep')) return actualPasswd
+            else fail("Unexpected sh call. Script: " + script)
+        })
         mockedScript.put('pwd', { return expectedHome })
-        mockedScript.put('writeFile', { Map<String, String> args -> actualWriteFileArgs = args})
+        mockedScript.put('writeFile', { Map<String, String> args -> actualWriteFileArgs.put(args['file'], args['text']) })
         mockedScript.put('error', { String arg -> throw new RuntimeException(arg) })
 
         return new Docker(mockedScript)
     }
 
-    private void testForInvaildPasswd(String invalidPasswd, String expectedError) {
+    private void testForInvaildPasswd(Closure imageHook, String expectedError) {
         Docker docker = createWithImage(
                 [run: { String param1, String param2 ->
                     return [param1, param2]
                 }])
 
-        actualPasswd = invalidPasswd
-
-        def image = docker.image(expectedImage)
-        image.mountJenkinsUser = true
         def exception = shouldFail {
+            def image = docker.image(expectedImage)
+            imageHook.call(image)
             image.run('arg', 'cmd')
         }
 

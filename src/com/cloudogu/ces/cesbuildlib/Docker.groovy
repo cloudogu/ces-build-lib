@@ -121,24 +121,9 @@ class Docker implements Serializable {
 
         Sh sh
 
-        /**
-         * Provides the user that executes the build within docker container's /etc/passwd.
-         * This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors without
-         * a user present.
-         *
-         * Why?
-         * Note that Jenkins starts Docker containers in the pipeline with the -u parameter (e.g. -u 1042:1043).
-         * That is, the container does not run as root (which is a good thing from a security point of view).
-         * However, the userID/UID (e.g. 1042) and the groupID/GID (e.g. 1043) will most likely not be present within the
-         * container which causes errors in some executables.
-         *
-         * How?
-         * Setting this will cause the creation of a {@code passwd} file that is mounted into a container started
-         * from this image() (triggered by run(), withRun() and inside() methods).
-         * This {@code passwd} file contains the username, UID, GID of the user that executes the build and also sets
-         * the current workspace as HOME within the docker container.
-         */
-        boolean mountJenkinsUser = false
+        private boolean mountJenkinsUser = false
+
+        private boolean mountDockerSocket = false
 
         Image(script, String id) {
             imageIdString = id
@@ -215,23 +200,71 @@ class Docker implements Serializable {
             image().push(tagName, force)
         }
 
+        /**
+         * Provides the user that executes the build within docker container's /etc/passwd.
+         * This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors without
+         * a user present.
+         *
+         * Why?
+         * Note that Jenkins starts Docker containers in the pipeline with the -u parameter (e.g. -u 1042:1043).
+         * That is, the container does not run as root (which is a good thing from a security point of view).
+         * However, the userID/UID (e.g. 1042) and the groupID/GID (e.g. 1043) will most likely not be present within the
+         * container which causes errors in some executables.
+         *
+         * How?
+         * Setting this will cause the creation of a {@code passwd} file that is mounted into a container started
+         * from this image() (triggered by run(), withRun() and inside() methods).
+         * This {@code passwd} file contains the username, UID, GID of the user that executes the build and also sets
+         * the current workspace as HOME within the docker container.
+         */
+        Image mountJenkinsUser(boolean mountJenkinsUser = true) {
+            this.mountJenkinsUser = mountJenkinsUser
+            return this
+        }
+
+        /** Setting this to {@code true} mounts the docker socket into the container.
+         * This allows the container to start other containers "next to" itself.
+         * Note that this is similar but not the same as "Docker In Docker". */
+        Image mountDockerSocket(boolean mountDockerSocket = true) {
+            this.mountDockerSocket = mountDockerSocket
+            return this
+        }
+
         private extendArgs(String args) {
             String extendedArgs = args
             if (mountJenkinsUser) {
                 String passwdPath = writePasswd()
-                extendedArgs += " -v ${script.pwd()}/${passwdPath}:/etc/passwd:ro"
+                extendedArgs += " -v ${script.pwd()}/${passwdPath}:/etc/passwd:ro "
+            }
+            if (mountDockerSocket) {
+                String groupPath = writeGroup()
+                extendedArgs +=
+                        // Mount the docker socket
+                        "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" " +
+                        // Mount the docker group
+                        "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
             }
             return extendedArgs
         }
 
-        String writePasswd() {
-            def passwdPath = '.jenkins/passwd'
+        private String writePasswd() {
+            def passwdPath = '.jenkins/etc/passwd'
 
             // e.g. "jenkins:x:1000:1000::/home/jenkins:/bin/sh"
             String passwd = readJenkinsUserFromEtcPasswdCutOffAfterGroupId() + ":${script.pwd()}:/bin/sh"
 
             script.writeFile file: passwdPath, text: passwd
             return passwdPath
+        }
+
+        private String writeGroup() {
+            def groupPath = '.jenkins/etc/group'
+
+            // e.g. "docker:x:999:jenkins"
+            String group = readDockerGroupFromEtcGroup()
+
+            script.writeFile file: groupPath, text: group
+            return groupPath
         }
 
         /**
@@ -253,13 +286,28 @@ class Docker implements Serializable {
         private String readJenkinsUserFromEtcPasswd() {
             // Query current jenkins user string, e.g. "jenkins:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
             // An alternative (dirtier) approach: https://github.com/cloudogu/docker-golang/blob/master/Dockerfile
-            def userName = System.properties.'user.name'
+            def userName = sh.returnStdOut('whoami')
             String jenkinsUserFromEtcPasswd = sh.returnStdOut "cat /etc/passwd | grep $userName"
 
             if (jenkinsUserFromEtcPasswd.isEmpty()) {
                 script.error 'Unable to parse user jenkins from /etc/passwd.'
             }
             return jenkinsUserFromEtcPasswd
+        }
+
+        private String readDockerGroupFromEtcGroup() {
+            // Get the GID of the docker group, e.g. "docker:x:999:jenkins"
+            def dockerGroupEtcGroup = sh.returnStdOut 'cat /etc/group | grep docker'
+
+            if (dockerGroupEtcGroup.isEmpty()) {
+                script.error 'Unable to parse group docker from /etc/group. Docker host will not be accessible for container.'
+            }
+            return dockerGroupEtcGroup
+        }
+
+        private String readDockerGroupId() {
+            // Get the GID of the docker group
+            sh.returnStdOut "echo ${readDockerGroupFromEtcGroup()} | sed -E 's/.*:x:(.*):.*/\\1/'"
         }
     }
 }

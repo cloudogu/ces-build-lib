@@ -37,7 +37,7 @@ Run maven in a docker container. This can be helpful,
 * when constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running integration tests, unit tests that use infrastructure that binds to ports or
 * when one maven repo per builds is required For example when concurrent builds of multi module project install the same snapshot versions. 
 
-The build are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
+The builds are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
 
 See [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
@@ -62,8 +62,7 @@ stage('Unit Test') {
     mvn.enableDockerHost = false
 }
 ```
-Note that this mounts the docker socket into the container. Use this wisely. [Some people say](https://dzone.com/articles/never-expose-docker-sockets-period), you shouldn't do this at all.  
-On the other hand, the alternative would be to run a real docker host in docker a docker container, aka "docker in docker" or "dind" (which [is possible](https://blog.docker.com/2013/09/docker-can-now-run-within-docker/). On this, however, [other people say](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/), you shouldn't do this at all. So lets stick to mounting the socket, which seems to cause less problems.
+There are some security-related concerns about this. See [Docker](#docker).
 
 If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
 ```
@@ -168,7 +167,7 @@ The `Docker` class provides additional convenience features:
 
 ## Additional features provided by the `Docker.Image` class
 
-* `mountJenkinsUser = true`: Provides the user that executes the build within docker container's `/etc/passwd`.
+* `mountJenkinsUser()`: Setting this to `true` provides the user that executes the build within docker container's `/etc/passwd`.
   This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors withouta user 
   present.
     
@@ -181,16 +180,33 @@ The `Docker` class provides additional convenience features:
   How?  
   Setting this will cause the creation of a `passwd` file that is mounted into a container started from this `image()`
   (triggered by `run()`, `withRun()` and `inside()` methods). This `passwd` file contains the username, UID, GID of the
-  user that executes the build and also sets the current workspace as `HOME` within the docker container.  
-  Example:
-  ```groovy
-  def image = new Docker(this).image('williamyeh/ansible:master-debian8')
-  image.mountJenkinsUser = true
-  image.inside() {
-      sh 'whoami'
-      sh 'id' // This would fail without mountJenkinsUser = true
-      sh 'cat /etc/passwd'
-  }
+  user that executes the build and also sets the current workspace as `HOME` within the docker container.
+   
+* `mountDockerSocket()`: Setting this to `true` mounts the docker socket into the container.  
+   This allows the container to start other containers "next to" itself, that is "sibling" containers. Note that this is 
+   similar but not the same as "Docker In Docker".   
+     
+   Note that this will make the docker host socket accessible from within the the container. Use this wisely. [Some people say](https://dzone.com/articles/never-expose-docker-sockets-period),
+   you should not do this at all. On the other hand, the alternative would be to run a real docker host in docker a 
+   docker container, aka "docker in docker" or "dind" (which [is possible](https://blog.docker.com/2013/09/docker-can-now-run-within-docker/).
+   On this, however, [other people say](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/), you 
+   should not do this at all. So lets stick to mounting the socket, which seems to cause less problems.
+   
+   This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
+
+Example:
+```groovy
+new Docker(this).image('docker') // contains the docker client binary
+    .mountJenkinsUser()
+    .mountDockerSocket()
+    .inside() {
+        sh 'whoami' // Would fail without mountJenkinsUser = true
+        sh 'id' // Would fail without mountJenkinsUser = true
+        
+        // Start a "sibling" container and wait for it to return
+        sh 'docker run hello-world' // Would fail without mountDockerSocket = true 
+        
+    }
   ```
   
 # SonarQube
