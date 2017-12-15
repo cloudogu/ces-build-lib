@@ -47,10 +47,10 @@ abstract class Maven implements Serializable {
      *
      * 'ossrh' // Sonatype OSSRH (OSS Repository Hosting)
      */
-    void signAndDeployToNexusRepository(SignedRepository repository, String additionalDeployArgs = '') {
-        script.withCredentials([script.file(credentialsId: repository.credentialsIdPublicKeyRingFile, variable: 'pubring'),
-                                script.file(credentialsId: repository.credentialsIdSecretKeyRingFile, variable: 'secring'),
-                                script.string(credentialsId: repository.credentialsIdSecretKeyPassPhrase, variable: 'passphrase')
+    void signAndDeployToNexusRepository(SignatureCredentials signatureCredentials, Repository repository, String additionalDeployArgs = '') {
+        script.withCredentials([script.file(credentialsId: signatureCredentials.publicKeyRingFile, variable: 'pubring'),
+                                script.file(credentialsId: signatureCredentials.secretKeyRingFile, variable: 'secring'),
+                                script.string(credentialsId: signatureCredentials.secretKeyPassPhrase, variable: 'passphrase')
         ]) {
             additionalDeployArgs =
                     // Sign jar using gpg
@@ -126,15 +126,18 @@ abstract class Maven implements Serializable {
 </settings>"""
     }
 
-    static class Repository {
+    static class Repository implements Serializable {
         String id
         String url
         String credentialsIdUsernameAndPassword
     }
 
-    static class SignedRepository extends Repository {
-        String credentialsIdPublicKeyRingFile
-        String credentialsIdSecretKeyRingFile
-        String credentialsIdSecretKeyPassPhrase
+    /**
+     * Holds the Jenkins credentials IDs necessary for signing the jar.
+     */
+    static class SignatureCredentials implements Serializable {
+        String publicKeyRingFile
+        String secretKeyRingFile
+        String secretKeyPassPhrase
     }
 }
