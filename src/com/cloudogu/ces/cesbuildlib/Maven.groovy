@@ -76,11 +76,13 @@ abstract class Maven implements Serializable {
             ]) {
                 additionalDeployArgs =
                         // Sign jar using gpg
-                        "gpg:sign -Dgpg.publicKeyring=${script.env.publicKeyring} " +
-                                "-Dgpg.secretKeyring=${script.env.privateKeyring} " +
+                        "gpg:sign -Dgpg.publicKeyring=${script.env.pubring} " +
+                                "-Dgpg.secretKeyring=${script.env.secring} " +
                                 "-Dgpg.passphrase=${script.env.passphrase} " +
                                 additionalDeployArgs
 
+                // Signatures requires the gpg binary on the PATH. It is present in the maven docker container.
+                // For local maven installation
                 doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
             }
         } else {
@@ -117,9 +119,11 @@ abstract class Maven implements Serializable {
             mvn "source:jar javadoc:jar $deployArgs -DskipTests " +
                     // credentials for deploying to sonatype
                     "-D${usernameProperty}=${script.env.username} -D${passwordProperty}=${script.env.password} " +
-                    "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/nexus/content/repositories/releases/ " +
-                    "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/nexus/content/repositories/snapshots/ " +
-                    additionalDeployArgs
+                    "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
+                    "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                    "$additionalDeployArgs " +
+                    // Deploy last to make sure signature, source/javadoc jars, and potential additional goals are executed first
+                    deployArgs
         }
     }
 
@@ -135,7 +139,7 @@ abstract class Maven implements Serializable {
      * line:
      *
      * {@code
-     * mvn.writeSettingsXmlWithServer ('ossrh', ' $ossrh.username' , ' $ossrh.password' )
+     * mvn.writeSettingsXmlWithServer ('ossrh', ' $ossrh.username', ' $ossrh.password' )
      * mvn "<goals> -Dossrh.username=$username -Dossrh.password=$password "
      *}
      * That way, they are not written to the settings.xml file.
