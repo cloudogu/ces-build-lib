@@ -20,7 +20,7 @@ class GitTest {
         String expectedParams = "params"
         def scriptMock = new ScriptMock()
         new Git(scriptMock).clean(expectedParams)
-        assertThat(scriptMock.shArgs, Matchers.contains(
+        assertThat(scriptMock.actualShStringArgs, Matchers.contains(
                 "git clean -df --exclude $expectedParams".toString(),
                 'git checkout -- .'))
     }
@@ -29,7 +29,7 @@ class GitTest {
     void testCleanEmpty() throws Exception {
         def scriptMock = new ScriptMock()
         new Git(scriptMock).clean("")
-        assertThat(scriptMock.shArgs, Matchers.contains(
+        assertThat(scriptMock.actualShStringArgs, Matchers.contains(
                 "git clean -df",
                 'git checkout -- .'))
     }
@@ -136,18 +136,5 @@ class GitTest {
                     return returnedBySh
                 }
         ]
-    }
-
-    private static class ScriptMock {
-        List<String> shArgs = new LinkedList<>()
-        def env
-
-        void sh(String args) {
-            shArgs.add(args)
-        }
-
-        def git(def args) {
-            return args
-        }
     }
 }

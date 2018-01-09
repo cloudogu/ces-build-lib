@@ -18,7 +18,7 @@ class MavenInDockerTest {
 
     String expectedVersion = "3.5.0-jdk8"
 
-    def scriptMock = new ScriptMock()
+    def scriptMock = new MavenInDockerScriptMock()
 
     def mavenInDocker = new MavenInDocker(scriptMock, expectedVersion)
 
@@ -56,21 +56,18 @@ class MavenInDockerTest {
         def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
 
         assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
-        assert scriptMock.shParams.script ==  'mkdir -p $HOME/.m2'
+        assert scriptMock.actualShMapArgs.size() == 1
+        assert scriptMock.actualShMapArgs.get(0).script ==  'mkdir -p $HOME/.m2'
     }
 
-    class ScriptMock {
-        def shParams
-        List<Map<String, String>> writeFileParams = new LinkedList<>()
-
-        String pwd() { EXPECTED_PWD }
-
-        void writeFile(Map<String, String> params) {
-            writeFileParams.add(params)
+    class MavenInDockerScriptMock extends ScriptMock {
+        MavenInDockerScriptMock() {
+            expectedPwd = EXPECTED_PWD
         }
 
+        @Override
         String sh(Map<String, String> params) {
-            shParams = params
+            actualShMapArgs.add(params)
             // Add some whitespaces
             String script = params.get("script")
             if (script == "cat /etc/passwd | grep jenkins") {
@@ -82,12 +79,5 @@ class MavenInDockerTest {
             }
             ""
         }
-    }
-
-    void echo(String arg) {}
-
-    def env = new Object() {
-        String WORKSPACE = ""
-        String HOME = ""
     }
 }

@@ -29,7 +29,7 @@ class SonarQubeTest {
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
         assert mavenMock.additionalArgs == '-Dsonar.branch=develop'
-        assert scriptMock.sonarQubeEnv == 'sqEnv'
+        assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
 
     @Test
@@ -56,7 +56,7 @@ class SonarQubeTest {
 
     @Test
     void analyzePullRequest() throws Exception {
-        scriptMock.isPullRequest = true
+        scriptMock.expectedIsPullRequest = true
         scriptMock.env = [
                 CHANGE_ID : 'PR-42'
         ]
@@ -69,12 +69,12 @@ class SonarQubeTest {
 
     @Test
     void analyzePullRequestUpdateGitHub() throws Exception {
-        scriptMock.isPullRequest = true
+        scriptMock.expectedIsPullRequest = true
         scriptMock.env = [
                 CHANGE_ID : 'PR-42',
                 PASSWORD : 'oauthToken'
         ]
-        scriptMock.shRetValue = 'github.com/owner/repo'
+        scriptMock.expectedShRetValue = 'github.com/owner/repo'
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
         sonarQube.updateAnalysisResultOfPullRequestsToGitHub('ghCredentials')
@@ -86,7 +86,7 @@ class SonarQubeTest {
 
     @Test
     void waitForQualityGate() throws Exception {
-        scriptMock.qGate = [ status : 'OK']
+        scriptMock.expectedQGate = [status: 'OK']
 
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
 
@@ -95,7 +95,7 @@ class SonarQubeTest {
 
     @Test
     void waitForQualityGateNotOk() throws Exception {
-        scriptMock.qGate = [ status : 'SOMETHING ELSE']
+        scriptMock.expectedQGate = [status: 'SOMETHING ELSE']
 
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
 
@@ -104,46 +104,9 @@ class SonarQubeTest {
 
     @Test
     void waitForQualityGatePullRequest() throws Exception {
-        scriptMock.isPullRequest = true
+        scriptMock.expectedIsPullRequest = true
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
         assert qualityGate
-    }
-
-    private class ScriptMock {
-        String sonarQubeEnv
-        boolean isPullRequest = false
-        def qGate
-        def env = [ : ]
-        def shRetValue
-
-        String sh(Map<String, String> params) {
-            shRetValue
-        }
-
-        boolean isPullRequest() {
-            return isPullRequest
-        }
-
-        void timeout(Map params, closure) {
-            closure.call()
-        }
-
-        def waitForQualityGate() {
-            return qGate
-        }
-
-        void withSonarQubeEnv(String sonarQubeEnv, Closure closure) {
-            this.sonarQubeEnv = sonarQubeEnv
-            closure.call()
-        }
-
-        void withCredentials(List args, Closure closure) {
-            closure.call()
-        }
-
-        void string(Map args) {}
-
-        void echo(String msg) {}
     }
 
     private static class MavenMock extends Maven {

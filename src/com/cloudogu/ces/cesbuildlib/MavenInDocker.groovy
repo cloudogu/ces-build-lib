@@ -40,6 +40,7 @@ class MavenInDocker extends Maven {
     def mvn(String args) {
 
         docker.image("maven:$dockerBaseImageVersion")
+                // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
                 .mountJenkinsUser(true)
                 .mountDockerSocket(enableDockerHost)
                 .inside(createDockerRunArgs()) {

@@ -74,6 +74,53 @@ mvn.useLocalRepoFromJenkins = true
 This speed speeds up the first build and uses less memory. 
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
+## Deploy to nexus repository (e.g. maven central)
+
+ces-build-lib makes deploying to nexus repositories easy, even when it includes signing of the artifacts and usage of 
+the nexus staging plugin (as necessary for maven central or other nexus repository pro instances).
+ 
+The most simple case is to deploy to a nexus repo (*not* maven central):
+ 
+* Just set the repository using `Maven.setDeploymentRepository()` passing a repository ID (you can choose), the URL as 
+  well as a nexus username and password/access token as jenkins username and password credential.
+* Call `Maven.deployToNexusRepository()`. And that is it. 
+
+Simple Example: 
+```
+mvn.setDeploymentRepository('ces', 'https://ecosystem.cloudogu.com', 'nexusSystemUserCredential')
+mvn.deployToNexusRepository()    
+```
+
+Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
+`snapshot` repository. Otherwise, the artifacts are deployed to the `release` repository.
+
+If you want to sign the artifacts before deploying, just set the credentials for signing before deploying, using 
+`Maven.setSignatureCredentials()` passing the secret key as ASC file (as jenkins secret file credential) and the 
+passphrase (as jenkins secret text credential).
+An ASC file can be exported via  `gpg --export-secret-keys -a ABCDEFGH > secretkey.asc`.
+See [Working with PGP Signatures](http://central.sonatype.org/pages/working-with-pgp-signatures.html)
+
+Another option is to use the nexus-staging-maven-plugin instead of the default maven-deploy-plugin.
+This is useful if you deploy to a nexus repository pro, such as maven central. 
+
+Just use the `Maven.deployToNexusRepositoryWithStaging()` instead of `Maven.deployToNexusRepository()`.
+
+When deploying to maven central, make sure that your `pom.xml` adheres to the requirements by maven central, as stated
+[here](http://central.sonatype.org/pages/requirements.html).
+ 
+Summing up, here is an example for deploying to maven central:
+
+```
+mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-UsernameAndAcccessTokenCredential')
+mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
+mvn.deployToNexusRepositoryWithStaging()            
+```
+
+For an example see [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus).
+
+Another option for `deployToNexusRepositoryWithStaging()` and `deployToNexusRepository()` is to pass additional maven 
+arguments to the deployment like so: `mvn.deployToNexusRepositoryWithStaging('-X')` (enables debug output).
+
 ## Maven Utilities
 
 Available from both local Maven and Maven in Docker.

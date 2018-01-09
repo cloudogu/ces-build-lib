@@ -1,12 +1,30 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static groovy.util.GroovyTestCase.assertEquals
+import static org.junit.Assert.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
+
+    static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
+    def expectedDeploymentRepoId = 'expectedId'
+    def expectedDeploymentGoalWithStaging =
+            'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+                    '-DserverId=expectedId -DnexusUrl=https://expected.url -DautoReleaseAfterClose=true '
+
+    def scriptMock = new ScriptMock()
+    def mvn = new MavenForTest(scriptMock)
+    String mvnArgs = null
+
+    @Before
+    void setup() {
+        scriptMock.expectedPwd = EXPECTED_PWD
+    }
 
     @After
     void tearDown() throws Exception {
@@ -37,8 +55,8 @@ class MavenTest {
     @Test
     void testGetVersionMissing() {
         String expectedVersion = ""
-        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        Maven mvn = new MavenForTest(scripMock)
+        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
+        Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
     }
 
@@ -46,14 +64,14 @@ class MavenTest {
     void testGetMavenProperty() {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = "expectedValue"
-        def scripMock = [readFile: {
+        def scriptMock = [readFile: {
             "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties>" +
                     EOL +
                     "<dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey>" +
                     EOL +
                     "</properties></project>"
         }] as Object
-        Maven mvn = new MavenForTest(scripMock)
+        Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
 
@@ -61,8 +79,8 @@ class MavenTest {
     void testGetMavenPropertyNoProperties() {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = ""
-        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
-        Maven mvn = new MavenForTest(scripMock)
+        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
+        Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
 
@@ -70,18 +88,95 @@ class MavenTest {
     void testGetMavenPropertyNoProperty() {
         String expectedPropertyKey = "expectedPropertyKey"
         String expectedPropertyValue = ""
-        def scripMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
-        Maven mvn = new MavenForTest(scripMock)
+        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
+        Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
     
-    static class MavenForTest extends Maven {
+    @Test
+    void testDeployToNexusRepositoryNoRepository() {
+        def exception = shouldFail {
+            mvn.deployToNexusRepository()
+        }
+
+        assert 'No deployment repository set. Cannot perform maven deploy.' == exception.getMessage()
+    }
+    
+    @Test
+    void testDeployToNexusRepository() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy')
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithSignature() {
+        deployToNexusRepositoryWithSignature(false, 'deploy:deploy')
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithStaging() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+
+        deployToNexusRepository(true, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoalWithStaging)
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithStagingAndSignature() {
+        deployToNexusRepositoryWithSignature(true, expectedDeploymentGoalWithStaging)
+    }
+
+    void deployToNexusRepositoryWithSignature(Boolean useNexusStaging, String expectedDeploymentGoal) {
+
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'org.kohsuke:pgp-maven-plugin:sign expectedAdditionalArgs'
+
+        scriptMock.env['ascFile'] = '/xyz/asc.file'
+        scriptMock.env['passphrase'] = 'verySecret'
+
+        mvn.setSignatureCredentials('expectedSecretKeyAscFile', 'expectedSecretKeyPassPhrase')
+        deployToNexusRepository(useNexusStaging, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoal)
+
+        assert 'expectedSecretKeyAscFile' == scriptMock.actualFileArgs['credentialsId']
+        assert 'expectedSecretKeyPassPhrase' == scriptMock.actualStringArgs['credentialsId']
+
+        assert scriptMock.actualWithEnv.size() == 2
+        assert scriptMock.actualWithEnv.get(0) == 'PGP_SECRETKEY=keyfile:/xyz/asc.file'
+        assert scriptMock.actualWithEnv.get(1) == 'PGP_PASSPHRASE=literal:verySecret'
+    }
+
+    private deployToNexusRepository(Boolean useNexusStaging, String expectedAdditionalArgs, String actualAdditionalArgs,
+                                    String expectedDeploymentGoal) {
+        def expectedCredentials = 'expectedCredentials'
+        mvn.setDeploymentRepository(expectedDeploymentRepoId, 'https://expected.url', expectedCredentials)
+        mvn.deployToNexusRepository(useNexusStaging, expectedAdditionalArgs)
+
+        assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
+        assert 'expectedId_password' == scriptMock.actualUsernamePasswordArgs['passwordVariable']
+        assert 'expectedId_username' == scriptMock.actualUsernamePasswordArgs['usernameVariable']
+
+        assert scriptMock.writeFileParams.size() == 1
+        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
+        assert actualSettingsXml.contains('<id>expectedId</id>')
+        assert actualSettingsXml.contains('<username>${env.expectedId_username}</username>')
+        assert actualSettingsXml.contains('<password>${env.expectedId_password}</password>')
+
+        assert mvnArgs.startsWith('source:jar javadoc:jar package -DskipTests ')
+        assert mvnArgs.contains('-DaltReleaseDeploymentRepository=expectedId::default::https://expected.url/content/repositories/releases/ ')
+        assert mvnArgs.contains('-DaltSnapshotDeploymentRepository=expectedId::default::https://expected.url/content/repositories/snapshots/ ')
+        assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
+        assert mvnArgs.endsWith("$actualAdditionalArgs $expectedDeploymentGoal")
+    }
+
+    class MavenForTest extends Maven {
 
         MavenForTest(Object script) {
             super(script)
         }
 
         def mvn(String args) {
+            mvnArgs = args
             return args
         }
     }
