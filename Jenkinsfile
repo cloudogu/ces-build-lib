@@ -2,7 +2,7 @@
 @Library('github.com/cloudogu/ces-build-lib@develop')
 import com.cloudogu.ces.cesbuildlib.*
 
-node() {
+node('docker') {
 
     properties([
             // Keep only the last 10 build to preserve space
