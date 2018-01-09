@@ -43,12 +43,12 @@ abstract class Maven implements Serializable {
         matcher ? matcher[0][1] : ""
     }
 
-    void setDepoymentRepo(String id, String url, String credentialsIdUsernameAndPassword) {
+    void setDeploymentRepository(String id, String url, String credentialsIdUsernameAndPassword) {
         deploymentRepository = new Repository(id, url, credentialsIdUsernameAndPassword)
     }
 
-    void setSignatureCredentials(String publicKeyRingFile, String secretKeyRingFile, String secretKeyPassPhrase) {
-        signatureCredentials = new SignatureCredentials(publicKeyRingFile, secretKeyRingFile, secretKeyPassPhrase)
+    void setSignatureCredentials(String secretKeyRingFile, String secretKeyPassPhrase) {
+        signatureCredentials = new SignatureCredentials(secretKeyRingFile, secretKeyPassPhrase)
     }
 
     /**
@@ -59,7 +59,6 @@ abstract class Maven implements Serializable {
      *
      * 'ossrh' // Sonatype OSSRH (OSS Repository Hosting)
      */
-
     void deployToNexusRepository(String additionalDeployArgs = '') {
         deployToNexusRepository(false, additionalDeployArgs)
     }
@@ -70,20 +69,19 @@ abstract class Maven implements Serializable {
         }
 
         if (signatureCredentials) {
-            script.withCredentials([script.file(credentialsId: signatureCredentials.publicKeyRingFile, variable: 'pubring'),
-                                    script.file(credentialsId: signatureCredentials.secretKeyRingFile, variable: 'secring'),
+            script.withCredentials([script.file(credentialsId: signatureCredentials.secretKeyRingFile, variable: 'secring'),
                                     script.string(credentialsId: signatureCredentials.secretKeyPassPhrase, variable: 'passphrase')
             ]) {
-                additionalDeployArgs =
-                        // Sign jar using gpg
-                        "gpg:sign -Dgpg.publicKeyring=${script.env.pubring} " +
-                                "-Dgpg.secretKeyring=${script.env.secring} " +
-                                "-Dgpg.passphrase=${script.env.passphrase} " +
-                                additionalDeployArgs
+                // Use koshuke's pgp instead of the maven gpg plugin.
+                // gpg version2 forces the usage of a key agent which is difficult on CI server
+                // http://kohsuke.org/pgp-maven-plugin/secretkey.html
+                script.withEnv(["PGP_SECRETKEY=keyring:keyring=${script.env.secring}",
+                                "PGP_PASSPHRASE=literal:${script.env.passphrase}"]) {
 
-                // Signatures requires the gpg binary on the PATH. It is present in the maven docker container.
-                // For local maven installation
-                doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
+                    additionalDeployArgs = "org.kohsuke:pgp-maven-plugin:sign " + additionalDeployArgs
+
+                    doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
+                }
             }
         } else {
             script.echo 'No signature credentials set. Deploying unsigned'
@@ -93,37 +91,36 @@ abstract class Maven implements Serializable {
 
     void doDeployToNexusRepository(Boolean useNexusStaging, String additionalDeployArgs = '') {
 
-        String deployArgs = 'deploy'
+        String deployGoal = 'deploy:deploy'
 
         if (useNexusStaging) {
             // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
             // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
-            deployArgs =
+            deployGoal =
                     "org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true " +
-                    "-DserverId=${deploymentRepository.id} -DnexusUrl=${deploymentRepository.url} -DautoReleaseAfterClose=true "
+                            "-DserverId=${deploymentRepository.id} -DnexusUrl=${deploymentRepository.url} -DautoReleaseAfterClose=true "
         }
 
-        script.withCredentials([script.usernamePassword(credentialsId: deploymentRepository.credentialsIdUsernameAndPassword,
-                passwordVariable: 'password', usernameVariable: 'username')]) {
+        String usernameProperty = "${deploymentRepository.id}_username"
+        String passwordProperty = "${deploymentRepository.id}_password"
 
-            String usernameProperty = "${deploymentRepository.id}.username"
-            String passwordProperty = "${deploymentRepository.id}.password"
+        script.withCredentials([script.usernamePassword(credentialsId: deploymentRepository.credentialsIdUsernameAndPassword,
+                passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
+
 
             // The deploy plugin does not provide an option of passing server credentials via command line
             // So, create settings.xml that contains custom properties that can be set via command line (property
             // interpolation) - https://stackoverflow.com/a/28074776/1845976
-            writeSettingsXmlWithServer(deploymentRepository.id,
-                    "\${${usernameProperty}}",
-                    "\${${passwordProperty}}")
-
-            mvn "source:jar javadoc:jar $deployArgs -DskipTests " +
-                    // credentials for deploying to sonatype
-                    "-D${usernameProperty}=${script.env.username} -D${passwordProperty}=${script.env.password} " +
+            String settingsXmlPath = writeSettingsXmlWithServer(deploymentRepository.id,
+                    "\${env.${usernameProperty}}",
+                    "\${env.${passwordProperty}}")
+            mvn "source:jar javadoc:jar package -DskipTests " +
                     "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
-                    "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                    "-DaltSnapshmotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                    "-s \"${settingsXmlPath}\" " + // Not needed for maven in Docker (but does no harm)
                     "$additionalDeployArgs " +
-                    // Deploy last to make sure signature, source/javadoc jars, and potential additional goals are executed first
-                    deployArgs
+                    // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
+                    deployGoal
         }
     }
 
@@ -146,13 +143,12 @@ abstract class Maven implements Serializable {
      *
      * See https://stackoverflow.com/a/28074776/1845976
      *
-     * @param serverId
-     * @param serverUsername
-     * @param serverPassword
+     * @return
      */
-    void writeSettingsXmlWithServer(def serverId, def serverUsername, def serverPassword) {
-        script.echo "Writing ${script.pwd()}/.m2/settings.xml"
-        script.writeFile file: "${script.pwd()}/.m2/settings.xml", text: """
+    String writeSettingsXmlWithServer(def serverId, def serverUsername, def serverPassword) {
+        def settingsXmlPath = "${script.pwd()}/.m2/settings.xml"
+        script.echo "Writing $settingsXmlPath"
+        script.writeFile file: settingsXmlPath, text: """
 <settings>
     <servers>
         <server>
@@ -162,6 +158,7 @@ abstract class Maven implements Serializable {
         </server>
     </servers>
 </settings>"""
+        return settingsXmlPath
     }
 
     // Unfortunately, inner classes cannot be accessed from Jenkinsfile: unable to resolve class Maven.Repository
@@ -184,13 +181,11 @@ abstract class Maven implements Serializable {
      */
     static class SignatureCredentials implements Serializable {
 
-        SignatureCredentials(String publicKeyRingFile, String secretKeyRingFile, String secretKeyPassPhrase) {
-            this.publicKeyRingFile = publicKeyRingFile
+        SignatureCredentials(String secretKeyRingFile, String secretKeyPassPhrase) {
             this.secretKeyRingFile = secretKeyRingFile
             this.secretKeyPassPhrase = secretKeyPassPhrase
         }
 
-        String publicKeyRingFile
         String secretKeyRingFile
         String secretKeyPassPhrase
     }
