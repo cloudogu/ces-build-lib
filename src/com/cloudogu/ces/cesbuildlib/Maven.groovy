@@ -47,35 +47,62 @@ abstract class Maven implements Serializable {
         deploymentRepository = new Repository(id, url, credentialsIdUsernameAndPassword)
     }
 
-    void setSignatureCredentials(String secretKeyRingFile, String secretKeyPassPhrase) {
-        signatureCredentials = new SignatureCredentials(secretKeyRingFile, secretKeyPassPhrase)
+    /**
+     * Set Jenkins credentials for signing artifacts deployed to nexus via deployToNexusRepository().
+     * If not set, no singing will take place.
+     *
+     * @param secretKeyAscFile an asc file that contains the secret ring
+     *                         Can be exported via  {@code gpg --export-secret-keys -a ABCDEFGH > secretkey.asc}
+     * @param secretKeyPassPhrase the passphrase to the {@code secretKeyAscFile}
+     */
+    void setSignatureCredentials(String secretKeyAscFile, String secretKeyPassPhrase) {
+        signatureCredentials = new SignatureCredentials(secretKeyAscFile, secretKeyPassPhrase)
     }
 
     /**
-     * Signs jar and deploys using the nexus-staging-maven-plugin.
+     * Deploys using the default maven-deploy-plugin.
+     * Make sure to configure repository before calling, using
+     * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
      *
-     * Can be used to deploy th maven central
-     * Project must adhere to the requirements: http://central.sonatype.org/pages/requirements.html
-     *
-     * 'ossrh' // Sonatype OSSRH (OSS Repository Hosting)
+     * If you want to deploy a signed jar, set signature credentials using
+     * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
      */
     void deployToNexusRepository(String additionalDeployArgs = '') {
         deployToNexusRepository(false, additionalDeployArgs)
     }
 
+    /**
+     * Deploys using the default maven-deploy-plugin or nexus-staging-maven-plugin.
+     * Make sure to configure repository before calling, using
+     * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
+     *
+     * Set {@code useNexusStaging} to {@code true}, when the nexus-staging-maven-plugin should be used.
+     * This can be used to deploy to maven central.
+     * The project must adhere to the requirements: http://central.sonatype.org/pages/requirements.html
+     *
+     * {@code mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-acccessToken-credential')}
+     *
+     * 'ossrh' = Sonatype OSS Repository Hosting
+     *
+     * If you want to deploy a signed jar, set signature credentials using
+     * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
+     * E.g. {@code mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')}
+     *
+     * This is mandatory for maven central.
+     */
     void deployToNexusRepository(Boolean useNexusStaging, String additionalDeployArgs = '') {
         if (!deploymentRepository) {
             script.error 'No deployment repository set. Cannot perform maven deploy.'
         }
 
         if (signatureCredentials) {
-            script.withCredentials([script.file(credentialsId: signatureCredentials.secretKeyRingFile, variable: 'secring'),
+            script.withCredentials([script.file(credentialsId: signatureCredentials.secretKeyAscFile, variable: 'ascFile'),
                                     script.string(credentialsId: signatureCredentials.secretKeyPassPhrase, variable: 'passphrase')
             ]) {
                 // Use koshuke's pgp instead of the maven gpg plugin.
                 // gpg version2 forces the usage of a key agent which is difficult on CI server
                 // http://kohsuke.org/pgp-maven-plugin/secretkey.html
-                script.withEnv(["PGP_SECRETKEY=keyring:keyring=${script.env.secring}",
+                script.withEnv(["PGP_SECRETKEY=keyfile:${script.env.ascFile}",
                                 "PGP_PASSPHRASE=literal:${script.env.passphrase}"]) {
 
                     additionalDeployArgs = "org.kohsuke:pgp-maven-plugin:sign " + additionalDeployArgs
@@ -98,7 +125,8 @@ abstract class Maven implements Serializable {
             // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
             deployGoal =
                     "org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true " +
-                            "-DserverId=${deploymentRepository.id} -DnexusUrl=${deploymentRepository.url} -DautoReleaseAfterClose=true "
+                    "-DserverId=${deploymentRepository.id} -DnexusUrl=${deploymentRepository.url} " +
+                    "-DautoReleaseAfterClose=true "
         }
 
         String usernameProperty = "${deploymentRepository.id}_username"
@@ -115,12 +143,12 @@ abstract class Maven implements Serializable {
                     "\${env.${usernameProperty}}",
                     "\${env.${passwordProperty}}")
             mvn "source:jar javadoc:jar package -DskipTests " +
-                    "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
-                    "-DaltSnapshmotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
-                    "-s \"${settingsXmlPath}\" " + // Not needed for maven in Docker (but does no harm)
-                    "$additionalDeployArgs " +
-                    // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
-                    deployGoal
+                "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
+                "-DaltSnapshmotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                "-s \"${settingsXmlPath}\" " + // Not needed for maven in Docker (but does no harm)
+                "$additionalDeployArgs " +
+                // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
+                deployGoal
         }
     }
 
@@ -181,12 +209,12 @@ abstract class Maven implements Serializable {
      */
     static class SignatureCredentials implements Serializable {
 
-        SignatureCredentials(String secretKeyRingFile, String secretKeyPassPhrase) {
-            this.secretKeyRingFile = secretKeyRingFile
+        SignatureCredentials(String secretKeyAscFile, String secretKeyPassPhrase) {
+            this.secretKeyAscFile = secretKeyAscFile
             this.secretKeyPassPhrase = secretKeyPassPhrase
         }
 
-        String secretKeyRingFile
+        String secretKeyAscFile
         String secretKeyPassPhrase
     }
 }
