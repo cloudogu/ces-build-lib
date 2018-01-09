@@ -60,7 +60,10 @@ abstract class Maven implements Serializable {
     }
 
     /**
-     * Deploys using the default maven-deploy-plugin.
+     * Deploy to a maven repository using the default maven-deploy-plugin.
+     * Note that if the pom.xml's version contains {@code -SNAPSHOT}, the artifacts are automatically deployed to the
+     * snapshot repository. Otherwise, the artifacts are deployed to the release repo.
+     *
      * Make sure to configure repository before calling, using
      * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
      *
@@ -72,24 +75,28 @@ abstract class Maven implements Serializable {
     }
 
     /**
-     * Deploys using the default maven-deploy-plugin or nexus-staging-maven-plugin.
+     * Deploy to a maven repository using the nexus-staging-maven-plugin.
+     * Note that if the pom.xml's version contains {@code -SNAPSHOT}, the artifacts are automatically deployed to the
+     * snapshot repository. Otherwise, the artifacts are deployed to the release repo.
+     *
      * Make sure to configure repository before calling, using
      * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
-     *
-     * Set {@code useNexusStaging} to {@code true}, when the nexus-staging-maven-plugin should be used.
-     * This can be used to deploy to maven central.
-     * The project must adhere to the requirements: http://central.sonatype.org/pages/requirements.html
-     *
-     * {@code mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-acccessToken-credential')}
-     *
-     * 'ossrh' = Sonatype OSS Repository Hosting
      *
      * If you want to deploy a signed jar, set signature credentials using
      * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
      * E.g. {@code mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')}
      *
-     * This is mandatory for maven central.
+     * This can be used to deploy to maven central.
+     * The project must adhere to the requirements: http://central.sonatype.org/pages/requirements.html
+     * {@code mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-acccessToken-credential')}
+     * where 'ossrh' means Sonatype OSS Repository Hosting.
+     * Note that signing is mandatory to deploy releases to maven central.
+     *
      */
+    void deployToNexusRepositoryWithStaging(String additionalDeployArgs = '') {
+        deployToNexusRepository(true, additionalDeployArgs)
+    }
+
     void deployToNexusRepository(Boolean useNexusStaging, String additionalDeployArgs = '') {
         if (!deploymentRepository) {
             script.error 'No deployment repository set. Cannot perform maven deploy.'
@@ -135,7 +142,6 @@ abstract class Maven implements Serializable {
         script.withCredentials([script.usernamePassword(credentialsId: deploymentRepository.credentialsIdUsernameAndPassword,
                 passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
 
-
             // The deploy plugin does not provide an option of passing server credentials via command line
             // So, create settings.xml that contains custom properties that can be set via command line (property
             // interpolation) - https://stackoverflow.com/a/28074776/1845976
@@ -145,7 +151,7 @@ abstract class Maven implements Serializable {
             mvn "source:jar javadoc:jar package -DskipTests " +
                 "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
                 "-DaltSnapshmotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
-                "-s \"${settingsXmlPath}\" " + // Not needed for maven in Docker (but does no harm)
+                "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                 "$additionalDeployArgs " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 deployGoal
