@@ -107,7 +107,11 @@ class SonarQube implements Serializable {
         // However, the alternative (the branch plugin is paid version only)
         // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
         if (isUsingBranchPlugin) {
-            mvn.additionalArgs = "-Dsonar.branch.name=${script.env.BRANCH_NAME} -Dsonar.branch.target=master"
+            mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
+            if (!"master".equals(script.env.BRANCH_NAME)) {
+                // Avoid exception "The main branch must not have a target" on master branch
+                mvn.additionalArgs += "-Dsonar.branch.target=master "
+            }
         } else {
             mvn.additionalArgs = "-Dsonar.branch=${script.env.BRANCH_NAME}"
         }

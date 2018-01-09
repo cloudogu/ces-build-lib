@@ -48,10 +48,25 @@ class SonarQubeTest {
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        mavenMock.additionalArgs = '-X'
         sonarQube.isUsingBranchPlugin = true
         sonarQube.analyzeWith(mavenMock)
 
-        assert mavenMock.additionalArgs == '-Dsonar.branch.name=develop -Dsonar.branch.target=master'
+        assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=develop -Dsonar.branch.target=master '
+    }
+
+    @Test
+    void analyzeWithPaidVersionOnMasterBranch() throws Exception {
+        scriptMock.env = [
+                BRANCH_NAME : 'master'
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        mavenMock.additionalArgs = '-X'
+        sonarQube.isUsingBranchPlugin = true
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=master '
     }
 
     @Test
