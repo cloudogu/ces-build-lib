@@ -115,6 +115,8 @@ mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secr
 mvn.deployToNexusRepositoryWithStaging()            
 ```
 
+For an example see [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus).
+
 Another option for `deployToNexusRepositoryWithStaging()` and `deployToNexusRepository()` is to pass additional maven 
 arguments to the deployment like so: `mvn.deployToNexusRepositoryWithStaging('-X')` (enables debug output).
 

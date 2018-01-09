@@ -112,7 +112,7 @@ abstract class Maven implements Serializable {
                 script.withEnv(["PGP_SECRETKEY=keyfile:${script.env.ascFile}",
                                 "PGP_PASSPHRASE=literal:${script.env.passphrase}"]) {
 
-                    additionalDeployArgs = "org.kohsuke:pgp-maven-plugin:sign " + additionalDeployArgs
+                    additionalDeployArgs = 'org.kohsuke:pgp-maven-plugin:sign ' + additionalDeployArgs
 
                     doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
                 }
@@ -150,7 +150,7 @@ abstract class Maven implements Serializable {
                     "\${env.${passwordProperty}}")
             mvn "source:jar javadoc:jar package -DskipTests " +
                 "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
-                "-DaltSnapshmotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                 "$additionalDeployArgs " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
