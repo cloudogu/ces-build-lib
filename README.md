@@ -92,7 +92,8 @@ mvn.deployToNexusRepository()
 ```
 
 Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
-`snapshot` repository. Otherwise, the artifacts are deployed to the `release` repository.
+[snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/). Otherwise, the artifacts are deployed 
+to the [release repository](https://oss.sonatype.org/content/repositories/releases/).
 
 If you want to sign the artifacts before deploying, just set the credentials for signing before deploying, using 
 `Maven.setSignatureCredentials()` passing the secret key as ASC file (as jenkins secret file credential) and the 
@@ -115,6 +116,10 @@ mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            
 ```
+
+Note that the staging of releases might well take 10 minutes. After that, the artifacts are in the 
+[release repository](https://oss.sonatype.org/content/repositories/releases/), which is *later* (feels like nightly) 
+synced to maven central.  
 
 For an example see [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus).
 
