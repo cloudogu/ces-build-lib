@@ -14,6 +14,40 @@ import com.cloudogu.ces.cesbuildlib.*
 * Best practice: Use a defined version (e.g. a commit, such as `6cd41e0` in the example above) and not a branch such as `develop`. Otherwise your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 * When build executors are docker containers and you intend to use their Docker host in the Pipeline: Please see [#8](https://github.com/cloudogu/ces-build-lib/issues/8#issuecomment-353584252).
 
+## Syntax completion
+
+You can get syntax completion in your `Jenkinsfile` when using the ces-build-lib, by adding it as dependency to your project. 
+
+You can get the source.jar from JitPack.
+
+With Maven this can be done like so:
+
+* Define the JitPack repository:
+    ```XML
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    ```
+* And the ces-build-lib dependency:
+    ```XML
+    <dependency>
+        <!-- Shared Library used in Jenkins. Including this in maven provides code completion in Jenkinsfile. -->
+        <groupId>com.github.cloudogu</groupId>
+        <artifactId>ces-build-lib</artifactId>
+        <!-- Keep this version in sync with the one used in Jenkinsfile -->
+        <version>888733b</version>
+        <!-- Don't ship this dependency with the app -->
+        <optional>true</optional>
+    </dependency>
+    ```
+Current version is [![](https://jitpack.io/v/cloudogu/ces-build-lib.svg)](https://jitpack.io/#cloudogu/ces-build-lib).<br/> 
+For further details and options refer to the [JitPack website](https://jitpack.io/#cloudogu/ces-build-lib).
+
+This is confirmed to work with IntelliJ IDEA.
+
 # Maven
 
 ## Maven from local Jenkins tool
