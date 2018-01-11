@@ -142,11 +142,31 @@ Just use the `Maven.deployToNexusRepositoryWithStaging()` instead of `Maven.depl
 
 When deploying to maven central, make sure that your `pom.xml` adheres to the requirements by maven central, as stated
 [here](http://central.sonatype.org/pages/requirements.html).
- 
+
+Note that as of nexus-staging-maven-plugin version 1.6.8, it [does seem to read the distribution repositories from pom.xml only](https://issues.sonatype.org/browse/NEXUS-15464).
+
+That is, you need to specify them in your pom.xml, they cannot be passed by the ces-build-lib. So for example for maven 
+central you need to add the following:
+
+```xml
+<distributionManagement>
+    <snapshotRepository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+</distributionManagement>
+```
+The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
+to ces-build-lib using `setDeploymentRepository()`.
+
 Summing up, here is an example for deploying to maven central:
 
 ```
-mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-UsernameAndAcccessTokenCredential')
+mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org', 'mavenCentral-UsernameAndAcccessTokenCredential')
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            
 ```

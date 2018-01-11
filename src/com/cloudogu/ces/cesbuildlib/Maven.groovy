@@ -149,8 +149,14 @@ abstract class Maven implements Serializable {
                     "\${env.${usernameProperty}}",
                     "\${env.${passwordProperty}}")
             mvn "source:jar javadoc:jar package -DskipTests " +
+                // TODO when using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
+                // https://oss.sonatype.org/service/local/staging/deploy/maven2 and
+                // https://oss.sonatype.org/content/repositories/snapshots
+                // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
+                // See: https://issues.sonatype.org/browse/NEXUS-15464
+                // "-DaltDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
                 "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
-                "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots/ " +
+                "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                 "$additionalDeployArgs " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
