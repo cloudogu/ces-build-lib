@@ -410,6 +410,23 @@ stage('SomethingToSkipWhenInPR') {
 }
 ```
 
+
+## findEmailRecipients
+
+Determines the email recipients:
+For branches that are considered unstable (all except for 'master' and 'develop') only the Git author is returned
+(if present).
+Otherwise, the default recipients (passed as parameter) and git author are returned.
+
+```
+catchError {
+ // Stages and steps
+}
+mailIfStatusChanged(findEmailRecipients('a@b.cd,123@xy.z'))
+```
+The example writes state changes email to 'a@b.cd,123@xy.z' + git author for stable branches and only to git author 
+for unstable branches.
+
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
   * [cloudugo/cas](https://github.com/cloudogu/cas)

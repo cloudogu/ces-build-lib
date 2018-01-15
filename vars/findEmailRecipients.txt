@@ -1,0 +1,14 @@
+<p>
+Determines the email recipients:
+For branches that are considered unstable (all except for 'master' and 'develop') only the Git author is returned
+(if present).
+Otherwise, the default recipients (passed as parameter) and git author are returned.
+
+Git author can be contained in default recipients.
+</p>
+<dl>
+  <dt>`findEmailRecipients('a@b.cd,123@xy.z')`</dt>
+  <dd>
+    Returns a comma-separated list of email addresses, depending on the branch: the git author (if present) for unstable
+    branches. Otherwise the default recipients passed as parameter.
+</dl>

@@ -4,7 +4,7 @@ import com.lesfurets.jenkins.unit.BasePipelineTest
 import org.junit.Before
 import org.junit.Test
 
-class IsPullRequest extends BasePipelineTest {
+class IsPullRequestTest extends BasePipelineTest {
 
     @Override
     @Before
