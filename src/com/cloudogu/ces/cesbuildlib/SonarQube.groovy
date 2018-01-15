@@ -33,9 +33,14 @@ class SonarQube implements Serializable {
      */
     void analyzeWith(Maven mvn) {
         initMaven(mvn)
+        String sonarExtraProps = script.env.SONAR_EXTRA_PROPS
+        if (sonarExtraProps == null) {
+            sonarExtraProps = ""
+        }
+
         script.withSonarQubeEnv(sonarQubeEnv) {
             mvn "${script.env.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.env.SONAR_HOST_URL} " +
-                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${script.env.SONAR_EXTRA_PROPS} " +
+                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${sonarExtraProps} " +
                     //exclude generated code in target folder in order to avoid duplicates and issues in code that cannot be changed.
                     "-Dsonar.exclusions=target/**"
         }

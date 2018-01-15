@@ -33,6 +33,19 @@ class SonarQubeTest {
     }
 
     @Test
+    void analyzeWithNoExtraProps() throws Exception {
+        scriptMock.env = [
+                SONAR_MAVEN_GOAL : 'sonar:sonar',
+                SONAR_HOST_URL : 'host',
+                SONAR_AUTH_TOKEN: 'auth',
+                BRANCH_NAME : 'develop'
+        ]
+
+        new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
+        assert !mavenMock.args.contains('null')
+    }
+
+    @Test
     void analyzeIgnoreBranches() throws Exception {
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
         sonarQube.isIgnoringBranches = true

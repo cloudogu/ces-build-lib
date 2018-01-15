@@ -407,6 +407,7 @@ stage('SomethingToSkipWhenInPR') {
     if (!isPullRequest()) {
       // ...
     }
+    
 }
 ```
 
