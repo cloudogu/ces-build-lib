@@ -66,6 +66,18 @@ stage('Build') {
 }
 ```
 
+## Maven Wrapper
+
+Run maven using a [Maven Wrapper](https://github.com/takari/maven-wrapper) from the local repository.
+
+```
+Maven mvn = new MavenWrapper(this)
+
+stage('Build') {
+    mvn 'clean install'
+}
+```
+
 ## Maven in Docker
 
 Run maven in a docker container. This can be helpful, 
