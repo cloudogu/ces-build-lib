@@ -115,10 +115,10 @@ class SonarQube implements Serializable {
             mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
             if (!"master".equals(script.env.BRANCH_NAME)) {
                 // Avoid exception "The main branch must not have a target" on master branch
-                mvn.additionalArgs += "-Dsonar.branch.target=master "
+                mvn.additionalArgs += " -Dsonar.branch.target=master "
             }
         } else {
-            mvn.additionalArgs = "-Dsonar.branch=${script.env.BRANCH_NAME}"
+            mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
         }
     }
 
