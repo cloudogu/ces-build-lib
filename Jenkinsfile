@@ -10,9 +10,7 @@ node('docker') {
     ])
 
     def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
- 
-    def sonarQube = 'ces-sonar'
-    
+
     def mvn = cesBuildLib.MavenInDocker.new(this, "3.5.0-jdk-8")
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
@@ -50,10 +48,14 @@ node('docker') {
         }
 
         stage('SonarQube') {
-            withSonarQubeEnv(sonarQube) {
-                mvn "$SONAR_MAVEN_GOAL -Dsonar.host.url=$SONAR_HOST_URL " +
-                        //exclude generated code in target folder
-                        "-Dsonar.exclusions=target/**"
+
+            def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
+            sonarQube.updateAnalysisResultOfPullRequestsToGitHub('cesmarvin')
+
+            sonarQube.analyzeWith(mvn)
+
+            if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
+                currentBuild.result = 'UNSTABLE'
             }
         }
     }
