@@ -1,6 +1,4 @@
 #!groovy
-@Library('github.com/cloudogu/ces-build-lib@develop')
-import com.cloudogu.ces.cesbuildlib.*
 
 node('docker') {
 
@@ -11,10 +9,13 @@ node('docker') {
             disableConcurrentBuilds()
     ])
 
+    def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
+ 
     def sonarQube = 'ces-sonar'
-
-    Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
-    Git git = new Git(this)
+    
+    def mvn = cesBuildLib.MavenInDocker.new(this, "3.5.0-jdk-8")
+    mvn.useLocalRepoFromJenkins = true
+    def git = cesBuildLib.Git.new(this)
 
     // TODO refactor this in an object-oriented way and move to build-lib
     if ("master".equals(env.BRANCH_NAME)) {
@@ -41,7 +42,7 @@ node('docker') {
         stage('Build') {
             // Run the maven build
             mvn 'clean install -DskipTests'
-            archive '**/target/*.jar'
+            archive 'target/*.jar'
         }
 
         stage('Unit Test') {
@@ -61,4 +62,11 @@ node('docker') {
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
     mailIfStatusChanged(emailRecipients)
+}
+
+def libraryFromLocalRepo() {
+    // Workaround for loading the current repo as shared build lib.
+    // Checks out to workspace local folder named like the identifier.
+    // We have to pass an identifier with version (which is ignored). Otherwise the build fails.
+    library(identifier: 'ces-build-lib@snapshot', retriever: legacySCM(scm))
 }
