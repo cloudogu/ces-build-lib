@@ -163,8 +163,8 @@ class MavenTest {
         assert actualSettingsXml.contains('<password>${env.expectedId_password}</password>')
 
         assert mvnArgs.startsWith('source:jar javadoc:jar package -DskipTests ')
-        assert mvnArgs.contains('-DaltReleaseDeploymentRepository=expectedId::default::https://expected.url/content/repositories/releases/ ')
-        assert mvnArgs.contains('-DaltSnapshotDeploymentRepository=expectedId::default::https://expected.url/content/repositories/snapshots/ ')
+        assert mvnArgs.contains('-DaltReleaseDeploymentRepository=expectedId::default::https://expected.url/content/repositories/releases ')
+        assert mvnArgs.contains('-DaltSnapshotDeploymentRepository=expectedId::default::https://expected.url/content/repositories/snapshots ')
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$actualAdditionalArgs $expectedDeploymentGoal")
     }

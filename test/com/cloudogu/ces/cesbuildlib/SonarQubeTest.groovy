@@ -28,7 +28,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
-        assert mavenMock.additionalArgs == '-Dsonar.branch=develop'
+        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
 
@@ -65,7 +65,11 @@ class SonarQubeTest {
         sonarQube.isUsingBranchPlugin = true
         sonarQube.analyzeWith(mavenMock)
 
-        assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=develop -Dsonar.branch.target=master '
+        def additionalArgs = mavenMock.additionalArgs.split("\\s+")
+        assert additionalArgs.size() == 3
+        assert additionalArgs[0].trim() == '-X'
+        assert additionalArgs[1].trim() == '-Dsonar.branch.name=develop'
+        assert additionalArgs[2].trim() == '-Dsonar.branch.target=master'
     }
 
     @Test

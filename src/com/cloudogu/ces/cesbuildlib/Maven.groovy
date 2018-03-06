@@ -155,7 +155,7 @@ abstract class Maven implements Serializable {
                 // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
                 // See: https://issues.sonatype.org/browse/NEXUS-15464
                 // "-DaltDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
-                "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases/ " +
+                "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases " +
                 "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                 "$additionalDeployArgs " +
