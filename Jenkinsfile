@@ -47,6 +47,10 @@ node('docker') {
             mvn 'test'
         }
 
+        stage('Integration Test') {
+            runIntegrationTests()
+        }
+
         stage('SonarQube') {
 
             def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
@@ -71,4 +75,22 @@ def libraryFromLocalRepo() {
     // Checks out to workspace local folder named like the identifier.
     // We have to pass an identifier with version (which is ignored). Otherwise the build fails.
     library(identifier: 'ces-build-lib@snapshot', retriever: legacySCM(scm))
+}
+
+void runIntegrationTests() {
+
+    runIntegrationTest('Sh')
+    // TODO how can we mount all files from MavenWrapper folders to /workspace while keeping the build lib?
+    //runIntegrationTest('MavenWrapper')
+}
+
+void runIntegrationTest(String integrationTestFolder) {
+    timeout(time: 2, unitintegrationTestFolder: 'MINUTES') { // Make sure to not wait forever for missing build executors, etc.
+        sh "docker run --rm " +
+                // We need to mount the lib into /workspace so the libraryFromLocalRepo() workaround works
+                "-v${pwd()}:/workspace " +
+                // Now overwrite the lib's Jenkins file with the one from the test
+                "-v${pwd()}/test/it/com/cloudogu/ces/cesbuildlib/$integrationTestFolder/Jenkinsfile:/workspace/Jenkinsfile " +
+                "schnatterer/jenkinsfile-runner:1.0-SNAPSHOT-ae14205-jenkins2.108-plugins20180225 "
+    }
 }

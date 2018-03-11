@@ -1,0 +1,17 @@
+#!groovy
+
+node {
+
+    def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
+
+    def mvn = cesBuildLib.MavenWrapper.new(this)
+
+    mvn '-version'
+}
+
+def libraryFromLocalRepo() {
+    // Workaround for loading the current repo as shared build lib.
+    // Checks out to workspace local it named like the identifier.
+    // We have to pass an identifier with version (which is ignored). Otherwise the build fails.
+    library(identifier: 'ces-build-lib@snapshot', retriever: legacySCM(scm))
+}
