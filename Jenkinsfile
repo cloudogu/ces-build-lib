@@ -50,7 +50,7 @@ node('docker') {
         stage('SonarQube') {
 
             def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
-            sonarQube.updateAnalysisResultOfPullRequestsToGitHub('cesmarvin')
+            sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh-token')
 
             sonarQube.analyzeWith(mvn)
 
