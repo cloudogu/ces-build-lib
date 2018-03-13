@@ -6,7 +6,7 @@ import org.junit.Test
 class SonarQubeTest {
 
     def scriptMock = new ScriptMock()
-    def mavenMock = new MavenMock()
+    def mavenMock = new MavenMock(scriptMock)
 
     @After
     void tearDown() throws Exception {
@@ -43,6 +43,14 @@ class SonarQubeTest {
 
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
         assert !mavenMock.args.contains('null')
+    }
+
+    @Test
+    void analyzeWithExclusionsFromMaven() throws Exception {
+        String exclusionsFromMaven = 'folder/file'
+        scriptMock.files.put('pom.xml', "<properties><sonar.exclusions>${exclusionsFromMaven}</sonar.exclusions></properties>")
+        new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
+        assert mavenMock.args.contains("-Dsonar.exclusions=target/**,$exclusionsFromMaven")
     }
 
     @Test
@@ -144,8 +152,8 @@ class SonarQubeTest {
     private static class MavenMock extends Maven {
         String args
 
-        MavenMock() {
-            super(new Object())
+        MavenMock(scriptMock) {
+            super(scriptMock)
         }
 
         def mvn(String args) {

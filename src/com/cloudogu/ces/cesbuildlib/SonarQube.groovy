@@ -17,7 +17,7 @@ class SonarQube implements Serializable {
     private String gitHubCredentials = ""
 
     //exclude generated code in target folder in order to avoid duplicates and issues in code that cannot be changed.
-    private String exclusions = "target/**"
+    private String defaultExclusions = 'target/**'
 
     SonarQube(script, String sonarQubeEnv) {
         this.script = script
@@ -41,27 +41,16 @@ class SonarQube implements Serializable {
             sonarExtraProps = ""
         }
 
-        // do not add sonar.exclusions property if the exclusions are null or empty
-        String sonarExclusionProp = ""
-        if (exclusions?.trim()) {
-            sonarExclusionProp = "-Dsonar.exclusions=${exclusions}"
+        String sonarExclusionProp = "-Dsonar.exclusions=$defaultExclusions"
+        def exclusionsFromMaven = mvn.getMavenProperty('sonar.exclusions')
+        if (!exclusionsFromMaven.isEmpty()) {
+            sonarExclusionProp += ",$exclusionsFromMaven"
         }
 
         script.withSonarQubeEnv(sonarQubeEnv) {
             mvn "${script.env.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.env.SONAR_HOST_URL} " +
                     "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${sonarExtraProps} ${sonarExclusionProp}"
         }
-    }
-
-    /**
-     * Sets the exclusion pattern for the SonarQube analysis. Multiple patterns can be separated by comma.
-     * The default pattern ignores the target maven directory.
-     *
-     * @see <a href="https://docs.sonarqube.org/display/SONAR/Narrowing+the+Focus#NarrowingtheFocus-Patterns">SonarQube Exclude Patterns</a>
-     * @see <a href="https://github.com/cloudogu/ces-build-lib/issues/9">Issue 9</a>
-     */
-    void setExclusions(String exclusions) {
-        this.exclusions = exclusions
     }
 
     /**

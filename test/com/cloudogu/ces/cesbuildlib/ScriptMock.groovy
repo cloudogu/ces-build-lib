@@ -15,6 +15,7 @@ class ScriptMock {
     List<Map<String, String>> writeFileParams = new LinkedList<>()
     Map actualFileArgs
     Map actualStringArgs
+    Map files = new HashMap<String, String>();
     List<String> actualWithEnv
 
     String sh(String args) {
@@ -79,5 +80,9 @@ class ScriptMock {
 
     void writeFile(Map<String, String> params) {
         writeFileParams.add(params)
+    }
+
+    String readFile(String file) {
+        return files.get(file)
     }
 }
