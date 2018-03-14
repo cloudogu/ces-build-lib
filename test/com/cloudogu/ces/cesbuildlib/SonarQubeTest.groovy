@@ -27,7 +27,7 @@ class SonarQubeTest {
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
 
         assert mavenMock.args ==
-                'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
+                'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
         assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
@@ -43,14 +43,6 @@ class SonarQubeTest {
 
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
         assert !mavenMock.args.contains('null')
-    }
-
-    @Test
-    void analyzeWithExclusionsFromMaven() throws Exception {
-        String exclusionsFromMaven = 'folder/file'
-        scriptMock.files.put('pom.xml', "<properties><sonar.exclusions>${exclusionsFromMaven}</sonar.exclusions></properties>")
-        new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
-        assert mavenMock.args.contains("-Dsonar.exclusions=target/**,$exclusionsFromMaven")
     }
 
     @Test

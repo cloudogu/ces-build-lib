@@ -16,9 +16,6 @@ class SonarQube implements Serializable {
     private String gitHubRepoName = ""
     private String gitHubCredentials = ""
 
-    //exclude generated code in target folder in order to avoid duplicates and issues in code that cannot be changed.
-    private String defaultExclusions = 'target/**'
-
     SonarQube(script, String sonarQubeEnv) {
         this.script = script
         this.sonarQubeEnv = sonarQubeEnv
@@ -41,15 +38,9 @@ class SonarQube implements Serializable {
             sonarExtraProps = ""
         }
 
-        String sonarExclusionProp = "-Dsonar.exclusions=$defaultExclusions"
-        def exclusionsFromMaven = mvn.getMavenProperty('sonar.exclusions')
-        if (!exclusionsFromMaven.isEmpty()) {
-            sonarExclusionProp += ",$exclusionsFromMaven"
-        }
-
         script.withSonarQubeEnv(sonarQubeEnv) {
             mvn "${script.env.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.env.SONAR_HOST_URL} " +
-                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${sonarExtraProps} ${sonarExclusionProp}"
+                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${sonarExtraProps}"
         }
     }
 
