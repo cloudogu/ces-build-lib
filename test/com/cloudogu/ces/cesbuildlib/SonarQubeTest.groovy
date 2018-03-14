@@ -6,7 +6,7 @@ import org.junit.Test
 class SonarQubeTest {
 
     def scriptMock = new ScriptMock()
-    def mavenMock = new MavenMock()
+    def mavenMock = new MavenMock(scriptMock)
 
     @After
     void tearDown() throws Exception {
@@ -27,7 +27,7 @@ class SonarQubeTest {
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
 
         assert mavenMock.args ==
-                'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dsonar.exclusions=target/**'
+                'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
         assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
@@ -144,8 +144,8 @@ class SonarQubeTest {
     private static class MavenMock extends Maven {
         String args
 
-        MavenMock() {
-            super(new Object())
+        MavenMock(scriptMock) {
+            super(scriptMock)
         }
 
         def mvn(String args) {
