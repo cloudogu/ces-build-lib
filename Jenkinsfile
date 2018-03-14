@@ -63,7 +63,7 @@ node('docker') {
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
-    mailIfStatusChanged(emailRecipients)
+    mailIfStatusChanged(findEmailRecipients(emailRecipients))
 }
 
 def libraryFromLocalRepo() {
