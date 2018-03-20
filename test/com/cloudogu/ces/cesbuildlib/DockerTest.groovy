@@ -14,6 +14,7 @@ class DockerTest {
     def actualDockerGroupId = "999"
     def actualDockerGroup = "docker:x:$actualDockerGroupId:jenkins"
     Map<String, String> actualWriteFileArgs = [:]
+    def actualShArgs = new LinkedList<Object>()
 
     @Test
     void findIp() {
@@ -196,52 +197,57 @@ class DockerTest {
 
     @Test
     void imageInsideExtendedArgs() {
-        Docker docker = createWithImage(
-                [inside: { String param1, Closure param2 ->
-                    return [param1, param2]
-                }])
-
-        def args = docker.image(expectedImage)
-                .mountJenkinsUser()
-                .mountDockerSocket()
-                .inside('-v a:b') { return 'expectedClosure' }
+        def args = testExtendedArgs {
+            Docker.Image image -> return image.inside('-v a:b') { return 'expectedClosure' }
+        }
 
         // inside() params
         assert args[0].contains('-v a:b ')
         assert 'expectedClosure' == args[1].call()
+    }
+
+    private testExtendedArgs(Closure<Docker.Image> testImage) {
+        Docker docker = createWithImage(
+                [inside: { String param1, Closure param2 ->
+                    return [param1, param2]
+                },
+                 run: { String param1, String param2 ->
+                     return [param1, param2]
+                 }
+                ])
+
+        def image = docker.image(expectedImage)
+                .mountJenkinsUser()
+                .mountDockerSocket()
+                .installDockerClient('1.2.3')
+
+        def args = testImage.call(image)
 
         // extended arg mounts
         assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
         assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+        assert args[0].contains("-v $expectedHome/.jenkins/docker/docker:/usr/bin/docker")
+
+        // Docker installed
+        assert actualShArgs.size() > 0
+        assert actualShArgs.get(0).contains('https://download.docker.com/linux/static/stable/x86_64/docker-1.2.3-ce.tgz')
 
         // Written files
         assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
         assert actualDockerGroup == actualWriteFileArgs['.jenkins/etc/group']
+
+        return args
     }
 
     @Test
     void imageRunExtendedArgs() {
-        Docker docker = createWithImage(
-                [run: { String param1, String param2 ->
-                    return [param1, param2]
-                }])
-
-        def args = docker.image(expectedImage)
-                .mountJenkinsUser()
-                .mountDockerSocket()
-                .run('arg', 'cmd')
+        def args = testExtendedArgs {
+            Docker.Image image -> return image.run('arg', 'cmd')
+        }
 
         // run() params
         assert args[0].contains('arg ')
         assert 'cmd' == args[1]
-
-        // extended arg mounts
-        assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
-        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
-
-        // Written files
-        assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
-        assert actualDockerGroup == actualWriteFileArgs['.jenkins/etc/group']
     }
 
     @Test
@@ -311,7 +317,13 @@ class DockerTest {
                 }
                 ]
         ]
-        mockedScript.put('sh', { Map<String, String> args ->
+        mockedScript.put('sh', { Object args ->
+
+            if (!(args instanceof Map)) {
+                actualShArgs.add(args)
+                return
+            }
+
             String script = args['script']
             if (script.contains('cat /etc/passwd ')) {
                 assert script.contains(actualUser)

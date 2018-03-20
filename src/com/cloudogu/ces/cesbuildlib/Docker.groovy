@@ -110,6 +110,8 @@ class Docker implements Serializable {
 
     static class Image implements Serializable {
 
+        private String DOCKER_CLIENT_PATH = ".jenkins/docker"
+
         private final script
 
         // The wrapped image object
@@ -124,6 +126,8 @@ class Docker implements Serializable {
         private boolean mountJenkinsUser = false
 
         private boolean mountDockerSocket = false
+
+        private String dockerClientVersionToInstall = ""
 
         Image(script, String id) {
             imageIdString = id
@@ -230,6 +234,16 @@ class Docker implements Serializable {
             return this
         }
 
+        /** Installs the docker client with the specified version inside the container.
+         * This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.
+         *
+         *  For available versions see here: https://download.docker.com/linux/static/stable/x86_64/
+         */
+        Image installDockerClient(String version) {
+            this.dockerClientVersionToInstall = version
+            return this
+        }
+
         private extendArgs(String args) {
             String extendedArgs = args
             if (mountJenkinsUser) {
@@ -240,9 +254,13 @@ class Docker implements Serializable {
                 String groupPath = writeGroup()
                 extendedArgs +=
                         // Mount the docker socket
-                        "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" " +
-                        // Mount the docker group
-                        "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
+                        " -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" " +
+                                // Mount the docker group
+                                "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
+            }
+            if (!dockerClientVersionToInstall.isEmpty()) {
+                doInstallDockerClient()
+                extendedArgs += " -v ${script.pwd()}/${DOCKER_CLIENT_PATH}/docker:/usr/bin/docker"
             }
             return extendedArgs
         }
@@ -308,6 +326,11 @@ class Docker implements Serializable {
         private String readDockerGroupId() {
             // Get the GID of the docker group
             sh.returnStdOut "echo ${readDockerGroupFromEtcGroup()} | sed -E 's/.*:x:(.*):.*/\\1/'"
+        }
+
+        private void doInstallDockerClient() {
+            // Installs statically linked docker binary
+            script.sh "cd ${script.pwd()}/.jenkins && wget -qc https://download.docker.com/linux/static/stable/x86_64/docker-$dockerClientVersionToInstall-ce.tgz -O - | tar -xz"
         }
     }
 }
