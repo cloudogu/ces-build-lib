@@ -312,8 +312,16 @@ The `Docker` class provides additional convenience features:
    should not do this at all. So lets stick to mounting the socket, which seems to cause less problems.
    
    This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
+   
+* `installDockerClient(String version)`: Installs the docker client with the specified version inside the container.  
+   This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.  
+   
+   For available versions see [here](https://download.docker.com/linux/static/stable/x86_64/).
+   For an exampl see [here](https://github.com/cloudogu/continuous-delivery-docs-example) 
 
-Example:
+Examples:
+
+Docker Container that uses its own docker client:
 ```groovy
 new Docker(this).image('docker') // contains the docker client binary
     .mountJenkinsUser()
@@ -326,8 +334,20 @@ new Docker(this).image('docker') // contains the docker client binary
         sh 'docker run hello-world' // Would fail without mountDockerSocket = true 
         
     }
-  ```
-  
+```
+
+Docker container that does not have its own docker client
+```groovy
+new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
+    .mountJenkinsUser()
+    .mountDockerSocket()
+    .installDockerClient('17.12.1')
+    .inside() {
+        // Start a "sibling" container and wait for it to return
+        sh 'docker run hello-world' // Would fail without mountDockerSocket = true & installDockerClient()
+    }
+```
+
 # SonarQube
 
 The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin) provides utility

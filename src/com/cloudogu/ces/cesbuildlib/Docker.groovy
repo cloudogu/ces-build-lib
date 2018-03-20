@@ -234,8 +234,10 @@ class Docker implements Serializable {
             return this
         }
 
-        /**
-         * See https://download.docker.com/linux/static/stable/x86_64/
+        /** Installs the docker client with the specified version inside the container.
+         * This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.
+         *
+         *  For available versions see here: https://download.docker.com/linux/static/stable/x86_64/
          */
         Image installDockerClient(String version) {
             this.dockerClientVersionToInstall = version
@@ -328,7 +330,6 @@ class Docker implements Serializable {
 
         private void doInstallDockerClient() {
             // Installs statically linked docker binary
-            script.echo "Installing docker client to ${DOCKER_CLIENT_PATH}"
             script.sh "cd ${script.pwd()}/.jenkins && wget -qc https://download.docker.com/linux/static/stable/x86_64/docker-$dockerClientVersionToInstall-ce.tgz -O - | tar -xz"
         }
     }
