@@ -67,7 +67,8 @@ node('docker') {
     // Archive Unit and integration test results, if any
     junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
-    mailIfStatusChanged(emailRecipients)
+    // TODO re-enable mailing once we leave the try and error stage
+    // mailIfStatusChanged(emailRecipients)
 }
 
 def libraryFromLocalRepo() {
@@ -92,6 +93,7 @@ void runIntegrationTest(String integrationTestFolder) {
                 "-v${pwd()}:/workspace " +
                 // Now overwrite the lib's Jenkins file with the one from the test
                 "-v${pwd()}/test/it/com/cloudogu/ces/cesbuildlib/$integrationTestFolder/Jenkinsfile:/workspace/Jenkinsfile " +
+                "-w ${pwd()} " +
                 "schnatterer/jenkinsfile-runner:1.0-SNAPSHOT-03d629a-jenkins2.108 "
     }
 }

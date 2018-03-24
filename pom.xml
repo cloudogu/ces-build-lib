@@ -21,6 +21,13 @@
             <version>1.21</version>
         </dependency>
 
+        <!-- In order to be able to use @grab in intelliJ -->
+        <dependency>
+            <groupId>org.apache.ivy</groupId>
+            <artifactId>ivy</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
@@ -31,7 +38,8 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
-            <scope>test</scope>
+            <!-- For JUnit.groovy to work this must be in compile scope -->
+            <!-- <scope>test</scope> -->
         </dependency>
 
         <dependency>
@@ -54,7 +62,6 @@
             <version>1.1</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -72,6 +79,13 @@
                 <groupId>org.codehaus.gmaven</groupId>
                 <artifactId>gmaven-plugin</artifactId>
                 <version>1.5</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.ivy</groupId>
+                        <artifactId>ivy</artifactId>
+                        <version>2.4.0</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <providerSelection>1.8</providerSelection>
                     <sources>

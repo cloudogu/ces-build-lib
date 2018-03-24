@@ -1,28 +1,17 @@
 #!groovy
 package it.com.cloudogu.ces.cesbuildlib.Sh
 
-import org.junit.Test
-
-import static org.junit.Assert.assertEquals
 
 node {
 
     def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
 
-    def junit = cesBuildLib.JUnit.new(this)
+    def sh = cesBuildLib.Sh.new(this)
 
-    echo (junit.runClasses(this.class))
-}
-
-@Test
-void jenkinsfile() {
-    // TODO how to get actual test to be loaded? (Jenkinsfile-test)
-    //evaluate()?
-    // Move to "vars" folder?
-
-    boolean isPr = isPullRequest()
-    assertEquals(false, isPr)
-
+    echo pwd()
+    def folderContents = sh.returnStdOut('ls -la')
+    assert folderContents.contains('..')
+    assert folderContents.contains('Jenkinsfile')
 }
 
 def libraryFromLocalRepo() {
