@@ -86,11 +86,12 @@ void runIntegrationTests() {
 
 void runIntegrationTest(String integrationTestFolder) {
     timeout(time: 2, unitintegrationTestFolder: 'MINUTES') { // Make sure to not wait forever for missing build executors, etc.
+        // TODO mabe we should mount the current folder and set it as working dir?
         sh "docker run --rm " +
                 // We need to mount the lib into /workspace so the libraryFromLocalRepo() workaround works
                 "-v${pwd()}:/workspace " +
                 // Now overwrite the lib's Jenkins file with the one from the test
                 "-v${pwd()}/test/it/com/cloudogu/ces/cesbuildlib/$integrationTestFolder/Jenkinsfile:/workspace/Jenkinsfile " +
-                "schnatterer/jenkinsfile-runner:1.0-SNAPSHOT-ae14205-jenkins2.108-plugins20180225 "
+                "schnatterer/jenkinsfile-runner:1.0-SNAPSHOT-03d629a-jenkins2.108 "
     }
 }

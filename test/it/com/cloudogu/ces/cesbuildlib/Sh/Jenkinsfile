@@ -7,7 +7,10 @@ node {
 
     def sh = cesBuildLib.Sh.new(this)
 
-    echo sh.returnStdOut('ls -la')
+    echo pwd()
+    def folderContents = sh.returnStdOut('ls -la')
+    assert folderContents.contains('..')
+    assert folderContents.contains('Jenkinsfile')
 }
 
 def libraryFromLocalRepo() {
