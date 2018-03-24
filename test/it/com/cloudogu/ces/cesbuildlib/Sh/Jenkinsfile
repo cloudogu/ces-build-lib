@@ -1,5 +1,6 @@
 #!groovy
 package it.com.cloudogu.ces.cesbuildlib.Sh
+import static groovy.test.GroovyAssert.*
 
 node {
 
@@ -9,8 +10,8 @@ node {
 
     echo pwd()
     def folderContents = sh.returnStdOut('ls -la')
-    assert folderContents.contains('..')
-    assert folderContents.contains('Jenkinsfile')
+    assertTrue('ls does not return ..', folderContents.contains('..'))
+    assertTrue('ls does not return Jenkinsfile', folderContents.contains('Jenkinsfile'))
 }
 
 def libraryFromLocalRepo() {
