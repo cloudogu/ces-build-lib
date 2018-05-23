@@ -130,6 +130,27 @@ class GitTest {
         assertEquals('', git.gitHubRepositoryName)
     }
 
+    @Test
+    void getTag() {
+        String expectedReturnValue = "our tag"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertEquals(expectedReturnValue, git.tag)
+    }
+
+    @Test
+    void isTag() {
+        String expectedReturnValue = "our tag"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertTrue(git.isTag())
+    }
+
+    @Test
+    void isNotATag() {
+        String expectedReturnValue = "undefined"
+        Git git = new Git(createMockedScriptReturnOnSh(expectedReturnValue + " \n"))
+        assertFalse(git.isTag())
+    }
+
     private static Map<String, Closure> createMockedScriptReturnOnSh(String returnedBySh) {
         return [
                 sh: { Map<String, String> args ->

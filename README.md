@@ -203,6 +203,8 @@ See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 # Git
 
+Example: 
+
 ```
 Git git = new Git(this)
 
@@ -212,6 +214,22 @@ stage('Checkout') {
   git.clean('".*/"')
 }
 ```
+
+## Git Utilities
+
+* `git.clean()` - Removes all untracked and unstaged files.
+* `git.clean('".*/"')` - Removes all untracked and unstaged files, except folders starting in "." like .m2 (maven), .npm, .cache, .local (bower), etc.
+* `git.branchName` - e.g. `feature/xyz/abc`
+* `git.simpleBranchName` - e.g. `abc`
+* `git.commitAuthorComplete` -  e.g. `User Name <user.name@doma.in>`
+* `git.commitAuthorEmail` -  e.g. `user.name@doma.in`
+* `git.commitAuthorName` -  e.g. `User Name`
+* `git.commitHash` -  e.g. `fb1c8820df462272011bca5fddbe6933e91d69ed`
+* `git.commitHashShort` -  e.g. `fb1c882`
+* `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
+* `git.gitHubRepositoryName` -  e.g. `orga/repo`
+* `git.tag` -  e.g. `1.0.0` or `undefined` if not set
+* `git.isTag()`
 
 # Docker
 

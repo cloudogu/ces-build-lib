@@ -35,7 +35,7 @@ class Git implements Serializable {
     }
 
     /**
-     * @return the part of the branch name after the  slash
+     * @return the part of the branch name after the slash
      */
     String getSimpleBranchName() {
         return branchName.substring(branchName.lastIndexOf('/') + 1)
@@ -45,8 +45,7 @@ class Git implements Serializable {
      * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
      */
     String getCommitAuthorComplete() {
-        return script.sh (
-                script: "git --no-pager show -s --format='%an <%ae>' HEAD", returnStdout: true)
+        return sh.returnStdOut(script: "git --no-pager show -s --format='%an <%ae>' HEAD")
     }
 
     String getCommitAuthorName() {
@@ -90,5 +89,13 @@ class Git implements Serializable {
             return potentialRepoName.substring(0, potentialRepoName.length() - 4)
         }
         return potentialRepoName
+    }
+
+    String getTag() {
+        return sh.returnStdOut("git name-rev --name-only --tags HEAD")
+    }
+
+    boolean isTag() {
+        return getTag() != "undefined"
     }
 }
