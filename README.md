@@ -10,7 +10,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 
 
 - [Usage](#usage)
-  - [Syntax completion](#syntax-completion)
+- [Syntax completion](#syntax-completion)
 - [Maven](#maven)
   - [Maven from local Jenkins tool](#maven-from-local-jenkins-tool)
   - [Maven Wrapper](#maven-wrapper)
@@ -21,6 +21,9 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Git Utilities](#git-utilities)
 - [Docker](#docker)
   - [`Docker` methods provided by the docker plugin](#docker-methods-provided-by-the-docker-plugin)
+  - [Additional features provided by the `Docker` class](#additional-features-provided-by-the-docker-class)
+  - [`Docker.Image` methods provided by the docker plugin](#dockerimage-methods-provided-by-the-docker-plugin)
+  - [Additional features provided by the `Docker.Image` class](#additional-features-provided-by-the-dockerimage-class)
 - [SonarQube](#sonarqube)
   - [Branches](#branches)
   - [PullRequests](#pullrequests)
@@ -43,7 +46,7 @@ import com.cloudogu.ces.cesbuildlib.*
 * Best practice: Use a defined version (e.g. a commit, such as `6cd41e0` in the example above) and not a branch such as `develop`. Otherwise your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 * When build executors are docker containers and you intend to use their Docker host in the Pipeline: Please see [#8](https://github.com/cloudogu/ces-build-lib/issues/8#issuecomment-353584252).
 
-## Syntax completion
+# Syntax completion
 
 You can get syntax completion in your `Jenkinsfile` when using the ces-build-lib, by adding it as dependency to your project. 
 
@@ -292,6 +295,7 @@ The `Docker`class provides the default methods of the global docker variable pro
      ```groovy
      def dockerContainer = docker.build("image/name:1.0", "folderOfDockfile").run("-e HOME=${pwd()}")
      ```
+
 ## Additional features provided by the `Docker` class
 
 The `Docker` class provides additional convenience features:
@@ -300,8 +304,8 @@ The `Docker` class provides additional convenience features:
  * `String findEnv(container)` returns the environment variables set within the docker container as string
  * `boolean isRunning(container)` return `true` if the container is in state running, otherwise `false`
  
- Example from Jenkinsfile:
- ```groovy
+Example from Jenkinsfile:
+```groovy
  Docker docker = new Docker(this)
  def dockerContainer = docker.build("image/name:1.0").run()
  waitUntil {
@@ -310,7 +314,6 @@ The `Docker` class provides additional convenience features:
  }
  echo docker.findIp(dockerContainer)
  echo docker.findEnv(dockerContainer)
- 
 ```
 
 ## `Docker.Image` methods provided by the docker plugin
@@ -490,7 +493,6 @@ stage('SomethingToSkipWhenInPR') {
     
 }
 ```
-
 
 ## findEmailRecipients
 
