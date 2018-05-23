@@ -3,6 +3,35 @@
 
 Jenkins Pipeline Shared library, that contains additional features for Git, Maven, etc. in an object-oriented manner as well as some additional pipeline steps.
 
+# Table of contents
+<!-- Update with `doctoc --notitle README.md`. See https://github.com/thlorenz/doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Usage](#usage)
+  - [Syntax completion](#syntax-completion)
+- [Maven](#maven)
+  - [Maven from local Jenkins tool](#maven-from-local-jenkins-tool)
+  - [Maven Wrapper](#maven-wrapper)
+  - [Maven in Docker](#maven-in-docker)
+  - [Deploy to nexus repository (e.g. maven central)](#deploy-to-nexus-repository-eg-maven-central)
+  - [Maven Utilities](#maven-utilities)
+- [Git](#git)
+  - [Git Utilities](#git-utilities)
+- [Docker](#docker)
+  - [`Docker` methods provided by the docker plugin](#docker-methods-provided-by-the-docker-plugin)
+- [SonarQube](#sonarqube)
+  - [Branches](#branches)
+  - [PullRequests](#pullrequests)
+- [Steps](#steps)
+  - [mailIfStatusChanged](#mailifstatuschanged)
+  - [isPullRequest](#ispullrequest)
+  - [findEmailRecipients](#findemailrecipients)
+- [Examples](#examples)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Usage
 
 * Install [Pipeline: GitHub Groovy Libraries](https://wiki.jenkins.io/display/JENKINS/Pipeline+GitHub+Library+Plugin)
