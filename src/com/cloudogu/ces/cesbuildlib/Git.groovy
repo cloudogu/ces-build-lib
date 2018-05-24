@@ -45,7 +45,7 @@ class Git implements Serializable {
      * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
      */
     String getCommitAuthorComplete() {
-        return sh.returnStdOut(script: "git --no-pager show -s --format='%an <%ae>' HEAD")
+        sh.returnStdOut "git --no-pager show -s --format='%an <%ae>' HEAD"
     }
 
     String getCommitAuthorName() {
