@@ -3,6 +3,7 @@ package com.cloudogu.ces.cesbuildlib
 class Git implements Serializable {
     def script
     Sh sh
+    def credentials
 
     Git(script) {
         this.script = script
@@ -97,5 +98,103 @@ class Git implements Serializable {
 
     boolean isTag() {
         return getTag() != "undefined"
+    }
+
+    def add(String pathspec) {
+        script.sh "git add $pathspec"
+    }
+
+    /**
+     * Commits using the name and email of the last committer as author and committer.
+     *
+     * @param message
+     */
+    void commit(String message) {
+        commit(message, commitAuthorName, commitAuthorEmail)
+    }
+
+    /**
+     * Commits using the specific name and emails as author and committer.
+     *
+     * @param message
+     */
+    void commit(String message, String authorName, String authorEmail) {
+        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
+                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+            script.sh "git commit -m \"$message\""
+        }
+    }
+
+    /**
+     * Pushes local to remote repo.
+     * Note that you need to set credentials before calling this method.
+     *
+     * @param refSpec branch or tag name
+     */
+    // TODO unit test
+    void push(String refSpec) {
+
+        // Their seems to be no secure way of pushing to git which credentials, we have to write them to the URL
+        // See also https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
+        // Our workaround: Explicitly replace any credentials in stdout and stderr before output
+
+        // TODO this will probably only work for https, not for ssh.
+        // However, ssh seems to work without further auth, wen using the git step in pipelines:
+        // https://stackoverflow.com/a/38784011/1845976
+        // Should we build distinguish if the repositoryUrl contains ssh or https here?
+
+        String repoUrlWithoutCredentials = repositoryUrl
+        includeCredentialsInGitRemote()
+
+        // Avoid credentials being written to stdout and stderr (sh.returnStdOut() will only capture stdout!)
+        // Write all output to unique file for this job
+        String stdOutAndErrFile = "/tmp/${script.env.BUILD_TAG}-shellout"
+        try {
+
+            script.sh "git push origin ${refSpec} > ${stdOutAndErrFile} 2>&1"
+
+        } finally {
+
+            setRemote(repoUrlWithoutCredentials)
+
+            // Remove credentials from stdout, then echo
+            script.withCredentials([script.usernamePassword(credentialsId: credentials,
+                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+
+                String output = sh.returnStdOut("cat ${stdOutAndErrFile}")
+                script.echo(output.replace(script.env.USERNAME, '****').replace(script.env.PASSWORD, '****'))
+                script.sh "rm $stdOutAndErrFile"
+            }
+        }
+    }
+
+    private void includeCredentialsInGitRemote() {
+        script.withCredentials([script.usernamePassword(credentialsId: credentials,
+                passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+            def repoUrlWithCredentials = createRepoUrlWithCredentials(script.env.USERNAME, script.env.PASSWORD)
+            // Set username and PW, so subsequent operations (fetch, pull, etc.) on remote will succeed
+            setRemote(repoUrlWithCredentials)
+        }
+    }
+
+    /**
+     * @return a string that contains the repo url like this. <code>https://${username}:${password}@${plainRepoUrl}</code>
+     */
+    protected String createRepoUrlWithCredentials(username, password) {
+        String repoUrl = script.sh(
+                script: 'git config --get remote.origin.url', returnStdout: true)
+        def urlPrefixWithUserNameAndPassword = "https://$username:$password@"
+
+        if (repoUrl.startsWith(urlPrefixWithUserNameAndPassword)) {
+            return repoUrl
+        }
+        if (repoUrl.startsWith("https://$username")) {
+            return repoUrl.replaceAll("https://$username@", urlPrefixWithUserNameAndPassword)
+        }
+        return repoUrl.replaceAll("https://", urlPrefixWithUserNameAndPassword)
+    }
+
+    protected setRemote(String remote) {
+        script.sh "git remote set-url origin ${remote}"
     }
 }

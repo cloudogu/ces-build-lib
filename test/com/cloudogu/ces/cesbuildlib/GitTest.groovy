@@ -151,6 +151,58 @@ class GitTest {
         assertFalse(git.isTag())
     }
 
+    @Test
+    void commit() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValue = "User Name <user.name@doma.in>"
+        Git git = new Git(scriptMock)
+        git.commit 'msg'
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+    }
+
+    @Test
+    void createRepoUrlWithCredentials() throws Exception {
+        Map<String, Closure> mockedScript = [
+                sh: { Map<String, String> args ->
+                    return "https://repo.url"
+                }
+        ]
+        Git git = new Git(mockedScript)
+
+        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("u", "pw")
+        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
+    }
+
+    @Test
+    void createRepoUrlWithCredentialsUrlWithUserName() throws Exception {
+        Map<String, Closure> mockedScript = [
+                sh: { Map<String, String> args ->
+                    return "https://u@repo.url"
+                }
+        ]
+        Git git = new Git(mockedScript)
+
+        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("u", "pw")
+        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
+    }
+
+    @Test
+    void createRepoUrlWithCredentialsUrlWithCredentials() throws Exception {
+        Map<String, Closure> mockedScript = [
+                sh: { Map<String, String> args ->
+                    return "https://u:pw@repo.url"
+                }
+        ]
+        Git git = new Git(mockedScript)
+
+        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("u", "pw")
+        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
+    }
+
     private static Map<String, Closure> createMockedScriptReturnOnSh(String returnedBySh) {
         return [
                 sh: { Map<String, String> args ->

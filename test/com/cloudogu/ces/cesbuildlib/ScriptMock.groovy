@@ -85,4 +85,8 @@ class ScriptMock {
     String readFile(String file) {
         return files.get(file)
     }
+
+    Map<String, String> actualWithEnvAsMap() {
+        actualWithEnv.collectEntries {[it.split('=')[0], it.split('=')[1]]}
+    }
 }
