@@ -235,6 +235,9 @@ See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 # Git
 
+An extension to the `git` step, that provides an API for some commonly used git commands and utilities.
+Mostly, this is a convenient wrapper around using the `sh 'git ...'` calls.
+
 Example: 
 
 ```
@@ -249,8 +252,11 @@ stage('Checkout') {
 
 ## Git Utilities
 
+### Read Only
+
 * `git.clean()` - Removes all untracked and unstaged files.
-* `git.clean('".*/"')` - Removes all untracked and unstaged files, except folders starting in "." like .m2 (maven), .npm, .cache, .local (bower), etc.
+* `git.clean('".*/"')` - Removes all untracked and unstaged files, except folders starting in "." like .m2 (maven), 
+  .npm, .cache, .local (bower), etc.
 * `git.branchName` - e.g. `feature/xyz/abc`
 * `git.simpleBranchName` - e.g. `abc`
 * `git.commitAuthorComplete` -  e.g. `User Name <user.name@doma.in>`
@@ -261,11 +267,23 @@ stage('Checkout') {
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
 * `git.tag` -  e.g. `1.0.0` or `undefined` if not set
-* `git.isTag()`
+* `git.isTag()` - is there a tag on the current commit?
+
+### Changes to local repository
+
+* `git.add('.')`
+* `git.commit('message', 'Author', 'Author@mail.server)`
+* `git.commit('message')` - uses the name and email of the last committer as author and committer.
+
+### Push to remote repository
+
+* TODO set credentials, only HTTPS, security considerations
+* `git.push('master')` - pushes origin
+
 
 # Docker
 
-The `Docker`class provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
+The `Docker` class provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
 
 ## `Docker` methods provided by the docker plugin
  
