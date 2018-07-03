@@ -152,52 +152,63 @@ class Git implements Serializable {
 
     /**
      * Pushes local to remote repo.
-     * Note that you need to set credentials before calling this method.
      *
      * @param refSpec branch or tag name
      */
-    // TODO unit test
     void push(String refSpec) {
+        executeInShellWithGitCredentialsForWriting "git push origin ${refSpec}"
+    }
 
-        // There seems to be no secure way of pushing to git which credentials, we have to write them to the URL
-        // See also
-        // https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
-        // Our workaround: Explicitly replace any credentials in stdout and stderr before output
+    /**
+     * There seems to be no secure way of pushing to git which credentials, we have to write them to the URL
+     * See also
+     * https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
+     * Our workaround: Explicitly replace any credentials in stdout and stderr before output
+     *
+     * @param shCommand
+     */
+    protected void executeInShellWithGitCredentialsForWriting(String shCommand) {
 
-        // TODO this will probably only work for https, not for ssh.
-        // However, ssh seems to work without further auth, wen using the git step in pipelines:
-        // https://stackoverflow.com/a/38784011/1845976
-        // Should we build distinguish if the repositoryUrl contains ssh or https here?
-
+        /* Writing credentials into the remote  will only work for https, not for ssh.
+         * However, ssh seems to work without further auth, wen using the git step in pipelines, so just try
+         * without setting credentials for ssh remotes.
+         * See https://stackoverflow.com/a/38784011/1845976 */
         String repoUrlWithoutCredentials = repositoryUrl
-        // Avoid credentials being written to stdout and stderr (sh.returnStdOut() will only capture stdout!)
-        // Write all output to unique file for this job
-        String stdOutAndErrFile = "/tmp/${script.env.BUILD_TAG}-shellout"
 
-        try {
-            writeCredentialsIntoGitRemote()
+        if (credentials == null || !repoUrlWithoutCredentials.startsWith('https://')) {
+            script.sh shCommand
+        } else {
 
-            script.sh "git push origin ${refSpec} > ${stdOutAndErrFile} 2>&1"
+            // Avoid credentials being written to stdout and stderr (sh.returnStdOut() will only capture stdout!)
+            // Write all output to unique file for this job
+            String stdOutAndErrFile = "/tmp/${script.env.BUILD_TAG}-shellout"
 
-        } finally {
+            try {
+                writeCredentialsIntoGitRemote(repoUrlWithoutCredentials)
 
-            setRemote(repoUrlWithoutCredentials)
+                script.sh "${shCommand} > ${stdOutAndErrFile} 2>&1"
 
-            // Remove credentials from stdout, then echo
-            script.withCredentials([script.usernamePassword(credentialsId: credentials,
-                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+            } finally {
 
-                String output = sh.returnStdOut("cat ${stdOutAndErrFile}")
-                script.echo(output.replace(script.env.USERNAME, '****').replace(script.env.PASSWORD, '****'))
-                script.sh "rm $stdOutAndErrFile"
+                setRemote(repoUrlWithoutCredentials)
+
+                // Remove credentials from stdout, then echo
+                script.withCredentials([script.usernamePassword(credentialsId: credentials,
+                        passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+
+                    String output = sh.returnStdOut("cat ${stdOutAndErrFile}")
+                    script.echo(output.replace(script.env.USERNAME, '****').replace(script.env.PASSWORD, '****'))
+                    script.sh "rm -f $stdOutAndErrFile"
+                }
             }
         }
     }
 
-    private void writeCredentialsIntoGitRemote() {
+
+    protected void writeCredentialsIntoGitRemote(String repoUrl) {
         script.withCredentials([script.usernamePassword(credentialsId: credentials,
                 passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-            def repoUrlWithCredentials = createRepoUrlWithCredentials(script.env.USERNAME, script.env.PASSWORD)
+            def repoUrlWithCredentials = createRepoUrlWithCredentials(repoUrl, script.env.USERNAME, script.env.PASSWORD)
             // Set username and PW, so subsequent operations (fetch, pull, etc.) on remote will succeed
             setRemote(repoUrlWithCredentials)
         }
@@ -206,9 +217,7 @@ class Git implements Serializable {
     /**
      * @return a string that contains the repo url like this. <code>https://${username}:${password}@${plainRepoUrl}</code>
      */
-    protected String createRepoUrlWithCredentials(username, password) {
-        String repoUrl = script.sh(
-                script: 'git config --get remote.origin.url', returnStdout: true)
+    protected String createRepoUrlWithCredentials(String repoUrl, username, password) {
         def urlPrefixWithUserNameAndPassword = "https://$username:$password@"
 
         if (repoUrl.startsWith(urlPrefixWithUserNameAndPassword)) {

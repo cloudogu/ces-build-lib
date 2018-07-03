@@ -106,7 +106,7 @@ class SonarQubeTest {
                 CHANGE_ID : 'PR-42',
                 PASSWORD : 'oauthToken'
         ]
-        scriptMock.expectedShRetValue = 'github.com/owner/repo'
+        scriptMock.expectedDefaultShRetValue = 'github.com/owner/repo'
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
         sonarQube.updateAnalysisResultOfPullRequestsToGitHub('ghCredentials')

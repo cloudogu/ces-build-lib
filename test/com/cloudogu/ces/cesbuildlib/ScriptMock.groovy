@@ -5,27 +5,43 @@ class ScriptMock {
 
     boolean expectedIsPullRequest = false
     def expectedQGate
-    def expectedShRetValue
     def expectedPwd
+
+    /** Used when no value in expectedShRetValueForScript matches **/
+    def expectedDefaultShRetValue
+    def expectedShRetValueForScript = [:]
 
     String actualSonarQubeEnv
     Map actualUsernamePasswordArgs
     List<String> actualShStringArgs = new LinkedList<>()
-    List<Map<String,String>> actualShMapArgs = new LinkedList<>()
+    List<String> actualEcho = new LinkedList<>()
+
+    List<String> actualShMapArgs = new LinkedList<>()
+
     List<Map<String, String>> writeFileParams = new LinkedList<>()
     Map actualFileArgs
     Map actualStringArgs
-    Map files = new HashMap<String, String>();
+    Map files = new HashMap<String, String>()
     List<String> actualWithEnv
 
     String sh(String args) {
-        actualShStringArgs.add(args)
-        expectedShRetValue
+        actualShStringArgs.add(args.toString())
+        if (expectedDefaultShRetValue == null) {
+            // toString() to make Map also match GStrings
+            return expectedShRetValueForScript.get(args.toString())
+        } else {
+            return expectedDefaultShRetValue
+        }
     }
 
     String sh(Map<String, String> args) {
-        actualShMapArgs.add(args)
-        expectedShRetValue
+        // toString() to make Map also match GStrings
+        actualShMapArgs.add(args.script.toString())
+        if (expectedDefaultShRetValue == null) {
+            return expectedShRetValueForScript.get(args.get('script').toString())
+        } else {
+            return expectedDefaultShRetValue
+        }
     }
 
     boolean isPullRequest() {
@@ -70,7 +86,9 @@ class ScriptMock {
         throw new RuntimeException(args)
     }
 
-    void echo(String msg) {}
+    void echo(String msg) {
+        actualEcho.add(msg)
+    }
 
     String pwd() { expectedPwd }
 

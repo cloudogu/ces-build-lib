@@ -57,7 +57,7 @@ class MavenInDockerTest {
 
         assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
         assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0).script ==  'mkdir -p $HOME/.m2'
+        assert scriptMock.actualShMapArgs.get(0) ==  'mkdir -p $HOME/.m2'
     }
 
     class MavenInDockerScriptMock extends ScriptMock {
@@ -67,7 +67,7 @@ class MavenInDockerTest {
 
         @Override
         String sh(Map<String, String> params) {
-            actualShMapArgs.add(params)
+            super.sh(params)
             // Add some whitespaces
             String script = params.get("script")
             if (script == "cat /etc/passwd | grep jenkins") {
