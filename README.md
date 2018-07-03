@@ -18,7 +18,11 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Deploy to nexus repository (e.g. maven central)](#deploy-to-nexus-repository-eg-maven-central)
   - [Maven Utilities](#maven-utilities)
 - [Git](#git)
+  - [Credentials](#credentials)
   - [Git Utilities](#git-utilities)
+    - [Read Only](#read-only)
+    - [Changes to local repository](#changes-to-local-repository)
+    - [Changes to remote repository](#changes-to-remote-repository)
 - [Docker](#docker)
   - [`Docker` methods provided by the docker plugin](#docker-methods-provided-by-the-docker-plugin)
   - [Additional features provided by the `Docker` class](#additional-features-provided-by-the-docker-class)
@@ -235,6 +239,9 @@ See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 # Git
 
+An extension to the `git` step, that provides an API for some commonly used git commands and utilities.
+Mostly, this is a convenient wrapper around using the `sh 'git ...'` calls.
+
 Example: 
 
 ```
@@ -247,10 +254,27 @@ stage('Checkout') {
 }
 ```
 
+## Credentials
+
+You can optionally pass `usernamePassword` credentials to `Git` during construction. These are then used for cloning 
+and pushing.
+
+```
+Git annonymousGit = new Git(this)
+Git gitWithCreds = new Git(this, 'ourCredentials')
+
+
+annonymousGit 'https://your.repo'
+gitWithCreds 'https://your.repo' // Implicitly passed credentials
+```
+
 ## Git Utilities
 
+### Read Only
+
 * `git.clean()` - Removes all untracked and unstaged files.
-* `git.clean('".*/"')` - Removes all untracked and unstaged files, except folders starting in "." like .m2 (maven), .npm, .cache, .local (bower), etc.
+* `git.clean('".*/"')` - Removes all untracked and unstaged files, except folders starting in "." like .m2 (maven), 
+  .npm, .cache, .local (bower), etc.
 * `git.branchName` - e.g. `feature/xyz/abc`
 * `git.simpleBranchName` - e.g. `abc`
 * `git.commitAuthorComplete` -  e.g. `User Name <user.name@doma.in>`
@@ -261,11 +285,28 @@ stage('Checkout') {
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
 * `git.tag` -  e.g. `1.0.0` or `undefined` if not set
-* `git.isTag()`
+* `git.isTag()` - is there a tag on the current commit?
+
+### Changes to local repository
+
+* `git.add('.')`
+* `git.commit('message', 'Author', 'Author@mail.server)`
+* `git.commit('message')` - uses the name and email of the last committer as author and committer.
+
+### Changes to remote repository
+
+* `git.push('master')` - pushes origin
+* `pushGitHubPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
+   the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
+   * Uses the name and email of the last committer as author and committer.
+   * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
+   * Don't forget to create a git object with credentials.
+   * Example: [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/) 
+
 
 # Docker
 
-The `Docker`class provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
+The `Docker` class provides the default methods of the global docker variable provided by [docker plugin](https://github.com/jenkinsci/docker-workflow-plugin):
 
 ## `Docker` methods provided by the docker plugin
  
