@@ -35,13 +35,37 @@ class GitTest {
     }
 
     @Test
-    void testCall() throws Exception {
+    void testCallString() throws Exception {
         Git git = new Git(new ScriptMock())
-        git.metaClass.git = { String args ->
-            return args
-        }
-        def result = git "https://repoUrl"
+        String repo = "https://repoUrl"
+        def result = git "$repo"
         assertEquals("https://repoUrl", result)
+    }
+
+    @Test
+    void testCallStringAddsCredentials() throws Exception {
+        def creds = "creds"
+        Git git = new Git(new ScriptMock(), creds)
+        def result = git "https://repoUrl"
+        assertEquals("https://repoUrl", result.get('url'))
+        assertEquals("creds", result.get('credentialsId'))
+    }
+
+    @Test
+    void testCallMap() throws Exception {
+        Git git = new Git(new ScriptMock())
+        def result = git url: "https://repoUrl", credentialsId: "creds"
+        assertEquals("https://repoUrl", result.get('url'))
+        assertEquals("creds", result.get('credentialsId'))
+    }
+
+    @Test
+    void testCallMapAddsCredentials() throws Exception {
+        def creds = "creds"
+        Git git = new Git(new ScriptMock(), creds)
+        def result = git url: "https://repoUrl"
+        assertEquals("https://repoUrl", result.get('url'))
+        assertEquals("creds", result.get('credentialsId'))
     }
 
     @Test

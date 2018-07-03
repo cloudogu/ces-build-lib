@@ -3,7 +3,12 @@ package com.cloudogu.ces.cesbuildlib
 class Git implements Serializable {
     def script
     Sh sh
-    def credentials
+    def credentials = null
+
+    Git(script, credentials) {
+        this(script)
+        this.credentials = credentials
+    }
 
     Git(script) {
         this.script = script
@@ -11,6 +16,26 @@ class Git implements Serializable {
     }
 
     def call(args) {
+        git(args)
+    }
+
+    /**
+     * Credential-aware wrapper around the global "git" step.
+     */
+    private def git(args) {
+
+        if (credentials != null) {
+
+            // args instanceof Map ist not allowed due to sandboxing. So find it out the hard way :-(
+            try {
+                if (!args.containsKey('credentialsId')) {
+                    args.put('credentialsId', credentials)
+                }
+            } catch (MissingMethodException ignored) {
+                // This exception indicates that we don't have a Map. Assume url String and add credentials
+                args = [url: args.toString(), credentialsId: credentials]
+            }
+        }
         script.git args
     }
 
@@ -134,8 +159,9 @@ class Git implements Serializable {
     // TODO unit test
     void push(String refSpec) {
 
-        // Their seems to be no secure way of pushing to git which credentials, we have to write them to the URL
-        // See also https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
+        // There seems to be no secure way of pushing to git which credentials, we have to write them to the URL
+        // See also
+        // https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
         // Our workaround: Explicitly replace any credentials in stdout and stderr before output
 
         // TODO this will probably only work for https, not for ssh.
@@ -144,12 +170,12 @@ class Git implements Serializable {
         // Should we build distinguish if the repositoryUrl contains ssh or https here?
 
         String repoUrlWithoutCredentials = repositoryUrl
-        includeCredentialsInGitRemote()
-
         // Avoid credentials being written to stdout and stderr (sh.returnStdOut() will only capture stdout!)
         // Write all output to unique file for this job
         String stdOutAndErrFile = "/tmp/${script.env.BUILD_TAG}-shellout"
+
         try {
+            writeCredentialsIntoGitRemote()
 
             script.sh "git push origin ${refSpec} > ${stdOutAndErrFile} 2>&1"
 
@@ -168,7 +194,7 @@ class Git implements Serializable {
         }
     }
 
-    private void includeCredentialsInGitRemote() {
+    private void writeCredentialsIntoGitRemote() {
         script.withCredentials([script.usernamePassword(credentialsId: credentials,
                 passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
             def repoUrlWithCredentials = createRepoUrlWithCredentials(script.env.USERNAME, script.env.PASSWORD)

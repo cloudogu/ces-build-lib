@@ -250,6 +250,20 @@ stage('Checkout') {
 }
 ```
 
+## Credentials
+
+You can optionally pass `usernamePassword` credentials to `Git` during construction. These are then used for cloning 
+and pushing.
+
+```
+Git annonymousGit = new Git(this)
+Git gitWithCreds = new Git(this, 'ourCredentials')
+
+
+annonymousGit 'https://your.repo'
+gitWithCreds 'https://your.repo' // Implicitly passed credentials
+```
+
 ## Git Utilities
 
 ### Read Only
@@ -275,9 +289,8 @@ stage('Checkout') {
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
 
-### Push to remote repository
+### Changes to remote repository
 
-* TODO set credentials, only HTTPS, security considerations
 * `git.push('master')` - pushes origin
 
 
