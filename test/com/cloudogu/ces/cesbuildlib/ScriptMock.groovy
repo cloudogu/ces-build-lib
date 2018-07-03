@@ -23,6 +23,8 @@ class ScriptMock {
     Map actualStringArgs
     Map files = new HashMap<String, String>()
     List<String> actualWithEnv
+    String actualDir
+    def actualGitArgs
 
     String sh(String args) {
         actualShStringArgs.add(args.toString())
@@ -93,6 +95,7 @@ class ScriptMock {
     String pwd() { expectedPwd }
 
     def git(def args) {
+        actualGitArgs = args
         return args
     }
 
@@ -103,6 +106,12 @@ class ScriptMock {
     String readFile(String file) {
         return files.get(file)
     }
+
+    void dir(String dir, Closure closure) {
+        actualDir = dir
+        closure.call()
+    }
+
 
     Map<String, String> actualWithEnvAsMap() {
         actualWithEnv.collectEntries {[it.split('=')[0], it.split('=')[1]]}

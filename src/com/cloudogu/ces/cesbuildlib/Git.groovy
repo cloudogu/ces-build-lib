@@ -160,6 +160,33 @@ class Git implements Serializable {
     }
 
     /**
+     * Commits and pushes a folder to the <code>gh-pages</code> branch of the current repo.
+     * Can be used to conveniently deliver websites. See https://pages.github.com/
+     *
+     * Uses the name and email of the last committer as author and committer.
+     *
+     * Note that the branch is temporarily checked out to the <code>.gh-pages</code> folder.
+     *
+     * @param workspaceFolder
+     * @param commitMessage
+     */
+    void pushGitHubPagesBranch(String workspaceFolder, String commitMessage) {
+        def ghPagesTempDir = '.gh-pages'
+        try {
+            script.dir(ghPagesTempDir) {
+                git url: repositoryUrl, branch: 'gh-pages', changelog: false, poll: false
+
+                script.sh "cp -rf ../${workspaceFolder}/* ."
+                add '.'
+                commit commitMessage
+                push 'gh-pages'
+            }
+        } finally {
+            script.sh "rm -rf ${ghPagesTempDir}"
+        }
+    }
+
+    /**
      * There seems to be no secure way of pushing to git which credentials, we have to write them to the URL
      * See also
      * https://github.com/jenkinsci/pipeline-examples/blob/0b834c0691b96d8dfc49229ba6effd66470bdee4/pipeline-examples/push-git-repo/pushGitRepo.groovy
@@ -198,7 +225,7 @@ class Git implements Serializable {
 
                     String output = sh.returnStdOut("cat ${stdOutAndErrFile}")
                     script.echo(output.replace(script.env.USERNAME, '****').replace(script.env.PASSWORD, '****'))
-                    script.sh "rm -f $stdOutAndErrFile"
+                    script.sh "rm -f ${stdOutAndErrFile}"
                 }
             }
         }

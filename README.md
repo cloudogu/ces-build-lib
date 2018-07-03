@@ -296,6 +296,12 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 ### Changes to remote repository
 
 * `git.push('master')` - pushes origin
+* `pushGitHubPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
+   the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
+   * Uses the name and email of the last committer as author and committer.
+   * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
+   * Don't forget to create a git object with credentials.
+   * Example: [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/) 
 
 
 # Docker

@@ -270,6 +270,28 @@ class GitTest {
         assert scriptMock.actualShStringArgs.get(0) == 'git push origin master'
     }
 
+    @Test
+    void pushGitHubPagesBranch() {
+        prepareGitPush()
+        scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
+
+        git.pushGitHubPagesBranch('website', 'Deploys new version of website')
+
+        assert scriptMock.actualGitArgs.url == "https://repo.url"
+        assert scriptMock.actualGitArgs.branch == "gh-pages"
+
+        assert scriptMock.actualDir == '.gh-pages'
+        assert scriptMock.actualShStringArgs.contains('cp -rf ../website/* .')
+        assert scriptMock.actualShStringArgs.contains('git add .')
+        assert scriptMock.actualShStringArgs.contains('git commit -m "Deploys new version of website"')
+        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_NAME=User Name'}")
+        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_NAME=User Name'}")
+        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_EMAIL=user.name@doma.in'}")
+        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
+        assert scriptMock.actualShStringArgs.contains('git push origin gh-pages')
+        assert scriptMock.actualShStringArgs.last == 'rm -rf .gh-pages'
+    }
+
     private void prepareGitPush() {
         scriptMock.env = new Object() {
             String BUILD_TAG = "ourBuildTag"
