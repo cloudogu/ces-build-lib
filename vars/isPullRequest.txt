@@ -1,0 +1,2 @@
+Returns true if the current build is a pull request (when the CHANGE_IDenvironment variable is set).
+Tested with GitHub.
