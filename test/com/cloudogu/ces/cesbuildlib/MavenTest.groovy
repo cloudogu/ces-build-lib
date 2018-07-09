@@ -5,14 +5,12 @@ import org.junit.Before
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static groovy.util.GroovyTestCase.assertEquals
 import static org.junit.Assert.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
 
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
-    def expectedDeploymentRepoId = 'expectedId'
     def expectedDeploymentGoalWithStaging =
             'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
                     '-DserverId=expectedId -DnexusUrl=https://expected.url -DautoReleaseAfterClose=true '
@@ -110,6 +108,14 @@ class MavenTest {
     }
 
     @Test
+    void testDeployToNexusRepositoryIdContainsDots() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy',
+                'our.id', 'our_id')
+    }
+
+    @Test
     void testDeployToNexusRepositoryWithSignature() {
         deployToNexusRepositoryWithSignature(false, 'deploy:deploy')
     }
@@ -147,24 +153,24 @@ class MavenTest {
     }
 
     private deployToNexusRepository(Boolean useNexusStaging, String expectedAdditionalArgs, String actualAdditionalArgs,
-                                    String expectedDeploymentGoal) {
+                                    String expectedDeploymentGoal, deploymentRepoId = 'expectedId', expectedDeploymentRepoId = 'expectedId') {
         def expectedCredentials = 'expectedCredentials'
-        mvn.setDeploymentRepository(expectedDeploymentRepoId, 'https://expected.url', expectedCredentials)
+        mvn.setDeploymentRepository(deploymentRepoId, 'https://expected.url', expectedCredentials)
         mvn.deployToNexusRepository(useNexusStaging, expectedAdditionalArgs)
 
         assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
-        assert 'expectedId_password' == scriptMock.actualUsernamePasswordArgs['passwordVariable']
-        assert 'expectedId_username' == scriptMock.actualUsernamePasswordArgs['usernameVariable']
+        assert "${expectedDeploymentRepoId}_password" == scriptMock.actualUsernamePasswordArgs['passwordVariable']
+        assert "${expectedDeploymentRepoId}_username" == scriptMock.actualUsernamePasswordArgs['usernameVariable']
 
         assert scriptMock.writeFileParams.size() == 1
         def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
-        assert actualSettingsXml.contains('<id>expectedId</id>')
-        assert actualSettingsXml.contains('<username>${env.expectedId_username}</username>')
-        assert actualSettingsXml.contains('<password>${env.expectedId_password}</password>')
+        assert actualSettingsXml.contains("<id>${deploymentRepoId}</id>")
+        assert actualSettingsXml.contains("<username>\${env.${expectedDeploymentRepoId}_username}</username>")
+        assert actualSettingsXml.contains("<password>\${env.${expectedDeploymentRepoId}_password}</password>")
 
         assert mvnArgs.startsWith('source:jar javadoc:jar package -DskipTests ')
-        assert mvnArgs.contains('-DaltReleaseDeploymentRepository=expectedId::default::https://expected.url/content/repositories/releases ')
-        assert mvnArgs.contains('-DaltSnapshotDeploymentRepository=expectedId::default::https://expected.url/content/repositories/snapshots ')
+        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::https://expected.url/content/repositories/releases ")
+        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::https://expected.url/content/repositories/snapshots ")
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$actualAdditionalArgs $expectedDeploymentGoal")
     }
