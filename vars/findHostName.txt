@@ -1,0 +1,2 @@
+Returns the hostname of the current Jenkins instance.
+For example, ff running on "http(s)://server:port/jenkins", "server" is returned.

@@ -35,6 +35,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
   - [findEmailRecipients](#findemailrecipients)
+  - [findHostName](#findhostname)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -550,6 +551,12 @@ mailIfStatusChanged(findEmailRecipients('a@b.cd,123@xy.z'))
 ```
 The example writes state changes email to 'a@b.cd,123@xy.z' + git author for stable branches and only to git author 
 for unstable branches.
+
+## findHostName
+
+Returns the hostname of the current Jenkins instance. 
+For example, ff running on `http(s)://server:port/jenkins`, `server` is returned.
+
 
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
