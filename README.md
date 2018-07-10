@@ -469,6 +469,8 @@ stage('Statical Code Analysis') {
 Note that
  
 * this requires a SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: `https://yourJenkinsInstance/configure`.
+* For sonarcloud, you also need setup your organization ID there, as "Additional analysis properties" (hit the "Advanced..." 
+  button to get there): `sonar.organization=YOUR_ID`
 * Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server (globally or per project), that notifies Jenkins (url: `https://yourJenkinsInstance/sonarqube-webhook/`). See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
 * Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job, i.e. `analyzeWith()` has been called.
 * When used in conjunction with [SonarQubeCommunity/sonar-build-breaker](https://github.com/SonarQubeCommunity/sonar-build-breaker) `waitForQualityGateWebhookToBeCalled()` will fail your build, if quality gate is not passed.
