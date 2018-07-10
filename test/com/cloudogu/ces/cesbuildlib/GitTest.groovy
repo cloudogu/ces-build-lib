@@ -133,8 +133,15 @@ class GitTest {
     }
 
     @Test
-    void getGitHubRepositoryName() {
+    void getGitHubRepositoryNameHttps() {
         String expectedReturnValue = "https://github.com/orga/repo"
+        scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
+        assertEquals('orga/repo', git.gitHubRepositoryName)
+    }
+
+    @Test
+    void getGitHubRepositoryNameSsh() {
+        String expectedReturnValue = "git@github.com:orga/repo.git"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
         assertEquals('orga/repo', git.gitHubRepositoryName)
     }
