@@ -137,8 +137,8 @@ abstract class Maven implements Serializable {
         }
 
         // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
-        String usernameProperty = "${deploymentRepository.id.bytes.encodeBase64().toString()}_username"
-        String passwordProperty = "${deploymentRepository.id.bytes.encodeBase64().toString()}_password"
+        String usernameProperty = "NEXUS_REPO_CREDENTIALS_USERNAME"
+        String passwordProperty = "NEXUS_REPO_CREDENTIALS_PASSWORD"
 
         script.withCredentials([script.usernamePassword(credentialsId: deploymentRepository.credentialsIdUsernameAndPassword,
                 passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {

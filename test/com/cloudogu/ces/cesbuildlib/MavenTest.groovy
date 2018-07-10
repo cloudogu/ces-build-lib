@@ -108,22 +108,6 @@ class MavenTest {
     }
 
     @Test
-    void testDeployToNexusRepositoryIdContainsDots() {
-        def expectedAdditionalArgs = 'expectedAdditionalArgs'
-        def actualAdditionalArgs = 'expectedAdditionalArgs'
-        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy',
-                'our.id', 'b3VyLmlk')
-    }
-
-    @Test
-    void testDeployToNexusRepositoryIdStartingWithNumber() {
-        def expectedAdditionalArgs = 'expectedAdditionalArgs'
-        def actualAdditionalArgs = 'expectedAdditionalArgs'
-        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy',
-                '1our.id', 'MW91ci5pZA==')
-    }
-
-    @Test
     void testDeployToNexusRepositoryWithSignature() {
         deployToNexusRepositoryWithSignature(false, 'deploy:deploy')
     }
@@ -161,20 +145,22 @@ class MavenTest {
     }
 
     private deployToNexusRepository(Boolean useNexusStaging, String expectedAdditionalArgs, String actualAdditionalArgs,
-                                    String expectedDeploymentGoal, deploymentRepoId = 'expectedId', expectedDeploymentRepoId = 'ZXhwZWN0ZWRJZA==') {
+                                    String expectedDeploymentGoal) {
+        String deploymentRepoId = 'expectedId'
+
         def expectedCredentials = 'expectedCredentials'
         mvn.setDeploymentRepository(deploymentRepoId, 'https://expected.url', expectedCredentials)
         mvn.deployToNexusRepository(useNexusStaging, expectedAdditionalArgs)
 
         assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
-        assert "${expectedDeploymentRepoId}_password" == scriptMock.actualUsernamePasswordArgs['passwordVariable']
-        assert "${expectedDeploymentRepoId}_username" == scriptMock.actualUsernamePasswordArgs['usernameVariable']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD" == scriptMock.actualUsernamePasswordArgs['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME" == scriptMock.actualUsernamePasswordArgs['usernameVariable']
 
         assert scriptMock.writeFileParams.size() == 1
         def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
         assert actualSettingsXml.contains("<id>${deploymentRepoId}</id>")
-        assert actualSettingsXml.contains("<username>\${env.${expectedDeploymentRepoId}_username}</username>")
-        assert actualSettingsXml.contains("<password>\${env.${expectedDeploymentRepoId}_password}</password>")
+        assert actualSettingsXml.contains("<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME}</username>")
+        assert actualSettingsXml.contains("<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD}</password>")
 
         assert mvnArgs.startsWith('source:jar javadoc:jar package -DskipTests ')
         assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::https://expected.url/content/repositories/releases ")
