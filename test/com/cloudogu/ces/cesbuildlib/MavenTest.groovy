@@ -112,7 +112,15 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy',
-                'our.id', 'our_id')
+                'our.id', 'b3VyLmlk')
+    }
+
+    @Test
+    void testDeployToNexusRepositoryIdStartingWithNumber() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy',
+                '1our.id', 'MW91ci5pZA==')
     }
 
     @Test
@@ -153,7 +161,7 @@ class MavenTest {
     }
 
     private deployToNexusRepository(Boolean useNexusStaging, String expectedAdditionalArgs, String actualAdditionalArgs,
-                                    String expectedDeploymentGoal, deploymentRepoId = 'expectedId', expectedDeploymentRepoId = 'expectedId') {
+                                    String expectedDeploymentGoal, deploymentRepoId = 'expectedId', expectedDeploymentRepoId = 'ZXhwZWN0ZWRJZA==') {
         def expectedCredentials = 'expectedCredentials'
         mvn.setDeploymentRepository(deploymentRepoId, 'https://expected.url', expectedCredentials)
         mvn.deployToNexusRepository(useNexusStaging, expectedAdditionalArgs)

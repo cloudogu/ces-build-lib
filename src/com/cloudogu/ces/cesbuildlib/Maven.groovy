@@ -136,9 +136,9 @@ abstract class Maven implements Serializable {
                     "-DautoReleaseAfterClose=true "
         }
 
-        // When using "env.x", x may not contain dots.
-        String usernameProperty = "${deploymentRepository.id.replace('.', '_')}_username"
-        String passwordProperty = "${deploymentRepository.id.replace('.', '_')}_password"
+        // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
+        String usernameProperty = "${deploymentRepository.id.bytes.encodeBase64().toString()}_username"
+        String passwordProperty = "${deploymentRepository.id.bytes.encodeBase64().toString()}_password"
 
         script.withCredentials([script.usernamePassword(credentialsId: deploymentRepository.credentialsIdUsernameAndPassword,
                 passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
