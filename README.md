@@ -485,12 +485,19 @@ sonarQube.isUsingBranchPlugin = true
 sonarQube.analyzeWith(mvn)
 ```
 
-Note that using the branch plugin requires a first analysis without branches. You can achieve this by setting this in the firt run:
+Note that using the branch plugin **requires a first analysis without branches**.
+
+You can do this on Jenkins or locally.
+
+On Jenkins, you can achieve this by setting the following for the first run:
 ```groovy
 sonarQube.isIgnoringBranches = true
 sonarQube.analyzeWith(mvn)
 ```
 Recommendation: Use Jenkins' replay feature for this. Then commit the `Jenkinsfile` with `isUsingBranchPlugin`.
+
+An alternative is running the first analysis locally, e.g. with maven
+`mvn clean install sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=YOUR-ORG -Dsonar.login=YOUR-TOKEN`
  
 
 ## PullRequests
