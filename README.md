@@ -571,3 +571,8 @@ For example, ff running on `http(s)://server:port/jenkins`, `server` is returned
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
   * [cloudugo/cas](https://github.com/cloudogu/cas)
   * [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus)
+  * [triologygmbh/test-data-loader](https://github.com/triologygmbh/test-data-loader)
+  * [triologygmbh/versionName](https://github.com/triologygmbh/versionName)
+  * [triologygmbh/reCAPTCHA-V2-java](https://github.com/triologygmbh/reCAPTCHA-V2-java)
+  * [cloudogu/smeagol(https://github.com/cloudogu/smeagol)
+  * [sdorra/scm-manager](https://bitbucket.org/sdorra/scm-manager/)
