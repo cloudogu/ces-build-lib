@@ -50,8 +50,8 @@ class ScriptMock {
         return expectedIsPullRequest
     }
 
-    void timeout(Map params, closure) {
-        closure.call()
+    def timeout(Map params, closure) {
+        return closure.call()
     }
 
     def waitForQualityGate() {

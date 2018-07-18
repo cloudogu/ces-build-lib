@@ -65,18 +65,22 @@ class SonarQube implements Serializable {
      * @return {@code true} if the result of the quality is 'OK' or if a Pull Request is built. Otherwise {@code false}.
      */
     boolean waitForQualityGateWebhookToBeCalled() {
-        boolean isQualityGateSucceeded = true
         // Pull Requests are analyzed locally, so no calling of the QGate webhook
         if (!script.isPullRequest()) {
-            script.timeout(time: 2, unit: 'MINUTES') { // Needed when there is no webhook for example
-                def qGate = script.waitForQualityGate()
-                script.echo "SonarQube Quality Gate status: ${qGate.status}"
-                if (qGate.status != 'OK') {
-                    isQualityGateSucceeded = false
-                }
-            }
+            return doWaitForQualityGateWebhookToBeCalled()
         }
-        return isQualityGateSucceeded
+        return true
+    }
+
+    boolean doWaitForQualityGateWebhookToBeCalled() {
+        script.timeout(time: 2, unit: 'MINUTES') { // Needed when there is no webhook for example
+            def qGate = script.waitForQualityGate()
+            script.echo "SonarQube Quality Gate status: ${qGate.status}"
+            if (qGate.status != 'OK') {
+                return false
+            }
+            return true
+        }
     }
 
     /**
@@ -91,7 +95,7 @@ class SonarQube implements Serializable {
         this.gitHubRepoName = new Git(script).gitHubRepositoryName
     }
 
-    private initMaven(Maven mvn) {
+    protected void initMaven(Maven mvn) {
         if (script.isPullRequest()) {
             initMavenForPullRequest(mvn)
         } else {
@@ -99,7 +103,7 @@ class SonarQube implements Serializable {
         }
     }
 
-    private void initMavenForRegularAnalysis(Maven mvn) {
+    protected void initMavenForRegularAnalysis(Maven mvn) {
         script.echo "SonarQube analyzing branch ${script.env.BRANCH_NAME}"
 
         if (isIgnoringBranches) {
@@ -121,11 +125,11 @@ class SonarQube implements Serializable {
         }
     }
 
-    private void initMavenForPullRequest(Maven mvn) {
+    protected void initMavenForPullRequest(Maven mvn) {
         script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
 
         // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
-        mvn.additionalArgs = "-Dsonar.analysis.mode=preview "
+        mvn.additionalArgs += "-Dsonar.analysis.mode=preview "
         mvn.additionalArgs += "-Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
 
         if (gitHubCredentials != null && !gitHubCredentials.isEmpty()) {
