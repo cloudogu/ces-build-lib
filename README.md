@@ -446,7 +446,7 @@ The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/Sonar
 steps for Jenkins Pipelines. However, analysing and checking the Quality Goal includes some challenges that are solved 
 using ces-build-lib's `SonarQube` class:
 
-* Setting the branch name
+* Setting the branch name (note that this only works in Jenkins multi-branch pipeline builds, regular pipelines don't have information about branches - see #11)
 * Preview analysis for PullRequests
 * Updating commit status in GitHub for PullRequests
 * Using the SonarQube branch plugin (SonarQube 6.x, developer edition and sonarcloud.io)
@@ -571,8 +571,3 @@ For example, ff running on `http(s)://server:port/jenkins`, `server` is returned
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
   * [cloudugo/cas](https://github.com/cloudogu/cas)
   * [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus)
-  * [triologygmbh/test-data-loader](https://github.com/triologygmbh/test-data-loader)
-  * [triologygmbh/versionName](https://github.com/triologygmbh/versionName)
-  * [triologygmbh/reCAPTCHA-V2-java](https://github.com/triologygmbh/reCAPTCHA-V2-java)
-  * [cloudogu/smeagol(https://github.com/cloudogu/smeagol)
-  * [sdorra/scm-manager](https://bitbucket.org/sdorra/scm-manager/)
