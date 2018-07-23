@@ -9,16 +9,21 @@ package com.cloudogu.ces.cesbuildlib
 class SonarQube implements Serializable {
     def script
 
-    String sonarQubeEnv
     // If enabled uses the branch plugin, available for developer edition and above
     boolean isUsingBranchPlugin = false
     boolean isIgnoringBranches = false
     private String gitHubRepoName = ""
     private String gitHubCredentials = ""
+    private config
 
+    @Deprecated
     SonarQube(script, String sonarQubeEnv) {
+        this(script, [sonarQubeEnv: sonarQubeEnv])
+    }
+
+    SonarQube(script, Map config) {
         this.script = script
-        this.sonarQubeEnv = sonarQubeEnv
+        this.config = config
     }
 
     /**
@@ -33,16 +38,7 @@ class SonarQube implements Serializable {
      */
     void analyzeWith(Maven mvn) {
         initMaven(mvn)
-
-        script.withSonarQubeEnv(sonarQubeEnv) {
-            String sonarExtraProps = script.env.SONAR_EXTRA_PROPS
-            if (sonarExtraProps == null) {
-                sonarExtraProps = ""
-            }
-
-            mvn "${script.env.SONAR_MAVEN_GOAL} -Dsonar.host.url=${script.env.SONAR_HOST_URL} " +
-                    "-Dsonar.login=${script.env.SONAR_AUTH_TOKEN} ${sonarExtraProps}"
-        }
+        determineAnalysisStrategy().executeWith(mvn)
     }
 
     /**
@@ -136,6 +132,109 @@ class SonarQube implements Serializable {
             mvn.additionalArgs += "-Dsonar.github.repository=$gitHubRepoName "
             script.withCredentials([script.string(credentialsId: gitHubCredentials, variable: 'PASSWORD')]) {
                 mvn.additionalArgs += "-Dsonar.github.oauth=${script.env.PASSWORD} "
+            }
+        }
+    }
+
+    protected void validateFieldPresent(Map config, String fieldKey) {
+        if (!config[fieldKey]) {
+            script.error "Missing required '${fieldKey}' parameter."
+        }
+    }
+
+    private AnalysisStrategy determineAnalysisStrategy() {
+
+        if (config['sonarQubeEnv']) {
+            return new EnvAnalysisStrategy(script, config['sonarQubeEnv'])
+
+        } else if (config['token']) {
+            validateFieldPresent(config, 'sonarHostUrl')
+            return new TokenAnalysisStrategy(script, config['token'], config['sonarHostUrl'])
+
+        } else if (config['usernamePassword']) {
+            validateFieldPresent(config, 'sonarHostUrl')
+            return new UsernamePasswordAnalysisStrategy(script, config['usernamePassword'], config['sonarHostUrl'])
+
+        } else {
+            script.error "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
+        }
+    }
+
+    private static abstract class AnalysisStrategy {
+
+        def script
+
+        AnalysisStrategy(script) {
+            this.script = script
+        }
+
+        abstract executeWith(Maven mvn)
+
+        protected analyzeWith(Maven mvn, String sonarMavenGoal, String sonarHostUrl, String sonarLogin,
+                              String sonarExtraProps = '') {
+
+            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}"
+        }
+
+
+    }
+
+    private static class EnvAnalysisStrategy extends AnalysisStrategy {
+
+        String sonarQubeEnv
+
+        EnvAnalysisStrategy(script, String sonarQubeEnv) {
+            super(script)
+            this.sonarQubeEnv = sonarQubeEnv
+        }
+
+        def executeWith(Maven mvn) {
+            script.withSonarQubeEnv(sonarQubeEnv) {
+                String sonarExtraProps = script.env.SONAR_EXTRA_PROPS
+                if (sonarExtraProps == null) {
+                    sonarExtraProps = ""
+                }
+
+                analyzeWith(mvn, script.env.SONAR_MAVEN_GOAL, script.env.SONAR_HOST_URL, script.env.SONAR_AUTH_TOKEN,
+                        sonarExtraProps)
+            }
+        }
+    }
+
+    private static class TokenAnalysisStrategy extends AnalysisStrategy {
+
+        String token
+        String host
+
+        TokenAnalysisStrategy(script, String tokenCredential, String host) {
+            super(script)
+            this.token = tokenCredential
+            this.host = host
+        }
+
+        def executeWith(Maven mvn) {
+            script.withCredentials([script.string(credentialsId: token, variable: 'SONAR_AUTH_TOKEN')]) {
+                analyzeWith(mvn, 'sonar:sonar', host, script.env.SONAR_AUTH_TOKEN)
+            }
+        }
+    }
+
+    private static class UsernamePasswordAnalysisStrategy extends AnalysisStrategy {
+
+        String usernameAndPasswordCredential
+        String host
+
+        UsernamePasswordAnalysisStrategy(script, String usernameAndPasswordCredential, String host) {
+            super(script)
+            this.usernameAndPasswordCredential = usernameAndPasswordCredential
+            this.host = host
+        }
+
+        def executeWith(Maven mvn) {
+            script.withCredentials([script.usernamePassword(credentialsId: usernameAndPasswordCredential,
+                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                analyzeWith(mvn, 'sonar:sonar', host, script.env.USERNAME,
+                        "-Dsonar.password=${script.env.PASSWORD} ")
             }
         }
     }

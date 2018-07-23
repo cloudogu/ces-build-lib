@@ -2,6 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 import org.junit.After
 import org.junit.Test
+import static groovy.test.GroovyAssert.shouldFail
 
 class SonarQubeTest {
 
@@ -15,7 +16,80 @@ class SonarQubeTest {
     }
 
     @Test
-    void analyzeWith() throws Exception {
+    void analyzeWithDeprecatedConstructor() throws Exception {
+        analyzeWith(new SonarQube(scriptMock, 'sqEnv'))
+    }
+
+    @Test
+    void analyzeWithSonarQubeEnv() throws Exception {
+        analyzeWith(new SonarQube(scriptMock, [sonarQubeEnv: 'sqEnv']))
+    }
+
+    @Test
+    void analyzeWithToken() throws Exception {
+        def sonarQube = new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'http://ces/sonar'])
+
+        scriptMock.env = [
+                SONAR_AUTH_TOKEN: 'auth',
+                BRANCH_NAME : 'develop'
+        ]
+
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.args ==
+                'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=auth '
+        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
+        assert scriptMock.actualStringArgs['credentialsId'] == 'secretTextCred'
+    }
+
+    @Test
+    void analyzeWithTokenWithoutHost() throws Exception {
+        assertSonarHostUrlError([ token: 'secretTextCred' ])
+    }
+
+    @Test
+    void analyzeWithTokenWithEmptyHost() throws Exception {
+        assertSonarHostUrlError([ token: 'secretTextCred', sonarHostUrl: ''  ])
+    }
+
+    @Test
+    void analyzeWithUsernameAndPassword() throws Exception {
+        def sonarQube = new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
+
+        scriptMock.env = [
+                USERNAME: 'usr',
+                PASSWORD: 'pw',
+                BRANCH_NAME : 'develop'
+        ]
+
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.args ==
+                'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
+        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
+        assert scriptMock.actualUsernamePasswordArgs['credentialsId'] == 'usrPwCred'
+    }
+
+    @Test
+    void analyzeWithUsernameAndPasswordWithoutHost() throws Exception {
+        assertSonarHostUrlError([usernamePassword: 'userCred'])
+    }
+
+    @Test
+    void analyzeWithUsernameAndPasswordWithEmptyHost() throws Exception {
+        assertSonarHostUrlError([ usernamePassword: 'userCred', sonarHostUrl: '' ])
+    }
+
+    @Test
+    void analyzeWithNothing() throws Exception {
+        def exception = shouldFail {
+            new SonarQube(scriptMock, [ something: 'else' ]).analyzeWith(mavenMock)
+        }
+
+        assert exception.message == "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
+    }
+
+    void analyzeWith(SonarQube sonarQube) throws Exception {
         scriptMock.env = [
                 SONAR_MAVEN_GOAL : 'sonar:sonar',
                 SONAR_HOST_URL : 'host',
@@ -24,7 +98,7 @@ class SonarQubeTest {
                 BRANCH_NAME : 'develop'
         ]
 
-        new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
+        sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
@@ -139,6 +213,14 @@ class SonarQubeTest {
         scriptMock.expectedIsPullRequest = true
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
         assert qualityGate
+    }
+
+    private void assertSonarHostUrlError(configMapg) {
+        def exception = shouldFail {
+            new SonarQube(scriptMock, configMapg).analyzeWith(mavenMock)
+        }
+
+        assert exception.message == "Missing required 'sonarHostUrl' parameter."
     }
 
     private static class MavenMock extends Maven {

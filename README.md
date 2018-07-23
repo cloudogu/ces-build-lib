@@ -446,7 +446,7 @@ The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/Sonar
 steps for Jenkins Pipelines. However, analysing and checking the Quality Goal includes some challenges that are solved 
 using ces-build-lib's `SonarQube` class:
 
-* Setting the branch name
+* Setting the branch name (note that this only works in Jenkins multi-branch pipeline builds, regular pipelines don't have information about branches - see #11)
 * Preview analysis for PullRequests
 * Updating commit status in GitHub for PullRequests
 * Using the SonarQube branch plugin (SonarQube 6.x, developer edition and sonarcloud.io)
@@ -457,7 +457,7 @@ For now, `SonarQube` can only analyze using `Maven`. Extending this to use the p
 
 ```groovy
 stage('Statical Code Analysis') {
-  def sonarQube = new SonarQube(this, 'sonarQubeServerSetupInJenkins')
+  def sonarQube = new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins'])
 
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
 
@@ -471,6 +471,9 @@ Note that
 * this requires a SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: `https://yourJenkinsInstance/configure`.
 * For sonarcloud, you also need setup your organization ID there, as "Additional analysis properties" (hit the "Advanced..." 
   button to get there): `sonar.organization=YOUR_ID`
+* You could analyze without the plugin by passing **the host name of the SonarQube instance** (you don't need that when using `sonarQubeEnv`) and
+  * a user token as secret text credential: `new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'https://sonarcloud.io'])` or
+  * a usernameAndPassword credential (not recommended, token can be revoked easier): `new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'https://sonarcloud.io'])`
 * Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server (globally or per project), that notifies Jenkins (url: `https://yourJenkinsInstance/sonarqube-webhook/`). See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
 * Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job, i.e. `analyzeWith()` has been called.
 * When used in conjunction with [SonarQubeCommunity/sonar-build-breaker](https://github.com/SonarQubeCommunity/sonar-build-breaker) `waitForQualityGateWebhookToBeCalled()` will fail your build, if quality gate is not passed.
