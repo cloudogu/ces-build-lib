@@ -43,8 +43,30 @@ abstract class Maven implements Serializable {
         matcher ? matcher[0][1] : ""
     }
 
+    @Deprecated
     void setDeploymentRepository(String id, String url, String credentialsIdUsernameAndPassword) {
-        deploymentRepository = new Repository(id, url, credentialsIdUsernameAndPassword)
+        // Legacy behavior support nexus 2 only
+        useDeploymentRepository([id: id, url: url, credentialsId: credentialsIdUsernameAndPassword, type: 'Nexus2'])
+    }
+
+    void useDeploymentRepository(Map config) {
+        // Naming this method set..() causes Groovy issues on Jenkins because the parameters are a Map but the object is a Repository:
+        // Cannot cast object 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3@11f9131c' with class 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3' to class 'java.util.Map'
+
+        validateFieldsPresent(config, 'id', 'url', 'credentialsId', 'type')
+
+        script.echo "Setting deployment repository with config ${config}"
+
+        String id = config['id']
+        String url = config['url']
+        String creds = config['credentialsId']
+        if ('Nexus2'.equals(config['type'])) {
+            deploymentRepository = new Nexus2(id, url, creds)
+        } else if ('Nexus3'.equals(config['type'])) {
+            script.echo "Creating Nexus 3"
+            def nexus3 = new Nexus3(id, url, creds)
+            this.deploymentRepository = nexus3
+        }
     }
 
     /**
@@ -156,12 +178,20 @@ abstract class Maven implements Serializable {
                 // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
                 // See: https://issues.sonatype.org/browse/NEXUS-15464
                 // "-DaltDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
-                "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/releases " +
-                "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}/content/repositories/snapshots " +
+                "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.releasesRepository} " +
+                "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                 "$additionalDeployArgs " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 deployGoal
+        }
+    }
+
+    protected void validateFieldsPresent(Map config, String... fieldKeys) {
+        for (String fieldKey  : fieldKeys) {
+            if (!config[fieldKey]) {
+                script.error "Missing required '${fieldKey}' parameter."
+            }
         }
     }
 
@@ -204,7 +234,11 @@ abstract class Maven implements Serializable {
 
     // Unfortunately, inner classes cannot be accessed from Jenkinsfile: unable to resolve class Maven.Repository
     // So we just use setters... See setDepoymentRepo()
-    static class Repository implements Serializable {
+    static abstract class Repository implements Serializable {
+
+        String id
+        String url
+        String credentialsIdUsernameAndPassword
 
         Repository(String id, String url, String credentialsIdUsernameAndPassword) {
             this.id = id
@@ -212,9 +246,8 @@ abstract class Maven implements Serializable {
             this.credentialsIdUsernameAndPassword = credentialsIdUsernameAndPassword
         }
 
-        String id
-        String url
-        String credentialsIdUsernameAndPassword
+        abstract String getSnapshotRepository()
+        abstract String getReleasesRepository()
     }
 
     /**
@@ -230,4 +263,23 @@ abstract class Maven implements Serializable {
         String secretKeyAscFile
         String secretKeyPassPhrase
     }
+
+    static class Nexus2 extends Repository {
+        String snapshotRepository =  '/content/repositories/snapshots'
+        String releasesRepository =  '/content/repositories/releases'
+
+        Nexus2(String id, String url, String credentialsIdUsernameAndPassword) {
+            super(id, url, credentialsIdUsernameAndPassword)
+        }
+    }
+
+    static class Nexus3 extends Repository {
+        String snapshotRepository =  '/repository/maven-snapshots'
+        String releasesRepository =  '/repository/maven-releases'
+
+        Nexus3(String id, String url, String credentialsIdUsernameAndPassword) {
+            super(id, url, credentialsIdUsernameAndPassword)
+        }
+    }
+
 }
