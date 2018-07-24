@@ -89,6 +89,23 @@ class SonarQubeTest {
         assert exception.message == "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
     }
 
+    @Test
+    void analyzeWithoutBranchName() throws Exception {
+        def sonarQube = new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
+
+        scriptMock.env = [
+                USERNAME: 'usr',
+                PASSWORD: 'pw',
+        ]
+
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.args ==
+                'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
+        assert !mavenMock.additionalArgs.contains('-Dsonar.branch')
+        assert scriptMock.actualUsernamePasswordArgs['credentialsId'] == 'usrPwCred'
+    }
+
     void analyzeWith(SonarQube sonarQube) throws Exception {
         scriptMock.env = [
                 SONAR_MAVEN_GOAL : 'sonar:sonar',
