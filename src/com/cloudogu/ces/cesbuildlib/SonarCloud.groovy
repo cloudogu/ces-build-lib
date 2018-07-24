@@ -8,12 +8,10 @@ package com.cloudogu.ces.cesbuildlib
  */
 class SonarCloud extends SonarQube {
 
-    String sonarOrganization
+    SonarCloud(script, Map config) {
+        super(script, config)
 
-    SonarCloud(script, String sonarQubeEnv, String sonarOrganization) {
-        super(script, sonarQubeEnv)
         this.isUsingBranchPlugin = true
-        this.sonarOrganization = sonarOrganization
     }
 
     @Override
@@ -39,6 +37,8 @@ class SonarCloud extends SonarQube {
     @Override
     protected void initMaven(Maven mvn) {
         super.initMaven(mvn)
-        mvn.additionalArgs += " -Dsonar.organization=${sonarOrganization} "
+
+        validateFieldPresent(config, 'sonarOrganization')
+        mvn.additionalArgs += " -Dsonar.organization=${config['sonarOrganization']} "
     }
 }

@@ -14,7 +14,7 @@ class SonarQube implements Serializable {
     boolean isIgnoringBranches = false
     private String gitHubRepoName = ""
     private String gitHubCredentials = ""
-    private config
+    protected Map config
 
     @Deprecated
     SonarQube(script, String sonarQubeEnv) {
