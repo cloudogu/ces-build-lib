@@ -162,21 +162,23 @@ However, concurrent builds of multi module projects building the same version (e
 ces-build-lib makes deploying to nexus repositories easy, even when it includes signing of the artifacts and usage of 
 the nexus staging plugin (as necessary for maven central or other nexus repository pro instances).
  
-The most simple case is to deploy to a nexus repo (*not* maven central):
+The most simple use case is to deploy to a nexus repo (*not* maven central):
  
-* Just set the repository using `Maven.setDeploymentRepository()` passing a repository ID (you can choose), the URL as 
+* Just set the repository using `Maven.useDeploymentRepository()` passing a repository ID (you can choose), the URL as 
   well as a nexus username and password/access token as jenkins username and password credential.
 * Call `Maven.deployToNexusRepository()`. And that is it. 
 
 Simple Example: 
 ```
-mvn.setDeploymentRepository('ces', 'https://ecosystem.cloudogu.com', 'nexusSystemUserCredential')
+mvn.useDeploymentRepository([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
 mvn.deployToNexusRepository()    
 ```
 
+Right now, the two supported repository types are `Nexus2` and `Nexus3`.
+
 Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
-[snapshot repository](https://oss.sonatype.org/content/repositories/snapshots/). Otherwise, the artifacts are deployed 
-to the [release repository](https://oss.sonatype.org/content/repositories/releases/).
+snapshot repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/snapshots/)). Otherwise, 
+the artifacts are deployed to the release repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/releases/)).
 
 If you want to sign the artifacts before deploying, just set the credentials for signing before deploying, using 
 `Maven.setSignatureCredentials()` passing the secret key as ASC file (as jenkins secret file credential) and the 
@@ -210,12 +212,12 @@ central you need to add the following:
 </distributionManagement>
 ```
 The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
-to ces-build-lib using `setDeploymentRepository()`.
+to ces-build-lib using `useDeploymentRepository()`.
 
 Summing up, here is an example for deploying to maven central:
 
 ```
-mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org', 'mavenCentral-UsernameAndAcccessTokenCredential')
+mvn.useDeploymentRepository([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            
 ```

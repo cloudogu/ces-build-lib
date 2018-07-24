@@ -108,6 +108,15 @@ class MavenTest {
     }
 
     @Test
+    void testDeployToNexus3Repository() {
+        mvn.useDeploymentRepository([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
+        mvn.deployToNexusRepository()
+
+        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=id::default::https://expected.url/repository/maven-releases ")
+        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=id::default::https://expected.url/repository/maven-snapshots ")
+    }
+
+    @Test
     void testDeployToNexusRepositoryWithSignature() {
         deployToNexusRepositoryWithSignature(false, 'deploy:deploy')
     }
@@ -118,6 +127,16 @@ class MavenTest {
         def actualAdditionalArgs = 'expectedAdditionalArgs'
 
         deployToNexusRepository(true, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoalWithStaging)
+    }
+
+
+    @Test
+    void testDeployToNexus3RepositoryWithStaging() {
+        mvn.useDeploymentRepository([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
+        mvn.deployToNexusRepositoryWithStaging()
+
+        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=id::default::https://expected.url/repository/maven-releases ")
+        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=id::default::https://expected.url/repository/maven-snapshots ")
     }
 
     @Test
