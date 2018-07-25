@@ -250,7 +250,7 @@ Mostly, this is a convenient wrapper around using the `sh 'git ...'` calls.
 
 Example: 
 
-```
+```groovy
 Git git = new Git(this)
 
 stage('Checkout') {
@@ -463,9 +463,9 @@ In general, you can analyse with or without the [SonarQube Plugin for Jenkins](h
 * `new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins'])` requires the SonarQube plugin and the 
   SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: 
   `https://yourJenkinsInstance/configure`.
-* `new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'http://ces/sonar'])` does not require the plugin 
+* `new SonarQube(this, [token: 'secretTextCred', sonarHostUrl: 'http://ces/sonar'])` does not require the plugin 
   and uses an access token, stored as secret text credential `secretTextCred` in your Jenkins instance.   
-* `new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])` does not require the 
+* `new SonarQube(this, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])` does not require the 
    plugin and uses a SonarQube user account, stored as username with password credential `usrPwCred` in your Jenkins 
    instance.
 
@@ -529,17 +529,18 @@ An alternative is running the first analysis locally, e.g. with maven
 ## SonarCloud
 
 [SonarCloud](https://sonarcloud.io) is a public SonarQube instance that has some extra features, such as PullRequest 
-decoration for GitHub, BitBucket, etc. ces-build-lib encapsulates the setup in `SonarCloud` class.
-It works just like `SonarQube` (i.e. you can create with `sonarQubeEnv`, etc. and provides the `analyzeWith())` and 
-`waitForQualityGateWebhookToBeCalled()` methods). 
+decoration for GitHub, BitBucket, etc.
+ces-build-lib encapsulates the setup in `SonarCloud` class.
+It works just like `SonarQube`, i.e. you can create it using `sonarQubeEnv`, `token`, etc. and it provides the `analyzeWith()` and 
+`waitForQualityGateWebhookToBeCalled()` methods.  
 The only difference: You either have to pass your organization ID using the `sonarOrganization: 'YOUR_ID'` parameter 
-during construction, or configure it under `https://yourJenkinsInstance/configure`. as "Additional analysis properties" 
+during construction, or configure it under `https://yourJenkinsInstance/configure` as "Additional analysis properties" 
 (hit the "Advanced..." button to get there): `sonar.organization=YOUR_ID`.
 
 Example using SonarCloud:
  
 ```groovy
-  def sonarQube = SonarCloud(scriptMock, [sonarQubeEnv: 'sonarcloud.io', sonarOrganization: 'YOUR_ID'])
+  def sonarQube = SonarCloud(this, [sonarQubeEnv: 'sonarcloud.io', sonarOrganization: 'YOUR_ID'])
 
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
 
