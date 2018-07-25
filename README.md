@@ -29,8 +29,11 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [`Docker.Image` methods provided by the docker plugin](#dockerimage-methods-provided-by-the-docker-plugin)
   - [Additional features provided by the `Docker.Image` class](#additional-features-provided-by-the-dockerimage-class)
 - [SonarQube](#sonarqube)
+  - [Constructors](#constructors)
+  - [A complete example](#a-complete-example)
   - [Branches](#branches)
-  - [PullRequests](#pullrequests)
+  - [Sonarcloud](#sonarcloud)
+  - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -444,18 +447,33 @@ new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
 
 # SonarQube
 
-The [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin) provides utility
-steps for Jenkins Pipelines. However, analysing and checking the Quality Goal includes some challenges that are solved 
-using ces-build-lib's `SonarQube` class:
+When analyzing code with SonarQube there are a couple of challenges that are solved using ces-build-lib's 
+`SonarQube` class:
 
 * Setting the branch name (note that this only works in Jenkins multi-branch pipeline builds, regular pipelines don't have information about branches - see #11)
-* Preview analysis for PullRequests
-* Updating commit status in GitHub for PullRequests
+* Analysis for Pull Requests
+* Commenting on Pull Requtests
+* Updating commit status in GitHub for Pull Requests
 * Using the SonarQube branch plugin (SonarQube 6.x, developer edition and sonarcloud.io)
 
-The most simple setup will look like this:
+## Constructors
 
-For now, `SonarQube` can only analyze using `Maven`. Extending this to use the plain SonarQube Runner in future, should be easy, however.
+In general, you can analyse with or without the [SonarQube Plugin for Jenkins](https://wiki.jenkins.io/display/JENKINS/SonarQube+plugin):
+
+* `new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins'])` requires the SonarQube plugin and the 
+  SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: 
+  `https://yourJenkinsInstance/configure`.
+* `new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'http://ces/sonar'])` does not require the plugin 
+  and uses an access token, stored as secret text credential `secretTextCred` in your Jenkins instance.   
+* `new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])` does not require the 
+   plugin and uses a SonarQube user account, stored as username with password credential `usrPwCred` in your Jenkins 
+   instance.
+
+With the `SonarQube` instance you can now analyze your code. When using the plugin (i.e. `sonarQubeEnv`) you can also
+wait for the quality gate status, that is computed by SonarQube asynchronously. Note that this does **not** work for `token`
+and `usernamePassword`.
+ 
+## A complete example
 
 ```groovy
 stage('Statical Code Analysis') {
@@ -468,21 +486,25 @@ stage('Statical Code Analysis') {
   }
 }
 ```
+
 Note that
  
-* this requires a SonarQube server `sonarQubeServerSetupInJenkins` setup up in your Jenkins instance. You can do this here: `https://yourJenkinsInstance/configure`.
-* For sonarcloud, you also need setup your organization ID there, as "Additional analysis properties" (hit the "Advanced..." 
-  button to get there): `sonar.organization=YOUR_ID`
-* You could analyze without the plugin by passing **the host name of the SonarQube instance** (you don't need that when using `sonarQubeEnv`) and
-  * a user token as secret text credential: `new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'https://sonarcloud.io'])` or
-  * a usernameAndPassword credential (not recommended, token can be revoked easier): `new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'https://sonarcloud.io'])`
-* Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server (globally or per project), that notifies Jenkins (url: `https://yourJenkinsInstance/sonarqube-webhook/`). See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
-* Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job, i.e. `analyzeWith()` has been called.
-* When used in conjunction with [SonarQubeCommunity/sonar-build-breaker](https://github.com/SonarQubeCommunity/sonar-build-breaker) `waitForQualityGateWebhookToBeCalled()` will fail your build, if quality gate is not passed.
-
+* Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server (globally or 
+  per project), that notifies Jenkins (url: `https://yourJenkinsInstance/sonarqube-webhook/`).  
+  See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
+* Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job,
+  i.e. `analyzeWith()` has been called and in conjuction with `sonarQubeEnv`.
+* When used in conjunction with [SonarQubeCommunity/sonar-build-breaker](https://github.com/SonarQubeCommunity/sonar-build-breaker),
+  `waitForQualityGateWebhookToBeCalled()` will fail your build, if quality gate is not passed.
+* For now, `SonarQube` can only analyze using `Maven`. Extending this to use the plain SonarQube Runner in future, 
+  should be easy, however.
+  
 ## Branches
 
-By default, the `SonarQube` class uses the old logic, of passing the branch name to SonarQube, which will create on project per branch. This is deprecated from SonarQube 6.x, but the alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
+By default, the `SonarQube` class uses the old logic, of passing the branch name to SonarQube, which will create one 
+project per branch. This is deprecated from SonarQube 6.x, but the alternative is the paid-version-only 
+[Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
+
 You can enable the branch plugin like so:
 
 ```groovy
@@ -504,12 +526,38 @@ Recommendation: Use Jenkins' replay feature for this. Then commit the `Jenkinsfi
 An alternative is running the first analysis locally, e.g. with maven
 `mvn clean install sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=YOUR-ORG -Dsonar.login=YOUR-TOKEN`
  
+## SonarCloud
 
-## PullRequests
+[SonarCloud](https://sonarcloud.io) is a public SonarQube instance that has some extra features, such as PullRequest 
+decoration for GitHub, BitBucket, etc. ces-build-lib encapsulates the setup in `SonarCloud` class.
+It works just like `SonarQube` (i.e. you can create with `sonarQubeEnv`, etc. and provides the `analyzeWith())` and 
+`waitForQualityGateWebhookToBeCalled()` methods). 
+The only difference: You either have to pass your organization ID using the `sonarOrganization: 'YOUR_ID'` parameter 
+during construction, or configure it under `https://yourJenkinsInstance/configure`. as "Additional analysis properties" 
+(hit the "Advanced..." button to get there): `sonar.organization=YOUR_ID`.
 
-If `isPullRequest()` is true, `SonarQube.analyzeWith()` will only perform a preview analysis. That is, the results are not sent to the server.
-When using the [GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin), you can add the results to the PullRequest.
-To do so, `SonarQube` needs credentials for the GitHub repo, defined in Jenkins. Please see [here](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) how to create those in GitHub.
+Example using SonarCloud:
+ 
+```groovy
+  def sonarQube = SonarCloud(scriptMock, [sonarQubeEnv: 'sonarcloud.io', sonarOrganization: 'YOUR_ID'])
+
+  sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
+
+  if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
+    currentBuild.result ='UNSTABLE'
+  }
+```
+
+Just like for ordinary SonarQube, you have to setup a webhook in SonarCloud for `waitForQualityGateWebhookToBeCalled()` to work (see [above](#a-complete-example)).
+
+If you want SonarCloud to decorate your Pull Requests, you will have to install the [SonarCloud Application for GitHub](https://github.com/apps/sonarcloud) into your GitHub organization or account. See also [Pull Request analysis](https://sonarcloud.io/documentation/pull_request).
+
+Note that SonarCloud uses the Branch Plugin, so the first analysis has to be done differently, as described in [Branches](#branches).
+
+## Pull Requests in SonarQube
+
+As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. You can also do this from a regular SonarQube using the [GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin).
+To do so, `SonarQube` needs credentials for the GitHub repo, defined as Jenkins credentials. Please see [here](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) how to create those in GitHub.
 Then save the GitHub access token as secret text in Jenkins at
 
 * `https://yourJenkinsInstance/credentials/` or
@@ -521,6 +569,8 @@ Finally pass the credentialsId to `SonarQube` in your pipleine like so
 sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh')
 sonarQube.analyzeWith(mvn)
 ```
+
+Note: When analysing the Pull Request using the `SonarQube` class, `SonarQube.analyzeWith()` will only perform a preview analysis. That is, the results are not sent to the server.
 
 # Steps
 

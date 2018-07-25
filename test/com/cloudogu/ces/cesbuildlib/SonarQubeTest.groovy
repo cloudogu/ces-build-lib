@@ -31,7 +31,7 @@ class SonarQubeTest {
 
         scriptMock.env = [
                 SONAR_AUTH_TOKEN: 'auth',
-                BRANCH_NAME : 'develop'
+                BRANCH_NAME     : 'develop'
         ]
 
         sonarQube.analyzeWith(mavenMock)
@@ -44,12 +44,12 @@ class SonarQubeTest {
 
     @Test
     void analyzeWithTokenWithoutHost() throws Exception {
-        assertSonarHostUrlError([ token: 'secretTextCred' ])
+        assertSonarHostUrlError([token: 'secretTextCred'])
     }
 
     @Test
     void analyzeWithTokenWithEmptyHost() throws Exception {
-        assertSonarHostUrlError([ token: 'secretTextCred', sonarHostUrl: ''  ])
+        assertSonarHostUrlError([token: 'secretTextCred', sonarHostUrl: ''])
     }
 
     @Test
@@ -57,9 +57,9 @@ class SonarQubeTest {
         def sonarQube = new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
 
         scriptMock.env = [
-                USERNAME: 'usr',
-                PASSWORD: 'pw',
-                BRANCH_NAME : 'develop'
+                USERNAME   : 'usr',
+                PASSWORD   : 'pw',
+                BRANCH_NAME: 'develop'
         ]
 
         sonarQube.analyzeWith(mavenMock)
@@ -77,13 +77,13 @@ class SonarQubeTest {
 
     @Test
     void analyzeWithUsernameAndPasswordWithEmptyHost() throws Exception {
-        assertSonarHostUrlError([ usernamePassword: 'userCred', sonarHostUrl: '' ])
+        assertSonarHostUrlError([usernamePassword: 'userCred', sonarHostUrl: ''])
     }
 
     @Test
     void analyzeWithNothing() throws Exception {
         def exception = shouldFail {
-            new SonarQube(scriptMock, [ something: 'else' ]).analyzeWith(mavenMock)
+            new SonarQube(scriptMock, [something: 'else']).analyzeWith(mavenMock)
         }
 
         assert exception.message == "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
@@ -109,10 +109,10 @@ class SonarQubeTest {
     void analyzeWith(SonarQube sonarQube) throws Exception {
         scriptMock.env = [
                 SONAR_MAVEN_GOAL : 'sonar:sonar',
-                SONAR_HOST_URL : 'host',
-                SONAR_AUTH_TOKEN: 'auth',
+                SONAR_HOST_URL   : 'host',
+                SONAR_AUTH_TOKEN : 'auth',
                 SONAR_EXTRA_PROPS: '-DextraKey=extraValue',
-                BRANCH_NAME : 'develop'
+                BRANCH_NAME      : 'develop'
         ]
 
         sonarQube.analyzeWith(mavenMock)
@@ -126,10 +126,10 @@ class SonarQubeTest {
     @Test
     void analyzeWithNoExtraProps() throws Exception {
         scriptMock.env = [
-                SONAR_MAVEN_GOAL : 'sonar:sonar',
-                SONAR_HOST_URL : 'host',
+                SONAR_MAVEN_GOAL: 'sonar:sonar',
+                SONAR_HOST_URL  : 'host',
                 SONAR_AUTH_TOKEN: 'auth',
-                BRANCH_NAME : 'develop'
+                BRANCH_NAME     : 'develop'
         ]
 
         new SonarQube(scriptMock, 'sqEnv').analyzeWith(mavenMock)
@@ -148,7 +148,7 @@ class SonarQubeTest {
     @Test
     void analyzeWithPaidVersion() throws Exception {
         scriptMock.env = [
-                BRANCH_NAME : 'develop'
+                BRANCH_NAME: 'develop'
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
@@ -166,7 +166,7 @@ class SonarQubeTest {
     @Test
     void analyzeWithPaidVersionOnMasterBranch() throws Exception {
         scriptMock.env = [
-                BRANCH_NAME : 'master'
+                BRANCH_NAME: 'master'
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
@@ -181,7 +181,7 @@ class SonarQubeTest {
     void analyzePullRequest() throws Exception {
         scriptMock.expectedIsPullRequest = true
         scriptMock.env = [
-                CHANGE_ID : 'PR-42'
+                CHANGE_ID: 'PR-42'
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
@@ -194,7 +194,7 @@ class SonarQubeTest {
     void analyzePullRequestUpdateGitHub() throws Exception {
         scriptMock.expectedIsPullRequest = true
         scriptMock.env = [
-                CHANGE_ID : 'PR-42',
+                CHANGE_ID: 'PR-42',
                 PASSWORD : 'oauthToken'
         ]
         scriptMock.expectedDefaultShRetValue = 'github.com/owner/repo'
@@ -217,6 +217,28 @@ class SonarQubeTest {
     }
 
     @Test
+    void waitForQualityGateWithToken() throws Exception {
+
+        def exception = shouldFail {
+            new SonarQube(scriptMock, [tokem: 'sometoken', sonarHostUrl: 'http://ces/sonar'])
+                    .waitForQualityGateWebhookToBeCalled()
+        }
+
+        assert exception.message == "waitForQualityGate will only work when using the SonarQube Plugin for Jenkins, via the 'sonarQubeEnv' parameter"
+    }
+
+    @Test
+    void waitForQualityGateWithUsernameAndPassword() throws Exception {
+
+        def exception = shouldFail {
+            new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
+                    .waitForQualityGateWebhookToBeCalled()
+        }
+
+        assert exception.message == "waitForQualityGate will only work when using the SonarQube Plugin for Jenkins, via the 'sonarQubeEnv' parameter"
+    }
+
+    @Test
     void waitForQualityGateNotOk() throws Exception {
         scriptMock.expectedQGate = [status: 'SOMETHING ELSE']
 
@@ -227,6 +249,7 @@ class SonarQubeTest {
 
     @Test
     void waitForQualityGatePullRequest() throws Exception {
+        scriptMock.expectedQGate = [status: 'SOMETHING ELSE']
         scriptMock.expectedIsPullRequest = true
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
         assert qualityGate
@@ -238,17 +261,5 @@ class SonarQubeTest {
         }
 
         assert exception.message == "Missing required 'sonarHostUrl' parameter."
-    }
-
-    private static class MavenMock extends Maven {
-        String args
-
-        MavenMock(scriptMock) {
-            super(scriptMock)
-        }
-
-        def mvn(String args) {
-            this.args = args
-        }
     }
 }

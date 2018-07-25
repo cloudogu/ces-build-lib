@@ -61,14 +61,22 @@ class SonarQube implements Serializable {
      * @return {@code true} if the result of the quality is 'OK' or if a Pull Request is built. Otherwise {@code false}.
      */
     boolean waitForQualityGateWebhookToBeCalled() {
-        // Pull Requests are analyzed locally, so no calling of the QGate webhook
+        if (!config['sonarQubeEnv']) {
+            script.error "waitForQualityGate will only work when using the SonarQube Plugin for Jenkins, via the 'sonarQubeEnv' parameter"
+        }
+
         if (!script.isPullRequest()) {
             return doWaitForQualityGateWebhookToBeCalled()
         }
-        return true
+        return doWaitForPullRequestQualityGateWebhookToBeCalled()
     }
 
-    boolean doWaitForQualityGateWebhookToBeCalled() {
+    protected boolean doWaitForPullRequestQualityGateWebhookToBeCalled() {
+        // Pull Requests are analyzed locally, so no calling of the QGate webhook
+        true
+    }
+
+    protected boolean doWaitForQualityGateWebhookToBeCalled() {
         script.timeout(time: 2, unit: 'MINUTES') { // Needed when there is no webhook for example
             def qGate = script.waitForQualityGate()
             script.echo "SonarQube Quality Gate status: ${qGate.status}"
@@ -142,22 +150,28 @@ class SonarQube implements Serializable {
         }
     }
 
-    private AnalysisStrategy determineAnalysisStrategy() {
+    protected AnalysisStrategy determineAnalysisStrategy() {
+        // If private may fail for SonarCloud with:
+        // No signature of method: com.cloudogu.ces.cesbuildlib.SonarCloud.determineAnalysisStrategy() is applicable for argument types: () values: []
 
         if (config['sonarQubeEnv']) {
             return new EnvAnalysisStrategy(script, config['sonarQubeEnv'])
 
         } else if (config['token']) {
-            validateFieldPresent(config, 'sonarHostUrl')
+            validateMandatoryFieldsWithoutSonarQubeEnv()
             return new TokenAnalysisStrategy(script, config['token'], config['sonarHostUrl'])
 
         } else if (config['usernamePassword']) {
-            validateFieldPresent(config, 'sonarHostUrl')
+            validateMandatoryFieldsWithoutSonarQubeEnv()
             return new UsernamePasswordAnalysisStrategy(script, config['usernamePassword'], config['sonarHostUrl'])
 
         } else {
             script.error "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
         }
+    }
+
+    protected void validateMandatoryFieldsWithoutSonarQubeEnv() {
+        validateFieldPresent(config, 'sonarHostUrl')
     }
 
     private static abstract class AnalysisStrategy {
@@ -175,8 +189,6 @@ class SonarQube implements Serializable {
 
             mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}"
         }
-
-
     }
 
     private static class EnvAnalysisStrategy extends AnalysisStrategy {
