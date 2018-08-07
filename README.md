@@ -81,6 +81,8 @@ With Maven this can be done like so:
         <version>888733b</version>
         <!-- Don't ship this dependency with the app -->
         <optional>true</optional>
+        <!-- Don't inherit this dependency! -->
+        <scope>provided</scope>
     </dependency>
     ```
 Current version is [![](https://jitpack.io/v/cloudogu/ces-build-lib.svg)](https://jitpack.io/#cloudogu/ces-build-lib).<br/> 
