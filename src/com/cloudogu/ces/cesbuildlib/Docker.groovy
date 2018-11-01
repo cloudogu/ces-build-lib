@@ -167,7 +167,7 @@ class Docker implements Serializable {
          * Runs docker pull. Not necessary before run, withRun, or inside.
          */
         void pull() {
-            script.docker.pull()
+            image().pull()
         }
 
         /**
