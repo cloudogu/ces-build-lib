@@ -23,6 +23,49 @@ class Docker implements Serializable {
     }
 
     /**
+     * @return the IP address in the current context: the docker host ip (when outside of a container) or the ip of the
+     * container this is running in
+     */
+    String findIp() {
+        if (isRunningInsideOfContainer()) {
+            findIpInside()
+        } else {
+            findDockerHostIpOutside()
+        }
+    }
+
+    String findIpInside() {
+        sh.returnStdOut 'hostname -I | awk \'{print $1}\''
+    }
+
+    /**
+     * Find the IP address of the docker host. Should work both, if running inside or outside a container.
+     * @return the IP address of the docker host.
+     */
+    String findDockerHostIp() {
+        if (isRunningInsideOfContainer()) {
+            findDockerHostIpInside()
+        } else {
+            findDockerHostIpOutside()
+        }
+    }
+
+    String findDockerHostIpInside() {
+        sh.returnStdOut 'ip route show | awk \'/default/ {print $3}\''
+    }
+
+    String findDockerHostIpOutside() {
+        sh.returnStdOut 'ip route show | awk \'/docker0/ {print $9}\''
+    }
+
+    /**
+     * @return true, if this step is executed inside a container
+     */
+    boolean isRunningInsideOfContainer() {
+        script.sh(returnStatus: true, script: 'cat /proc/1/cgroup | grep docker >/dev/null 2>&1') == 0
+    }
+
+    /**
      * @param container docker container instance
      * @return the environment variables set within the docker container as string
      */

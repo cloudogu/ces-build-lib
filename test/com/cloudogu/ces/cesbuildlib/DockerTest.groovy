@@ -17,11 +17,55 @@ class DockerTest {
     def actualShArgs = new LinkedList<Object>()
 
     @Test
-    void findIp() {
+    void findIpOfContainer() {
         String containerId = '93a401b14684'
         Docker docker = new Docker([sh: { Map<String, String> args -> return args['script'] }])
         def ip = docker.findIp([id: containerId])
         assertTrue(ip.contains(containerId))
+    }
+
+    @Test
+    void findIpInContainer() {
+        String expectedIp = '172.2.0.2'
+        Docker docker = new Docker([sh: { Map<String, String> args ->
+            if (args['script'] == 'cat /proc/1/cgroup | grep docker >/dev/null 2>&1') 0
+            else if (args['script'] == 'hostname -I | awk \'{print $1}\'') expectedIp
+        }])
+        def ip = docker.findIp()
+        assert ip == expectedIp
+    }
+
+    @Test
+    void findIpOnHost() {
+        String expectedIp = '172.2.0.1'
+        Docker docker = new Docker([sh: { Map<String, String> args ->
+            if (args['script'] == 'cat /proc/1/cgroup | grep docker >/dev/null 2>&1') 1
+            else if (args['script'] == 'ip route show | awk \'/docker0/ {print $9}\'') expectedIp
+        }])
+        def ip = docker.findIp()
+        assert ip == expectedIp
+    }
+
+    @Test
+    void findDockerHostIpInContainer() {
+        String expectedIp = '172.2.0.1'
+        Docker docker = new Docker([sh: { Map<String, String> args ->
+            if (args['script'] == 'cat /proc/1/cgroup | grep docker >/dev/null 2>&1') 0
+            else if (args['script'] == 'ip route show | awk \'/default/ {print $3}\'') expectedIp
+        }])
+        def ip = docker.findDockerHostIp()
+        assert ip == expectedIp
+    }
+
+    @Test
+    void findDockerHostIpOnHost() {
+        String expectedIp = '172.2.0.1'
+        Docker docker = new Docker([sh: { Map<String, String> args ->
+            if (args['script'] == 'cat /proc/1/cgroup | grep docker >/dev/null 2>&1') 1
+            else if (args['script'] == 'ip route show | awk \'/docker0/ {print $9}\'') expectedIp
+        }])
+        def ip = docker.findDockerHostIp()
+        assert ip == expectedIp
     }
 
     @Test

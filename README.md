@@ -350,7 +350,12 @@ The `Docker` class provides the default methods of the global docker variable pr
 The `Docker` class provides additional convenience features:
 
  * `String findIp(container)` returns the IP address for a docker container instance
+ * `String findIp()` returns the IP address in the current context: the docker host ip (when outside of a container) or 
+    the ip of the container this is running in
+ * `String findDockerHostIp()` returns  the IP address of the docker host. Should work both, if running inside or 
+    outside a container 
  * `String findEnv(container)` returns the environment variables set within the docker container as string
+ * `boolean isRunningInsideOfContainer()` return `true` if this step is executed inside a container, otherwise `false`
  * `boolean isRunning(container)` return `true` if the container is in state running, otherwise `false`
  
 Example from Jenkinsfile:
