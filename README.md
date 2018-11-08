@@ -122,9 +122,12 @@ stage('Build') {
 
 ## Maven in Docker
 
-Run maven in a docker container. This can be helpful, 
-* when constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running integration tests, unit tests that use infrastructure that binds to ports or
-* when one maven repo per builds is required For example when concurrent builds of multi module project install the same snapshot versions. 
+Run maven in a docker container. This can be helpful, when
+
+* constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running 
+  integration tests, unit tests that use infrastructure that binds to ports or
+* one maven repo per builds is required For example when concurrent builds of multi module project install the same 
+  snapshot versions. 
 
 The builds are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
 
@@ -138,7 +141,11 @@ stage('Build') {
 }
 ```
 
-If you run Docker from your maven build, because you use the [docker-maven-plugin](https://github.com/fabric8io/docker-maven-plugin) for example, you can connect the docker socket through to your docker in maven like so:
+### Maven starts new containers
+
+If you run Docker from your maven build, because you use the 
+[docker-maven-plugin](https://github.com/fabric8io/docker-maven-plugin) for example, you can connect the docker socket 
+through to your docker in maven like so:
 
 ```
 stage('Unit Test') {
@@ -153,6 +160,8 @@ stage('Unit Test') {
 ```
 There are some security-related concerns about this. See [Docker](#docker).
 
+### Local repo
+
 If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
 ```
 Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
@@ -161,6 +170,20 @@ mvn.useLocalRepoFromJenkins = true
 
 This speed speeds up the first build and uses less memory. 
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
+
+### Lazy evaluation / execute more steps inside container
+ 
+If you need to execute more steps inside the maven container you can pass a closure to your maven instance that is 
+lazily evaluated within the container. The String value returned are the maven arguments. 
+
+```
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8"),
+echo "Outside Maven Container! ${new Docker(this).findIp()}"
+mvn {
+    echo "Insinde Maven Container! ${new Docker(this).findIp()}"
+    'clean package -DskipTests'
+}
+```
 
 ## Deploy to nexus repository (e.g. maven central)
 

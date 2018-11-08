@@ -28,7 +28,7 @@ class MavenInDocker extends Maven {
 
     /**
      * @param script the Jenkinsfile instance ({@code this} in Jenkinsfile)
-     * @param dockerBaseImageVersion the version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8}
+     * @param dockerBaseImageVersion the version of the maven docker image to use, e.g. {@code 3.5.0-jdk-8}
      */
     MavenInDocker(script, String dockerBaseImageVersion) {
         super(script)
@@ -38,14 +38,19 @@ class MavenInDocker extends Maven {
 
     @Override
     def mvn(String args) {
+        call {
+            args
+        }
+    }
 
+    def call(Closure closure) {
         docker.image("maven:$dockerBaseImageVersion")
-                // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
+        // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
                 .mountJenkinsUser(true)
                 .mountDockerSocket(enableDockerHost)
                 .inside(createDockerRunArgs()) {
-                    script.sh("mvn ${createCommandLineArgs(args)}")
-                }
+            script.sh("mvn ${createCommandLineArgs(closure.call())}")
+        }
     }
 
     String createDockerRunArgs() {

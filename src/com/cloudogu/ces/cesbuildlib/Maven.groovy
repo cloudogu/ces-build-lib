@@ -14,7 +14,7 @@ abstract class Maven implements Serializable {
         this.script = script
     }
 
-    def call(args) {
+    def call(String args) {
         mvn(args)
     }
 
