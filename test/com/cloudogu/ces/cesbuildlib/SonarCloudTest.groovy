@@ -97,4 +97,35 @@ class SonarCloudTest {
         assert mavenMock.additionalArgs.endsWith(' -Dsonar.organization=org ')
     }
 
+
+    @Test
+    void pullRequestAnalysisBitBucket() {
+        scriptMock.expectedIsPullRequest = true
+        scriptMock.env = [
+                CHANGE_ID : 'PR-42',
+                CHANGE_TARGET : 'develop',
+                CHANGE_BRANCH : 'feature/something'
+        ]
+        scriptMock.expectedDefaultShRetValue = 'bitbucket.org/orga/repo'
+
+        sonarCloud.analyzeWith(mavenMock)
+
+        assertEquals(
+                '-Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
+                        '-Dsonar.pullrequest.key=PR-42 -Dsonar.pullrequest.provider=bitbucketcloud ' +
+                        '-Dsonar.pullrequest.bitbucketcloud.owner=orga ' +
+                        '-Dsonar.pullrequest.bitbucketcloud.repository=repo ',
+                mavenMock.additionalArgs)
+    }
+
+    @Test
+    void pullRequestAnalysisUnknown() {
+        scriptMock.expectedIsPullRequest = true
+        scriptMock.expectedDefaultShRetValue = 'UnameIt.org/orga/repo'
+
+        def exception = shouldFail {
+            sonarCloud.analyzeWith(mavenMock)
+        }
+        assert exception.message == "Unknown sonar.pullrequest.provider. None matching for repo URL: UnameIt.org/orga/repo"
+    }
 }
