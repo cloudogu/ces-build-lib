@@ -96,7 +96,7 @@ class SonarQube implements Serializable {
      */
     void updateAnalysisResultOfPullRequestsToGitHub(String gitHubCredentials) {
         this.gitHubCredentials = gitHubCredentials
-        this.gitHubRepoName = new Git(script).gitHubRepositoryName
+        this.gitHubRepoName = new Git(script).repositoryName
     }
 
     protected void initMaven(Maven mvn) {

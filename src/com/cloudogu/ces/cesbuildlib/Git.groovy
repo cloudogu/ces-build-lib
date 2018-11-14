@@ -105,16 +105,26 @@ class Git implements Serializable {
     /**
      * @return the name of the GitHub Repository e.g. {@code repository/url} or empty String, if no GitHub repo.
      */
+    @Deprecated
     String getGitHubRepositoryName() {
-        String repoUrl = repositoryUrl
-        if (!repoUrl.contains('github.com')) {
+        if (!repositoryUrl.contains('github.com')) {
             return ''
         }
-        def potentialRepoName = repoUrl.substring(repositoryUrl.indexOf('github.com') + 'github.com'.length() + 1)
-        if (potentialRepoName.endsWith('.git')) {
-            return potentialRepoName.substring(0, potentialRepoName.length() - 4)
+        return repositoryName
+    }
+
+    /**
+     * @return the name of the Repository, assuming it is the URL is formatted like {@code host/getRepositoryName}
+     */
+    String getRepositoryName() {
+        String repoUrl = repositoryUrl
+                .replace('https://', '')
+                .replace('.git', '')
+        if (repoUrl.startsWith('git@')) {
+            return repoUrl.substring(repoUrl.indexOf(':') + 1)
+        } else {
+            return repoUrl.substring(repoUrl.indexOf('/') + 1)
         }
-        return potentialRepoName
     }
 
     String getTag() {

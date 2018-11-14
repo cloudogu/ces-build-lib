@@ -133,36 +133,36 @@ class GitTest {
     }
 
     @Test
-    void getGitHubRepositoryNameHttps() {
-        String expectedReturnValue = "https://github.com/orga/repo"
+    void getRepositoryNameHttps() {
+        String expectedReturnValue = "https://bitbucket.org/orga/repo"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
-        assertEquals('orga/repo', git.gitHubRepositoryName)
+        assertEquals('orga/repo', git.repositoryName)
     }
 
     @Test
-    void getGitHubRepositoryNameSsh() {
-        String expectedReturnValue = "git@github.com:orga/repo.git"
+    void getRepositoryNameSsh() {
+        String expectedReturnValue = "git@bitbucket.org:orga/repo.git"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
-        assertEquals('orga/repo', git.gitHubRepositoryName)
+        assertEquals('orga/repo', git.repositoryName)
     }
 
     @Test
-    void getGitHubRepositoryNameEndingInGit() {
-        String expectedReturnValue = "https://github.com/orga/repo.git"
+    void getRepositoryNameEndingInGit() {
+        String expectedReturnValue = "https://bitbucket.org/orga/repo.git"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
-        assertEquals('orga/repo', git.gitHubRepositoryName)
+        assertEquals('orga/repo', git.repositoryName)
     }
 
     @Test
-    void getGitHubRepositoryNameNotContainsDotGitSomewhere() {
-        String expectedReturnValue = "https://a.git.github.com/orga/repo"
+    void getRepositoryNameNotContainsDotGitSomewhere() {
+        String expectedReturnValue = "https://a.git.bitbucket.org/orga/repo"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
-        assertEquals('orga/repo', git.gitHubRepositoryName)
+        assertEquals('orga/repo', git.repositoryName)
     }
 
     @Test
     void getGitHubRepositoryNameNonGitHub() {
-        String expectedReturnValue = "https://notGH.info/orga/repo"
+        String expectedReturnValue = "https://bitbucket.org/orga/repo"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
         assertEquals('', git.gitHubRepositoryName)
     }
