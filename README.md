@@ -581,7 +581,13 @@ Example using SonarCloud:
 
 Just like for ordinary SonarQube, you have to setup a webhook in SonarCloud for `waitForQualityGateWebhookToBeCalled()` to work (see [above](#a-complete-example)).
 
-If you want SonarCloud to decorate your Pull Requests, you will have to install the [SonarCloud Application for GitHub](https://github.com/apps/sonarcloud) into your GitHub organization or account. See also [Pull Request analysis](https://sonarcloud.io/documentation/pull_request).
+If you want SonarCloud to decorate your Pull Requests, you will have to 
+
+* GitHub: Install the [SonarCloud Application for GitHub](https://sonarcloud.io/documentation/integrations/github/) into your GitHub organization or account.
+* BitBucket: Installt the [SonarCloud add-on for Bitbucket Cloud]()https://sonarcloud.io/documentation/integrations/bitbucketcloud/) into your BitBucket team or account.  
+  Note that ces-build-lib supports only Git repos for now. No mercurial/hg, sorry.
+
+See also [Pull Request analysis](https://sonarcloud.io/documentation/analysis/pull-request/).
 
 Note that SonarCloud uses the Branch Plugin, so the first analysis has to be done differently, as described in [Branches](#branches).
 
