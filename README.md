@@ -570,7 +570,7 @@ during construction, or configure it under `https://yourJenkinsInstance/configur
 Example using SonarCloud:
  
 ```groovy
-  def sonarQube = SonarCloud(this, [sonarQubeEnv: 'sonarcloud.io', sonarOrganization: 'YOUR_ID'])
+  def sonarQube = new SonarCloud(this, [sonarQubeEnv: 'sonarcloud.io', sonarOrganization: 'YOUR_ID'])
 
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
 
