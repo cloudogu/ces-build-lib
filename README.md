@@ -584,7 +584,7 @@ Just like for ordinary SonarQube, you have to setup a webhook in SonarCloud for 
 If you want SonarCloud to decorate your Pull Requests, you will have to 
 
 * GitHub: Install the [SonarCloud Application for GitHub](https://sonarcloud.io/documentation/integrations/github/) into your GitHub organization or account.
-* BitBucket: Installt the [SonarCloud add-on for Bitbucket Cloud]()https://sonarcloud.io/documentation/integrations/bitbucketcloud/) into your BitBucket team or account.  
+* BitBucket: Install the [SonarCloud add-on for Bitbucket Cloud](https://sonarcloud.io/documentation/integrations/bitbucketcloud/) into your BitBucket team or account.  
   Note that ces-build-lib supports only Git repos for now. No mercurial/hg, sorry.
 
 See also [Pull Request analysis](https://sonarcloud.io/documentation/analysis/pull-request/).
