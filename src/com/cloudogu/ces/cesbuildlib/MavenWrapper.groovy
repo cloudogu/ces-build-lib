@@ -7,12 +7,27 @@ package com.cloudogu.ces.cesbuildlib
  */
 class MavenWrapper extends Maven {
 
-    MavenWrapper(script) {
+    def javaHome
+
+    MavenWrapper(script, javaHome = null) {
         super(script)
+        this.javaHome = javaHome
     }
 
     @Override
     def mvn(String args) {
+
+        if (javaHome) {
+            // PATH+something prepends to PATH
+            script.withEnv(["JAVA_HOME=${javaHome}", "PATH+JDK=${script.env.JAVA_HOME}/bin"]) {
+                mvnw(args)
+            }
+        } else {
+            mvnw(args)
+        }
+    }
+
+    def mvnw(String args) {
         script.sh "./mvnw ${createCommandLineArgs(args)}"
     }
 }

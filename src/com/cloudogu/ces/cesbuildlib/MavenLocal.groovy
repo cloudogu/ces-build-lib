@@ -16,6 +16,7 @@ class MavenLocal extends Maven {
     @Override
     def mvn(String args) {
         // Advice: don't define M2_HOME in general. Maven will autodetect its root fine.
+        // PATH+something prepends to PATH
         script.withEnv(["JAVA_HOME=${javaHome}", "PATH+MAVEN=${mvnHome}/bin:${script.env.JAVA_HOME}/bin"]) {
             script.sh "${mvnHome}/bin/mvn ${createCommandLineArgs(args)}"
         }

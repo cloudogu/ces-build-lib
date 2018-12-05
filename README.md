@@ -15,6 +15,9 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Maven from local Jenkins tool](#maven-from-local-jenkins-tool)
   - [Maven Wrapper](#maven-wrapper)
   - [Maven in Docker](#maven-in-docker)
+    - [Maven starts new containers](#maven-starts-new-containers)
+    - [Local repo](#local-repo)
+    - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
   - [Deploy to nexus repository (e.g. maven central)](#deploy-to-nexus-repository-eg-maven-central)
   - [Maven Utilities](#maven-utilities)
 - [Git](#git)
@@ -32,7 +35,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Constructors](#constructors)
   - [A complete example](#a-complete-example)
   - [Branches](#branches)
-  - [Sonarcloud](#sonarcloud)
+  - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
@@ -101,7 +104,7 @@ See [MavenLocal](src/com/cloudogu/ces/cesbuildlib/MavenLocal.groovy)
 ```
 def mvnHome = tool 'M3'
 def javaHome = tool 'JDK8'
-Maven mvn = new Maven(this, mvnHome, javaHome)
+Maven mvn = new MavenLocal(this, mvnHome, javaHome)
 
 stage('Build') {
     mvn 'clean install'
@@ -114,6 +117,17 @@ Run maven using a [Maven Wrapper](https://github.com/takari/maven-wrapper) from 
 
 ```
 Maven mvn = new MavenWrapper(this)
+
+stage('Build') {
+    mvn 'clean install'
+}
+```
+This uses Java Runtime on the Build agent's `PATH`.
+Similar to `MavenLocal` you can also specify a JDK from a local tool installation on Jenkins:
+
+```
+def javaHome = tool 'JDK8'
+Maven mvn = new MavenWrapper(this, javaHome)
 
 stage('Build') {
     mvn 'clean install'
