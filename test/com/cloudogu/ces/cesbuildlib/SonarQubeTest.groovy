@@ -185,9 +185,10 @@ class SonarQubeTest {
         ]
 
         def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        mavenMock.additionalArgs = '-Dadditional'
         sonarQube.analyzeWith(mavenMock)
 
-        assert mavenMock.additionalArgs == '-Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 '
+        assert mavenMock.additionalArgs == '-Dadditional -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 '
     }
 
     @Test

@@ -133,8 +133,8 @@ class SonarQube implements Serializable {
         script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
 
         // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
-        mvn.additionalArgs += "-Dsonar.analysis.mode=preview "
-        mvn.additionalArgs += "-Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
+        mvn.additionalArgs += " -Dsonar.analysis.mode=preview"
+        mvn.additionalArgs += " -Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
 
         if (gitHubCredentials != null && !gitHubCredentials.isEmpty()) {
             mvn.additionalArgs += "-Dsonar.github.repository=$gitHubRepoName "
