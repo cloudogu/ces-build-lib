@@ -88,6 +88,11 @@ With Maven this can be done like so:
         <scope>provided</scope>
     </dependency>
     ```
+Or you can download the file (and sources) manually and add them to your IDE. For example:
+
+* `https://jitpack.io/com/github/cloudogu/ces-build-lib/9fa7ac4/ces-build-lib-9fa7ac4.jar`
+* `https://jitpack.io/com/github/cloudogu/ces-build-lib/9fa7ac4/ces-build-lib-9fa7ac4-sources.jar`
+
 Current version is [![](https://jitpack.io/v/cloudogu/ces-build-lib.svg)](https://jitpack.io/#cloudogu/ces-build-lib).<br/> 
 For further details and options refer to the [JitPack website](https://jitpack.io/#cloudogu/ces-build-lib).
 
