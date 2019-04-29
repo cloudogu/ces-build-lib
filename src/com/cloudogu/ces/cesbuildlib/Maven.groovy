@@ -87,7 +87,7 @@ abstract class Maven implements Serializable {
      * snapshot repository. Otherwise, the artifacts are deployed to the release repo.
      *
      * Make sure to configure repository before calling, using
-     * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
+     * {@link #useDeploymentRepository(java.util.Map)}.
      *
      * If you want to deploy a signed jar, set signature credentials using
      * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
@@ -102,7 +102,7 @@ abstract class Maven implements Serializable {
      * snapshot repository. Otherwise, the artifacts are deployed to the release repo.
      *
      * Make sure to configure repository before calling, using
-     * {@link #setDeploymentRepository(java.lang.String, java.lang.String, java.lang.String)}.
+     * {@link #useDeploymentRepository(java.util.Map)}.
      *
      * If you want to deploy a signed jar, set signature credentials using
      * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
@@ -110,13 +110,40 @@ abstract class Maven implements Serializable {
      *
      * This can be used to deploy to maven central.
      * The project must adhere to the requirements: http://central.sonatype.org/pages/requirements.html
-     * {@code mvn.setDeploymentRepository('ossrh', 'https://oss.sonatype.org/', 'mavenCentral-acccessToken-credential')}
+     * {@code mvn.useDeploymentRepository([id: ossrh, url: 'https://oss.sonatype.org/', credentialsId:
+     * 'mavenCentral-acccessToken-credential', type: 'Nexus2'])}
      * where 'ossrh' means Sonatype OSS Repository Hosting.
      * Note that signing is mandatory to deploy releases to maven central.
      *
      */
     void deployToNexusRepositoryWithStaging(String additionalDeployArgs = '') {
         deployToNexusRepository(DeployGoal.NEXUS_STAGING, additionalDeployArgs)
+    }
+
+    /**
+     * Deploy site to a maven repository using the maven-site-plugin's "site:deploy" goal.
+     * Note that the site plugin does not provide options to specify the target repository via the command line
+     * (http://maven.apache.org/plugins/maven-site-plugin/deploy-mojo.html).
+     *
+     * That is, it has to be configured in the pom.xml like so:
+     *
+     *     &lt;distributionManagement&gt;
+     *         &lt;site&gt;
+     *             &lt;id&gt;YOUR-ID&lt;/id&gt;
+     *             &lt;name&gt;site repository cloudogu ecosystem&lt;/name&gt;
+     *             &lt;url&gt;dav:https://your.domain/nexus/repository/Site-repo/${project.groupId}/${project.artifactId}/${project.version}/&lt;/url&gt;
+     *         &lt;/site&gt;
+     *     &lt;/distributionManagement&gt;
+     *
+     * Make sure to configure repository before calling, using
+     * {@link #useDeploymentRepository(java.util.Map)}, where the id parameter must match the one specified in the pom
+     * ("YOUR-ID" in the example above) and the url parameter is ignored (taken from pom.xml).
+     *
+     * If you want to deploy a signed jar, set signature credentials using
+     * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
+     */
+    void deploySiteToNexus(String additionalDeployArgs = '') {
+        deployToNexusRepository(DeployGoal.SITE, additionalDeployArgs)
     }
 
     protected void deployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
@@ -162,7 +189,7 @@ abstract class Maven implements Serializable {
             String settingsXmlPath = writeSettingsXmlWithServer(deploymentRepository.id,
                     "\${env.${usernameProperty}}",
                     "\${env.${passwordProperty}}")
-            mvn "source:jar javadoc:jar package -DskipTests " +
+            mvn "-DskipTests " +
                 // TODO when using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
                 // https://oss.sonatype.org/service/local/staging/deploy/maven2 and
                 // https://oss.sonatype.org/content/repositories/snapshots
@@ -275,15 +302,20 @@ abstract class Maven implements Serializable {
 
     enum DeployGoal {
         REGULAR(
+                SOURCE_JAVADOC_PACKAGE +
                 'deploy:deploy'
         ),
         NEXUS_STAGING(
+                SOURCE_JAVADOC_PACKAGE +
                 // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
                 // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
                 'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
                 '-DserverId=${id} -DnexusUrl=${url} ' +
                 '-DautoReleaseAfterClose=true '
-        )
+        ),
+        SITE('site:deploy')
+
+        private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
 
         final String goal
 

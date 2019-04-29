@@ -18,7 +18,13 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Maven starts new containers](#maven-starts-new-containers)
     - [Local repo](#local-repo)
     - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
-  - [Deploy to nexus repository (e.g. maven central)](#deploy-to-nexus-repository-eg-maven-central)
+  - [Deploying to Nexus repository](#deploying-to-nexus-repository)
+    - [Deploying artifacts](#deploying-artifacts)
+      - [Simple deployment](#simple-deployment)
+      - [Signing artifacts (e.g. Maven Central)](#signing-artifacts-eg-maven-central)
+      - [Deploying with staging (e.g. Maven Central)](#deploying-with-staging-eg-maven-central)
+    - [Deploying sites](#deploying-sites)
+    - [Passing additional arguments](#passing-additional-arguments)
   - [Maven Utilities](#maven-utilities)
 - [Git](#git)
   - [Credentials](#credentials)
@@ -204,12 +210,16 @@ mvn {
 }
 ```
 
-## Deploy to nexus repository (e.g. maven central)
+## Deploying to Nexus repository 
+
+### Deploying artifacts
 
 ces-build-lib makes deploying to nexus repositories easy, even when it includes signing of the artifacts and usage of 
-the nexus staging plugin (as necessary for maven central or other nexus repository pro instances).
+the nexus staging plugin (as necessary for Maven Central or other Nexus repository pro instances).
  
-The most simple use case is to deploy to a nexus repo (*not* maven central):
+#### Simple deployment
+
+The most simple use case is to deploy to a nexus repo (*not* Maven Central):
  
 * Just set the repository using `Maven.useDeploymentRepository()` passing a repository ID (you can choose), the URL as 
   well as a nexus username and password/access token as jenkins username and password credential.
@@ -227,21 +237,26 @@ Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are autom
 snapshot repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/snapshots/)). Otherwise, 
 the artifacts are deployed to the release repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/releases/)).
 
+#### Signing artifacts (e.g. Maven Central)
+
 If you want to sign the artifacts before deploying, just set the credentials for signing before deploying, using 
 `Maven.setSignatureCredentials()` passing the secret key as ASC file (as jenkins secret file credential) and the 
 passphrase (as jenkins secret text credential).
 An ASC file can be exported via  `gpg --export-secret-keys -a ABCDEFGH > secretkey.asc`.
 See [Working with PGP Signatures](http://central.sonatype.org/pages/working-with-pgp-signatures.html)
 
+#### Deploying with staging (e.g. Maven Central)
+
 Another option is to use the nexus-staging-maven-plugin instead of the default maven-deploy-plugin.
-This is useful if you deploy to a nexus repository pro, such as maven central. 
+This is useful if you deploy to a Nexus repository pro, such as Maven Central. 
 
 Just use the `Maven.deployToNexusRepositoryWithStaging()` instead of `Maven.deployToNexusRepository()`.
 
-When deploying to maven central, make sure that your `pom.xml` adheres to the requirements by maven central, as stated
+When deploying to Maven Central, make sure that your `pom.xml` adheres to the requirements by Maven Central, as stated
 [here](http://central.sonatype.org/pages/requirements.html).
 
-Note that as of nexus-staging-maven-plugin version 1.6.8, it [does seem to read the distribution repositories from pom.xml only](https://issues.sonatype.org/browse/NEXUS-15464).
+Note that as of nexus-staging-maven-plugin version 1.6.8, it 
+[does seem to read the distribution repositories from pom.xml only](https://issues.sonatype.org/browse/NEXUS-15464).
 
 That is, you need to specify them in your pom.xml, they cannot be passed by the ces-build-lib. So for example for maven 
 central you need to add the following:
@@ -261,7 +276,7 @@ central you need to add the following:
 The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
 to ces-build-lib using `useDeploymentRepository()`.
 
-Summing up, here is an example for deploying to maven central:
+Summing up, here is an example for deploying to Maven Central:
 
 ```
 mvn.useDeploymentRepository([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
@@ -271,9 +286,44 @@ mvn.deployToNexusRepositoryWithStaging()
 
 Note that the staging of releases might well take 10 minutes. After that, the artifacts are in the 
 [release repository](https://oss.sonatype.org/content/repositories/releases/), which is *later* (feels like nightly) 
-synced to maven central.  
+synced to Maven Central.  
 
 For an example see [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus).
+
+### Deploying sites
+
+Similar to deploying artifacts as described above, we can also easily deploy a [Maven site](https://maven.apache.org/guides/mini/guide-site.html)
+to a "raw" maven repository.  
+
+Note that the site plugin [does not provide options to specify the target repository via the command line](http://maven.apache.org/plugins/maven-site-plugin/deploy-mojo.html).
+That is, it has to be configured in the pom.xml like so:
+
+```xml
+<distributionManagement>
+    <site>
+        <id>ces</id>
+        <name>site repository cloudogu ecosystem</name>
+        <url>dav:https://your.domain/nexus/repository/Site-repo/${project.groupId}/${project.artifactId}/${project.version}/</url>
+    </site>
+</distributionManagement>
+```
+Where `Site-repo` is the name of the raw repository that must exist in Nexus to succeed.
+
+Then, you can deploy the site as follows:
+
+```groovy
+mvn.useDeploymentRepository([id: 'ces', url: 'see pom.xml', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+mvn.deploySiteToNexus()
+```
+
+Where
+ 
+* the `id` parameter must match the one specified in the `pom.xml`(`ces` in the example above), 
+* the `url` parameter is ignored (taken from `pom.xml`),
+* the nexus username and password/access token are passed as jenkins username and password credential 
+  (`nexusSystemUserCredential`).
+
+### Passing additional arguments
 
 Another option for `deployToNexusRepositoryWithStaging()` and `deployToNexusRepository()` is to pass additional maven 
 arguments to the deployment like so: `mvn.deployToNexusRepositoryWithStaging('-X')` (enables debug output).
