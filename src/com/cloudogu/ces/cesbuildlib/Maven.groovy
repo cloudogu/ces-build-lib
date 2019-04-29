@@ -334,7 +334,9 @@ abstract class Maven implements Serializable {
 
         String validateMandatoryFields(Repository repository) {
             for (String fieldKey  : mandatoryFields) {
-                if (!repository[fieldKey]) {
+                // Note: "[]" syntax (and also getProperty()) leads to
+                // Scripts not permitted to use staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt
+                if (!(repository."$fieldKey")) {
                     // We can't access "script" variable here to call script.error directly. So just return a string
                     return "Missing required '${fieldKey}' parameter."
                 }
@@ -345,7 +347,7 @@ abstract class Maven implements Serializable {
         private String evalTemplate(String template, Map<String, String> binding) {
             //Scripts not permitted to use new groovy.text.GStringTemplateEngine
             //new GStringTemplateEngine().createTemplate(goal).make(binding)
-            goal.replaceAll(/\$\{(\w+)\}/) { m, k -> binding[k] }
+            template.replaceAll(/\$\{(\w+)\}/) { m, k -> binding[k] }
         }
     }
 }

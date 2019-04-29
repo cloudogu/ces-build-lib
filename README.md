@@ -289,7 +289,7 @@ Note that the staging of releases might well take 10 minutes. After that, the ar
 [release repository](https://oss.sonatype.org/content/repositories/releases/), which is *later* (feels like nightly) 
 synced to Maven Central.  
 
-For an example see [triologygmbh/command-bus](https://github.com/cloudogu/command-bus).
+For an example see [cloudogu/command-bus](https://github.com/cloudogu/command-bus).
 
 ### Deploying sites
 
@@ -323,6 +323,8 @@ Where
 * the nexus username and password/access token are passed as jenkins username and password credential 
   (`nexusSystemUserCredential`).
 * there is no difference between Nexus 2 and Nexus 3 regarding site deployments.
+
+For an example see [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/)
 
 ### Passing additional arguments
 
@@ -732,4 +734,5 @@ For example, ff running on `http(s)://server:port/jenkins`, `server` is returned
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
   * [cloudugo/cas](https://github.com/cloudogu/cas)
-  * [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus)
+  * [cloudogu/command-bus](https://github.com/cloudogu/command-bus)
+  * [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/)
