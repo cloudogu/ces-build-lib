@@ -205,7 +205,7 @@ class SonarQubeTest {
         sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.additionalArgs ==
-                '-Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 -Dsonar.github.repository=owner/repo -Dsonar.github.oauth=oauthToken '
+                ' -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=PR-42 -Dsonar.github.repository=owner/repo -Dsonar.github.oauth=oauthToken '
     }
 
     @Test
