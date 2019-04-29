@@ -288,7 +288,7 @@ Note that the staging of releases might well take 10 minutes. After that, the ar
 [release repository](https://oss.sonatype.org/content/repositories/releases/), which is *later* (feels like nightly) 
 synced to Maven Central.  
 
-For an example see [triologygmbh/command-bus](https://github.com/triologygmbh/command-bus).
+For an example see [triologygmbh/command-bus](https://github.com/cloudogu/command-bus).
 
 ### Deploying sites
 
@@ -312,7 +312,7 @@ Where `Site-repo` is the name of the raw repository that must exist in Nexus to 
 Then, you can deploy the site as follows:
 
 ```groovy
-mvn.useDeploymentRepository([id: 'ces', url: 'see pom.xml', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+mvn.useDeploymentRepository([id: 'ces', url: 'ignored-see-pom.xml', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
 mvn.deploySiteToNexus()
 ```
 
