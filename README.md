@@ -231,7 +231,8 @@ mvn.useDeploymentRepository([id: 'ces', url: 'https://ecosystem.cloudogu.com/nex
 mvn.deployToNexusRepository()    
 ```
 
-Right now, the two supported repository types are `Nexus2` and `Nexus3`.
+Right now, the two supported repository types are `Nexus2` and `Nexus3`, where Nexus 3 is used when `type` parameter is 
+not set.
 
 Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
 snapshot repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/snapshots/)). Otherwise, 
@@ -312,16 +313,16 @@ Where `Site-repo` is the name of the raw repository that must exist in Nexus to 
 Then, you can deploy the site as follows:
 
 ```groovy
-mvn.useDeploymentRepository([id: 'ces', url: 'ignored-see-pom.xml', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+mvn.useDeploymentRepository([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
 mvn.deploySiteToNexus()
 ```
 
 Where
  
 * the `id` parameter must match the one specified in the `pom.xml`(`ces` in the example above), 
-* the `url` parameter is ignored (taken from `pom.xml`),
 * the nexus username and password/access token are passed as jenkins username and password credential 
   (`nexusSystemUserCredential`).
+* there is no difference between Nexus 2 and Nexus 3 regarding site deployments.
 
 ### Passing additional arguments
 

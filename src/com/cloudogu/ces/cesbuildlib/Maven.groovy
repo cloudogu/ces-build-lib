@@ -53,8 +53,6 @@ abstract class Maven implements Serializable {
         // Naming this method set..() causes Groovy issues on Jenkins because the parameters are a Map but the object is a Repository:
         // Cannot cast object 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3@11f9131c' with class 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3' to class 'java.util.Map'
 
-        validateFieldsPresent(config, 'id', 'url', 'credentialsId', 'type')
-
         script.echo "Setting deployment repository with config ${config}"
 
         String id = config['id']
@@ -62,10 +60,11 @@ abstract class Maven implements Serializable {
         String creds = config['credentialsId']
         if ('Nexus2'.equals(config['type'])) {
             deploymentRepository = new Nexus2(id, url, creds)
-        } else if ('Nexus3'.equals(config['type'])) {
-            script.echo "Creating Nexus 3"
-            def nexus3 = new Nexus3(id, url, creds)
-            this.deploymentRepository = nexus3
+        } else {
+            if (!'Nexus3'.equals(config['type'])) {
+                script.echo "useDeploymentRepository() - Repository type \"${config['type']}\" empty or unknown. Defaulting to Nexus 3."
+            }
+            deploymentRepository = new Nexus3(id, url, creds)
         }
     }
 
@@ -150,6 +149,10 @@ abstract class Maven implements Serializable {
         if (!deploymentRepository) {
             script.error 'No deployment repository set. Cannot perform maven deploy.'
         }
+        def missingMandatoryField = goal.validateMandatoryFields(deploymentRepository)
+        if (missingMandatoryField) {
+            script.error missingMandatoryField
+        }
 
         if (signatureCredentials) {
             script.withCredentials([script.file(credentialsId: signatureCredentials.secretKeyAscFile, variable: 'ascFile'),
@@ -202,14 +205,6 @@ abstract class Maven implements Serializable {
                 "${additionalDeployArgs} " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 deployGoal
-        }
-    }
-
-    protected void validateFieldsPresent(Map config, String... fieldKeys) {
-        for (String fieldKey  : fieldKeys) {
-            if (!config[fieldKey]) {
-                script.error "Missing required '${fieldKey}' parameter."
-            }
         }
     }
 
@@ -303,7 +298,8 @@ abstract class Maven implements Serializable {
     enum DeployGoal {
         REGULAR(
                 SOURCE_JAVADOC_PACKAGE +
-                'deploy:deploy'
+                'deploy:deploy',
+                ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
         NEXUS_STAGING(
                 SOURCE_JAVADOC_PACKAGE +
@@ -311,16 +307,20 @@ abstract class Maven implements Serializable {
                 // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
                 'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
                 '-DserverId=${id} -DnexusUrl=${url} ' +
-                '-DautoReleaseAfterClose=true '
+                '-DautoReleaseAfterClose=true ',
+                ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
-        SITE('site:deploy')
+        SITE('site:deploy',
+                ['id', 'credentialsIdUsernameAndPassword'])
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
 
         final String goal
+        final List mandatoryFields
 
-        private DeployGoal(String goal) {
+        private DeployGoal(String goal, mandatoryFields) {
             this.goal = goal
+            this.mandatoryFields = mandatoryFields
         }
 
         String createGoal(Repository repository) {
@@ -330,6 +330,16 @@ abstract class Maven implements Serializable {
                     url: repository.url
             ]
             evalTemplate(goal, binding)
+        }
+
+        String validateMandatoryFields(Repository repository) {
+            for (String fieldKey  : mandatoryFields) {
+                if (!repository[fieldKey]) {
+                    // We can't access "script" variable here to call script.error directly. So just return a string
+                    return "Missing required '${fieldKey}' parameter."
+                }
+            }
+            return ""
         }
 
         private String evalTemplate(String template, Map<String, String> binding) {

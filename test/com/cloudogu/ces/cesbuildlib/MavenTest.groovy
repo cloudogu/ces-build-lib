@@ -100,7 +100,63 @@ class MavenTest {
 
         assert 'No deployment repository set. Cannot perform maven deploy.' == exception.getMessage()
     }
-    
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsRegularId() {
+        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
+        assertMissingDeploymentRepositoryParameter('id',
+                { mvn.deployToNexusRepository() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsRegularUrl() {
+        mvn.useDeploymentRepository([id: 'id', credentialsId: 'creds'])
+        assertMissingDeploymentRepositoryParameter('url',
+                { mvn.deployToNexusRepository() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsRegularCredentials() {
+        mvn.useDeploymentRepository([id: 'id', url: 'url'])
+        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
+                { mvn.deployToNexusRepository() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsStagingId() {
+        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
+        assertMissingDeploymentRepositoryParameter('id',
+                { mvn.deployToNexusRepositoryWithStaging() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsStagingUrl() {
+        mvn.useDeploymentRepository([id: 'id', credentialsId: 'creds'])
+        assertMissingDeploymentRepositoryParameter('url',
+                { mvn.deployToNexusRepositoryWithStaging() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsStagingCredentials() {
+        mvn.useDeploymentRepository([id: 'id', url: 'url'])
+        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
+                { mvn.deployToNexusRepositoryWithStaging() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsSiteId() {
+        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
+        assertMissingDeploymentRepositoryParameter('id',
+                { mvn.deploySiteToNexus() })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryMissingRequiredFieldsSiteCredentials() {
+        mvn.useDeploymentRepository([id: 'id', url: 'url'])
+        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
+                { mvn.deploySiteToNexus() })
+    }
+
     @Test
     void testDeployToNexusRepository() {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
@@ -149,6 +205,7 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
+                [id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2'],
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
@@ -174,17 +231,19 @@ class MavenTest {
     private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
                                     String expectedDeploymentGoal) {
         deployToNexusRepository(actualAdditionalArgs, expectedDeploymentGoal,
+                [id: 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials',
+                 type: 'Nexus2'],
                             { mvn.deployToNexusRepository(goal, expectedAdditionalArgs) }
         )
     }
 
-    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal,
+    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, Map deploymentRepo,
                                     Closure methodUnderTest) {
-        String deploymentRepoId = 'expectedId'
+        String deploymentRepoId = deploymentRepo.id
+        def expectedCredentials = deploymentRepo.credentialsId
+        def expectedUrl = deploymentRepo.url
 
-        def expectedCredentials = 'expectedCredentials'
-        mvn.useDeploymentRepository([id: deploymentRepoId, url: 'https://expected.url', credentialsId: expectedCredentials,
-                                     type: 'Nexus2'])
+        mvn.useDeploymentRepository(deploymentRepo)
         methodUnderTest.call()
 
         assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
@@ -198,10 +257,19 @@ class MavenTest {
         assert actualSettingsXml.contains("<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD}</password>")
 
         assert mvnArgs.startsWith('-DskipTests ')
-        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::https://expected.url/content/repositories/releases ")
-        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::https://expected.url/content/repositories/snapshots ")
+        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
+        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$actualAdditionalArgs $expectedDeploymentGoal")
+    }
+
+
+    private static void assertMissingDeploymentRepositoryParameter(String fieldKey, Closure methodUnderTest) {
+        def exception = shouldFail {
+            methodUnderTest.call()
+        }
+
+        assert "Missing required '${fieldKey}' parameter." == exception.getMessage()
     }
 
     class MavenForTest extends Maven {
