@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+import com.cloudogu.ces.cesbuildlib.Maven.DeployGoal
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -104,7 +105,7 @@ class MavenTest {
     void testDeployToNexusRepository() {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
-        deployToNexusRepository(false, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy')
+        deployToNexusRepository(DeployGoal.REGULAR, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy')
     }
 
     @Test
@@ -118,15 +119,14 @@ class MavenTest {
 
     @Test
     void testDeployToNexusRepositoryWithSignature() {
-        deployToNexusRepositoryWithSignature(false, 'deploy:deploy')
+        deployToNexusRepositoryWithSignature( DeployGoal.REGULAR, 'deploy:deploy')
     }
 
     @Test
     void testDeployToNexusRepositoryWithStaging() {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
-
-        deployToNexusRepository(true, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoalWithStaging)
+        deployToNexusRepository(DeployGoal.NEXUS_STAGING, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoalWithStaging)
     }
 
 
@@ -141,10 +141,10 @@ class MavenTest {
 
     @Test
     void testDeployToNexusRepositoryWithStagingAndSignature() {
-        deployToNexusRepositoryWithSignature(true, expectedDeploymentGoalWithStaging)
+        deployToNexusRepositoryWithSignature(DeployGoal.NEXUS_STAGING, expectedDeploymentGoalWithStaging)
     }
 
-    void deployToNexusRepositoryWithSignature(Boolean useNexusStaging, String expectedDeploymentGoal) {
+    void deployToNexusRepositoryWithSignature(DeployGoal goal, String expectedDeploymentGoal) {
 
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'org.kohsuke:pgp-maven-plugin:sign expectedAdditionalArgs'
@@ -153,7 +153,7 @@ class MavenTest {
         scriptMock.env['passphrase'] = 'verySecret'
 
         mvn.setSignatureCredentials('expectedSecretKeyAscFile', 'expectedSecretKeyPassPhrase')
-        deployToNexusRepository(useNexusStaging, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoal)
+        deployToNexusRepository(goal, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoal)
 
         assert 'expectedSecretKeyAscFile' == scriptMock.actualFileArgs['credentialsId']
         assert 'expectedSecretKeyPassPhrase' == scriptMock.actualStringArgs['credentialsId']
@@ -163,13 +163,14 @@ class MavenTest {
         assert scriptMock.actualWithEnv.get(1) == 'PGP_PASSPHRASE=literal:verySecret'
     }
 
-    private deployToNexusRepository(Boolean useNexusStaging, String expectedAdditionalArgs, String actualAdditionalArgs,
+    private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
                                     String expectedDeploymentGoal) {
         String deploymentRepoId = 'expectedId'
 
         def expectedCredentials = 'expectedCredentials'
-        mvn.setDeploymentRepository(deploymentRepoId, 'https://expected.url', expectedCredentials)
-        mvn.deployToNexusRepository(useNexusStaging, expectedAdditionalArgs)
+        mvn.useDeploymentRepository([id: deploymentRepoId, url: 'https://expected.url', credentialsId: expectedCredentials,
+                                     type: 'Nexus2'])
+        mvn.deployToNexusRepository(goal, expectedAdditionalArgs)
 
         assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD" == scriptMock.actualUsernamePasswordArgs['passwordVariable']

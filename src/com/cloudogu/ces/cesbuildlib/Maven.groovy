@@ -93,7 +93,7 @@ abstract class Maven implements Serializable {
      * {@link #setSignatureCredentials(java.lang.String, java.lang.String)}.
      */
     void deployToNexusRepository(String additionalDeployArgs = '') {
-        deployToNexusRepository(false, additionalDeployArgs)
+        deployToNexusRepository(DeployGoal.REGULAR, additionalDeployArgs)
     }
 
     /**
@@ -116,10 +116,10 @@ abstract class Maven implements Serializable {
      *
      */
     void deployToNexusRepositoryWithStaging(String additionalDeployArgs = '') {
-        deployToNexusRepository(true, additionalDeployArgs)
+        deployToNexusRepository(DeployGoal.NEXUS_STAGING, additionalDeployArgs)
     }
 
-    void deployToNexusRepository(Boolean useNexusStaging, String additionalDeployArgs = '') {
+    protected void deployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
         if (!deploymentRepository) {
             script.error 'No deployment repository set. Cannot perform maven deploy.'
         }
@@ -136,27 +136,18 @@ abstract class Maven implements Serializable {
 
                     additionalDeployArgs = 'org.kohsuke:pgp-maven-plugin:sign ' + additionalDeployArgs
 
-                    doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
+                    doDeployToNexusRepository(goal, additionalDeployArgs)
                 }
             }
         } else {
             script.echo 'No signature credentials set. Deploying unsigned'
-            doDeployToNexusRepository(useNexusStaging, additionalDeployArgs)
+            doDeployToNexusRepository(goal, additionalDeployArgs)
         }
     }
 
-    void doDeployToNexusRepository(Boolean useNexusStaging, String additionalDeployArgs = '') {
+    protected void doDeployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
 
-        String deployGoal = 'deploy:deploy'
-
-        if (useNexusStaging) {
-            // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
-            // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
-            deployGoal =
-                    "org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true " +
-                    "-DserverId=${deploymentRepository.id} -DnexusUrl=${deploymentRepository.url} " +
-                    "-DautoReleaseAfterClose=true "
-        }
+        String deployGoal = goal.createGoal(deploymentRepository)
 
         // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
         String usernameProperty = "NEXUS_REPO_CREDENTIALS_USERNAME"
@@ -181,7 +172,7 @@ abstract class Maven implements Serializable {
                 "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.releasesRepository} " +
                 "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
-                "$additionalDeployArgs " +
+                "${additionalDeployArgs} " +
                 // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 deployGoal
         }
@@ -282,4 +273,37 @@ abstract class Maven implements Serializable {
         }
     }
 
+    enum DeployGoal {
+        REGULAR(
+                'deploy:deploy'
+        ),
+        NEXUS_STAGING(
+                // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
+                // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
+                'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+                '-DserverId=${id} -DnexusUrl=${url} ' +
+                '-DautoReleaseAfterClose=true '
+        )
+
+        final String goal
+
+        private DeployGoal(String goal) {
+            this.goal = goal
+        }
+
+        String createGoal(Repository repository) {
+
+            Map<String, String> binding = [
+                    id: repository.id,
+                    url: repository.url
+            ]
+            evalTemplate(goal, binding)
+        }
+
+        private String evalTemplate(String template, Map<String, String> binding) {
+            //Scripts not permitted to use new groovy.text.GStringTemplateEngine
+            //new GStringTemplateEngine().createTemplate(goal).make(binding)
+            goal.replaceAll(/\$\{(\w+)\}/) { m, k -> binding[k] }
+        }
+    }
 }
