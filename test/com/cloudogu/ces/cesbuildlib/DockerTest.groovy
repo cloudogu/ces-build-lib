@@ -188,9 +188,35 @@ class DockerTest {
                     return [param1, param2]
                 }])
 
+        def args = docker.image(expectedImage).inside { return 'expectedClosure' }
+
+        assertEquals(' --entrypoint="" ', args[0])
+        assertEquals('expectedClosure', args[1].call())
+    }
+
+    @Test
+    void imageInsideWithArgs() {
+        Docker docker = createWithImage(
+                [inside: { String param1, Closure param2 ->
+                    return [param1, param2]
+                }])
+
         def args = docker.image(expectedImage).inside('-v a:b') { return 'expectedClosure' }
 
-        assertEquals('-v a:b', args[0])
+        assert args[0].startsWith('-v a:b')
+        assertEquals('expectedClosure', args[1].call())
+    }
+
+    @Test
+    void imageInsideWithEntrypoint() {
+        Docker docker = createWithImage(
+                [inside: { String param1, Closure param2 ->
+                    return [param1, param2]
+                }])
+
+        def args = docker.image(expectedImage).inside('--entrypoint="entry"') { return 'expectedClosure' }
+
+        assertEquals('--entrypoint="entry"', args[0])
         assertEquals('expectedClosure', args[1].call())
     }
 
@@ -221,7 +247,7 @@ class DockerTest {
 
         def args = docker.image(expectedImage).run('arg', 'cmd')
 
-        assertEquals('arg', args[0])
+        assertEquals('arg --entrypoint="" ', args[0])
         assertEquals('cmd', args[1])
     }
 
@@ -234,7 +260,7 @@ class DockerTest {
 
         def args = docker.image(expectedImage).withRun('arg', 'cmd') { return 'expectedClosure' }
 
-        assertEquals('arg', args[0])
+        assertEquals('arg --entrypoint="" ', args[0])
         assertEquals('cmd', args[1])
         assertEquals('expectedClosure', args[2].call())
     }

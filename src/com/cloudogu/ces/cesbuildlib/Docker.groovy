@@ -305,7 +305,16 @@ class Docker implements Serializable {
                 doInstallDockerClient()
                 extendedArgs += " -v ${script.pwd()}/${DOCKER_CLIENT_PATH}/docker:/usr/bin/docker"
             }
+            extendedArgs = workAroundEntrypointIssues(extendedArgs)
             return extendedArgs
+        }
+
+        private String workAroundEntrypointIssues(String extendedArgs) {
+            // E.g. https://issues.jenkins-ci.org/browse/JENKINS-41316
+            if (!extendedArgs.contains('--entrypoint')) {
+                extendedArgs += ' --entrypoint="" '
+            }
+            extendedArgs
         }
 
         private String writePasswd() {
