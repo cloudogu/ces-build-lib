@@ -4,8 +4,8 @@ package com.cloudogu.ces.cesbuildlib
  * Run maven from a local tool installation on Jenkins.
  */
 class MavenLocal extends Maven {
-    def mvnHome
-    def javaHome
+    private mvnHome
+    private javaHome
 
     MavenLocal(script, mvnHome, javaHome) {
         super(script)

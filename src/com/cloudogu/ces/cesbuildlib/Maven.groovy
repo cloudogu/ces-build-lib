@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 abstract class Maven implements Serializable {
-    def script
+    protected script
 
     // Args added to each mvn call
     String additionalArgs = ""

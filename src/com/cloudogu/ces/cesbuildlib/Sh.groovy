@@ -4,7 +4,7 @@ package com.cloudogu.ces.cesbuildlib
  * An abstraction for the {@code sh} step
  */
 class Sh implements Serializable {
-    def script
+    private script
 
     Sh(script) {
         this.script = script

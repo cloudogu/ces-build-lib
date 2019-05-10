@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 class Git implements Serializable {
-    def script
+    private script
     Sh sh
     def credentials = null
 

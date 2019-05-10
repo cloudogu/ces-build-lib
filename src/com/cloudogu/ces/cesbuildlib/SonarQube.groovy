@@ -7,7 +7,7 @@ package com.cloudogu.ces.cesbuildlib
  * https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline
  */
 class SonarQube implements Serializable {
-    def script
+    protected script
 
     // If enabled uses the branch plugin, available for developer edition and above
     boolean isUsingBranchPlugin = false

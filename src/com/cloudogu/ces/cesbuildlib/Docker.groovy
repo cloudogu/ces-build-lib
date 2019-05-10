@@ -6,7 +6,7 @@ package com.cloudogu.ces.cesbuildlib
  * as well as some convenience methods.
  */
 class Docker implements Serializable {
-    def script
+    private script
     Sh sh
 
     Docker(script) {

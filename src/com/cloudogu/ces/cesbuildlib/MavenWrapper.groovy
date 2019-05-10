@@ -7,7 +7,7 @@ package com.cloudogu.ces.cesbuildlib
  */
 class MavenWrapper extends Maven {
 
-    def javaHome
+    private javaHome
 
     MavenWrapper(script, javaHome = null) {
         super(script)
