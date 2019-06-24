@@ -728,8 +728,11 @@ for unstable branches.
 ## findHostName
 
 Returns the hostname of the current Jenkins instance. 
-For example, ff running on `http(s)://server:port/jenkins`, `server` is returned.
+For example, if running on `http(s)://server:port/jenkins`, `server` is returned.
 
+## isBuildSuccessful
+
+Returns true if the build is successful, i.e. not failed or unstable (yet).
 
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)

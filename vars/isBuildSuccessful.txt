@@ -1,0 +1,1 @@
+Returns true if the build is successful, i.e. not failed or unstable (yet).
