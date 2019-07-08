@@ -206,7 +206,7 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2'],
+                [id: 'expectedId', credentialsId: 'expectedCredentials',  url: 'https://expected.url', type: 'Nexus2'],
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 

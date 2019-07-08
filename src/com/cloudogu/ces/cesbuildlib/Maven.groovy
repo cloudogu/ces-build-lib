@@ -331,14 +331,9 @@ abstract class Maven implements Serializable {
 
         String createGoal(Repository repository, String additionalDeployArgs) {
 
-            Map<String, String> binding = [
-                    id: repository.id,
-                    url: repository.url,
-                    additionalDeployArgs: additionalDeployArgs
-            ]
-            return evalTemplate(goal, binding)
-            //String goal = evalTemplate(goal, binding)
-            //goal.replace(' null ', ' ')
+            goal.replace('${id}', repository.id)
+                .replace('${url}', repository.url)
+                .replace('${additionalDeployArgs}', additionalDeployArgs)
         }
 
         String validateMandatoryFields(Repository repository) {
@@ -351,12 +346,6 @@ abstract class Maven implements Serializable {
                 }
             }
             return ""
-        }
-
-        private String evalTemplate(String template, Map<String, String> binding) {
-            //Scripts not permitted to use new groovy.text.GStringTemplateEngine
-            //new GStringTemplateEngine().createTemplate(goal).make(binding)
-            template.replaceAll(/\$\{(\w+)\}/) { m, k -> binding[k] }
         }
     }
 }
