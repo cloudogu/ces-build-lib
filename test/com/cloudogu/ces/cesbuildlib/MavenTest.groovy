@@ -13,7 +13,7 @@ class MavenTest {
 
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     def expectedDeploymentGoalWithStaging =
-            'source:jar javadoc:jar package org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+            'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
             '-DserverId=expectedId -DnexusUrl=https://expected.url -DautoReleaseAfterClose=true '
 
     def scriptMock = new ScriptMock()
@@ -161,7 +161,7 @@ class MavenTest {
     void testDeployToNexusRepository() {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
-        deployToNexusRepository(DeployGoal.REGULAR, expectedAdditionalArgs, actualAdditionalArgs, 'source:jar javadoc:jar package deploy:deploy')
+        deployToNexusRepository(DeployGoal.REGULAR, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy')
     }
 
     @Test
@@ -175,14 +175,15 @@ class MavenTest {
 
     @Test
     void testDeployToNexusRepositoryWithSignature() {
-        deployToNexusRepositoryWithSignature(DeployGoal.REGULAR, 'source:jar javadoc:jar package deploy:deploy')
+        deployToNexusRepositoryWithSignature(DeployGoal.REGULAR, 'deploy:deploy', 'source:jar javadoc:jar package')
     }
 
     @Test
     void testDeployToNexusRepositoryWithStaging() {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
-        deployToNexusRepository(DeployGoal.NEXUS_STAGING, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoalWithStaging)
+        deployToNexusRepository(DeployGoal.NEXUS_STAGING, expectedAdditionalArgs, actualAdditionalArgs,
+                expectedDeploymentGoalWithStaging, 'source:jar javadoc:jar package')
     }
 
 
@@ -197,7 +198,7 @@ class MavenTest {
 
     @Test
     void testDeployToNexusRepositoryWithStagingAndSignature() {
-        deployToNexusRepositoryWithSignature(DeployGoal.NEXUS_STAGING, expectedDeploymentGoalWithStaging)
+        deployToNexusRepositoryWithSignature(DeployGoal.NEXUS_STAGING, expectedDeploymentGoalWithStaging, 'source:jar javadoc:jar package')
     }
 
     @Test
@@ -209,7 +210,7 @@ class MavenTest {
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
-    void deployToNexusRepositoryWithSignature(DeployGoal goal, String expectedDeploymentGoal) {
+    void deployToNexusRepositoryWithSignature(DeployGoal goal, String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
 
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'org.kohsuke:pgp-maven-plugin:sign expectedAdditionalArgs'
@@ -218,7 +219,7 @@ class MavenTest {
         scriptMock.env['passphrase'] = 'verySecret'
 
         mvn.setSignatureCredentials('expectedSecretKeyAscFile', 'expectedSecretKeyPassPhrase')
-        deployToNexusRepository(goal, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoal)
+        deployToNexusRepository(goal, expectedAdditionalArgs, actualAdditionalArgs, expectedDeploymentGoal, beforeAdditionalArgs)
 
         assert 'expectedSecretKeyAscFile' == scriptMock.actualFileArgs['credentialsId']
         assert 'expectedSecretKeyPassPhrase' == scriptMock.actualStringArgs['credentialsId']
@@ -229,16 +230,17 @@ class MavenTest {
     }
 
     private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
-                                    String expectedDeploymentGoal) {
+                                    String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
         deployToNexusRepository(actualAdditionalArgs, expectedDeploymentGoal,
-                [id: 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials',
+                [id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials',
                  type: 'Nexus2'],
-                            { mvn.deployToNexusRepository(goal, expectedAdditionalArgs) }
+                { mvn.deployToNexusRepository(goal, expectedAdditionalArgs)},
+                beforeAdditionalArgs
         )
     }
 
     private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, Map deploymentRepo,
-                                    Closure methodUnderTest) {
+                                    Closure methodUnderTest, String beforeAdditionalArgs = '') {
         String deploymentRepoId = deploymentRepo.id
         def expectedCredentials = deploymentRepo.credentialsId
         def expectedUrl = deploymentRepo.url
@@ -260,7 +262,7 @@ class MavenTest {
         assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
         assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
-        assert mvnArgs.endsWith("$actualAdditionalArgs $expectedDeploymentGoal")
+        assert mvnArgs.endsWith("$beforeAdditionalArgs $actualAdditionalArgs $expectedDeploymentGoal")
     }
 
 

@@ -177,7 +177,9 @@ abstract class Maven implements Serializable {
 
     protected void doDeployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
 
-        String deployGoal = goal.createGoal(deploymentRepository)
+        script.echo "creating goal with additionalDeployArgs=$additionalDeployArgs"
+        String deployGoal = goal.createGoal(deploymentRepository, additionalDeployArgs)
+        script.echo "created goal $deployGoal"
 
         // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
         String usernameProperty = "NEXUS_REPO_CREDENTIALS_USERNAME"
@@ -202,8 +204,6 @@ abstract class Maven implements Serializable {
                 "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.releasesRepository} " +
                 "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} " +
                 "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
-                "${additionalDeployArgs} " +
-                // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 deployGoal
         }
     }
@@ -297,12 +297,17 @@ abstract class Maven implements Serializable {
 
     enum DeployGoal {
         REGULAR(
+                // Build sources and javadoc first, because they need to be signed as well.
+                // Otherwise we'll run into an NPE here: https://github.com/kohsuke/pgp-maven-plugin/blob/master/src/main/java/org/kohsuke/maven/pgp/PgpMojo.java#L188
                 SOURCE_JAVADOC_PACKAGE +
+                '${additionalDeployArgs} ' +
+                // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
                 'deploy:deploy',
                 ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
         NEXUS_STAGING(
                 SOURCE_JAVADOC_PACKAGE +
+                '${additionalDeployArgs} ' +
                 // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
                 // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
                 'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
@@ -310,7 +315,8 @@ abstract class Maven implements Serializable {
                 '-DautoReleaseAfterClose=true ',
                 ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
-        SITE('site:deploy',
+        SITE('${additionalDeployArgs} ' +
+                'site:deploy',
                 ['id', 'credentialsIdUsernameAndPassword'])
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
@@ -323,13 +329,16 @@ abstract class Maven implements Serializable {
             this.mandatoryFields = mandatoryFields
         }
 
-        String createGoal(Repository repository) {
+        String createGoal(Repository repository, String additionalDeployArgs) {
 
             Map<String, String> binding = [
                     id: repository.id,
-                    url: repository.url
+                    url: repository.url,
+                    additionalDeployArgs: additionalDeployArgs
             ]
-            evalTemplate(goal, binding)
+            return evalTemplate(goal, binding)
+            //String goal = evalTemplate(goal, binding)
+            //goal.replace(' null ', ' ')
         }
 
         String validateMandatoryFields(Repository repository) {
