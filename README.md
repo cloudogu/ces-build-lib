@@ -14,10 +14,15 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [Maven](#maven)
   - [Maven from local Jenkins tool](#maven-from-local-jenkins-tool)
   - [Maven Wrapper](#maven-wrapper)
+    - [With local JDK tool](#with-local-jdk-tool)
+    - [With the JDK provided by the build agent](#with-the-jdk-provided-by-the-build-agent)
   - [Maven in Docker](#maven-in-docker)
-    - [Maven starts new containers](#maven-starts-new-containers)
-    - [Local repo](#local-repo)
-    - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
+    - [Plain Maven In Docker](#plain-maven-in-docker)
+    - [Maven Wrapper In Docker](#maven-wrapper-in-docker)
+    - [Advanced Maven in Docker features](#advanced-maven-in-docker-features)
+      - [Maven starts new containers](#maven-starts-new-containers)
+      - [Local repo](#local-repo)
+      - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
     - [Deploying artifacts](#deploying-artifacts)
       - [Simple deployment](#simple-deployment)
@@ -48,6 +53,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [isPullRequest](#ispullrequest)
   - [findEmailRecipients](#findemailrecipients)
   - [findHostName](#findhostname)
+  - [isBuildSuccessful](#isbuildsuccessful)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -126,19 +132,27 @@ stage('Build') {
 
 Run maven using a [Maven Wrapper](https://github.com/takari/maven-wrapper) from the local repository.
 
+### With local JDK tool
+
+Similar to `MavenLocal` you can use the Maven Wrapper with a JDK from a local tool installation on Jenkins:
+
 ```
-Maven mvn = new MavenWrapper(this)
+def javaHome = tool 'JDK8'
+Maven mvn = new MavenWrapper(this, javaHome)
 
 stage('Build') {
     mvn 'clean install'
 }
 ```
-This uses Java Runtime on the Build agent's `PATH`.
-Similar to `MavenLocal` you can also specify a JDK from a local tool installation on Jenkins:
+
+### With the JDK provided by the build agent
+
+It is also possible to not specify a JDK tool and use the Java Runtime on the Build agent's `PATH`. However, 
+experience tells us that this is absolutely non-deterministic and will result in unpredictable behavior.  
+So: Better set an explicit Java tool to be used or use `MavenWrapperInDocker.`
 
 ```
-def javaHome = tool 'JDK8'
-Maven mvn = new MavenWrapper(this, javaHome)
+Maven mvn = new MavenWrapper(this)
 
 stage('Build') {
     mvn 'clean install'
@@ -152,7 +166,9 @@ Run maven in a docker container. This can be helpful, when
 * constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running 
   integration tests, unit tests that use infrastructure that binds to ports or
 * one maven repo per builds is required For example when concurrent builds of multi module project install the same 
-  snapshot versions. 
+  snapshot versions.
+  
+### Plain Maven In Docker
 
 The builds are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
 
@@ -166,7 +182,29 @@ stage('Build') {
 }
 ```
 
-### Maven starts new containers
+### Maven Wrapper In Docker
+
+It's also possible to use the MavenWrapper in a Docker Container. Here, the Docker container is responsible for 
+providing the JDK.
+
+See [MavenWrapperInDocker](src/com/cloudogu/ces/cesbuildlib/MavenWrapperInDocker.groovy)
+
+```
+Maven mvn = MavenWrapperInDocker(this, 'adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine')
+
+stage('Build') {
+    mvn 'clean install'
+}
+```
+
+Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image 
+registries, where `adoptopenjdk` is just one option. The choice is yours. 
+
+### Advanced Maven in Docker features
+
+The following features apply to plain Maven as well as Maven Wrapper in Docker.
+
+#### Maven starts new containers
 
 If you run Docker from your maven build, because you use the 
 [docker-maven-plugin](https://github.com/fabric8io/docker-maven-plugin) for example, you can connect the docker socket 
@@ -185,7 +223,7 @@ stage('Unit Test') {
 ```
 There are some security-related concerns about this. See [Docker](#docker).
 
-### Local repo
+#### Local repo
 
 If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
 ```
@@ -196,7 +234,7 @@ mvn.useLocalRepoFromJenkins = true
 This speed speeds up the first build and uses less memory. 
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
-### Lazy evaluation / execute more steps inside container
+#### Lazy evaluation / execute more steps inside container
  
 If you need to execute more steps inside the maven container you can pass a closure to your maven instance that is 
 lazily evaluated within the container. The String value returned are the maven arguments. 

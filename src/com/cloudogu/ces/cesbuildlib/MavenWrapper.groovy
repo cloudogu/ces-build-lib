@@ -12,7 +12,7 @@ class MavenWrapper extends Maven {
     /**
      * @deprecated
      * Using no explicit Java tool results in using the one that happens to be in the PATH of the build agent.
-     * Experience tells us that this is absoultely non-deterministic and will result in unpredictable behavior.
+     * Experience tells us that this is absolutely non-deterministic and will result in unpredictable behavior.
      * So: Better set an explicit Java tool to be used, or use MavenWrapperInDocker.
      *
      */
