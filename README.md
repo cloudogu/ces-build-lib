@@ -584,7 +584,7 @@ stage('Statical Code Analysis') {
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
 
   if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
-    currentBuild.result ='UNSTABLE'
+    unstable("Pipeline unstable due to SonarQube quality gate failure")
   }
 }
 ```
@@ -647,7 +647,7 @@ Example using SonarCloud:
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
 
   if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
-    currentBuild.result ='UNSTABLE'
+    unstable("Pipeline unstable due to SonarCloud quality gate failure")
   }
 ```
 
