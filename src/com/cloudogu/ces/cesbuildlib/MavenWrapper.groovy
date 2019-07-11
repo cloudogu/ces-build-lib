@@ -9,7 +9,19 @@ class MavenWrapper extends Maven {
 
     private javaHome
 
-    MavenWrapper(script, javaHome = null) {
+    /**
+     * @deprecated
+     * Using no explicit Java tool results in using the one that happens to be in the PATH of the build agent.
+     * Experience tells us that this is absolutely non-deterministic and will result in unpredictable behavior.
+     * So: Better set an explicit Java tool to be used, or use MavenWrapperInDocker.
+     *
+     */
+    @Deprecated
+    MavenWrapper(script) {
+        this(script, '')
+    }
+
+    MavenWrapper(script, javaHome) {
         super(script)
         this.javaHome = javaHome
     }
@@ -25,9 +37,5 @@ class MavenWrapper extends Maven {
         } else {
             mvnw(args)
         }
-    }
-
-    def mvnw(String args) {
-        script.sh "./mvnw ${createCommandLineArgs(args)}"
     }
 }

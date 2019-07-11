@@ -20,6 +20,10 @@ abstract class Maven implements Serializable {
 
     abstract def mvn(String args)
 
+    protected def mvnw(String args) {
+        script.sh "./mvnw ${createCommandLineArgs(args)}"
+    }
+
     String createCommandLineArgs(String args) {
         // Apache Maven related side notes:
         // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
