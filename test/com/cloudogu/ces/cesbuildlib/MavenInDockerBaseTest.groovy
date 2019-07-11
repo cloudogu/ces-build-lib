@@ -6,7 +6,8 @@ import static junit.framework.TestCase.assertEquals
 import static org.mockito.ArgumentMatchers.anyBoolean
 import static org.mockito.Mockito.*
 
-class MavenInDockerTest {
+class MavenInDockerBaseTest {
+
     static final ORIGINAL_USER_HOME = "/home/jenkins"
     static final String EXPECTED_JENKINS_USER_FROM_ETC_PASSWD =
             "jenkins:x:1000:1000:Jenkins,,,:" + ORIGINAL_USER_HOME + ":/bin/bash"
@@ -15,47 +16,41 @@ class MavenInDockerTest {
     // Expected output of pwd, print working directory
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     static final SOME_WHITESPACES = "  \n  "
-
-    String expectedVersion = "3.5.0-jdk8"
+    static final IMAGE_ID = 'maven:3.5.0-jdk8'
 
     def scriptMock = new MavenInDockerScriptMock()
 
-    def mavenInDocker = new MavenInDocker(scriptMock, expectedVersion)
+    def mvn = new MavenInDockerTest(scriptMock)
 
     @Test
     void testCreateDockerRunArgsDefault() {
-        assertEquals("", mavenInDocker.createDockerRunArgs())
+        assertEquals("", mvn.createDockerRunArgs())
     }
 
     @Test
     void testDockerHostEnabled() {
-        mavenInDocker.enableDockerHost = true
+        mvn.enableDockerHost = true
         Docker dockerMock = mock(Docker.class)
         Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.image('maven:3.5.0-jdk8')).thenReturn(imageMock)
+        when(dockerMock.image(IMAGE_ID)).thenReturn(imageMock)
         when(imageMock.mountJenkinsUser(anyBoolean())).thenReturn(imageMock)
         when(imageMock.mountDockerSocket(anyBoolean())).thenReturn(imageMock)
-        mavenInDocker.docker = dockerMock
+        mvn.docker = dockerMock
 
-
-        def expectedDockerRunArgs = "-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" --group-add " + EXPECTED_GROUP_ID
-
-        mavenInDocker 'test'
+        mvn 'test'
 
         verify(imageMock).mountDockerSocket(true)
         verify(imageMock).mountJenkinsUser(true)
-        //assertEquals(expectedDockerRunArgs, mavenInDocker.createDockerRunArgs())
     }
 
     @Test
     void testCreateDockerRunArgsUseLocalRepoFromJenkins() {
         scriptMock.env.HOME = "/home/jenkins"
-        mavenInDocker.useLocalRepoFromJenkins = true
-
+        mvn.useLocalRepoFromJenkins = true
 
         def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
 
-        assert mavenInDocker.createDockerRunArgs().contains(expectedMavenRunArgs)
+        assert mvn.createDockerRunArgs().contains(expectedMavenRunArgs)
         assert scriptMock.actualShMapArgs.size() == 1
         assert scriptMock.actualShMapArgs.get(0) ==  'mkdir -p $HOME/.m2'
     }
@@ -78,6 +73,19 @@ class MavenInDockerTest {
                 return EXPECTED_GROUP_ID
             }
             ""
+        }
+    }
+
+    class MavenInDockerTest extends MavenInDockerBase {
+
+        MavenInDockerTest(Object script) {
+            super(script)
+        }
+
+        def call(Closure closure) {
+            inDocker(IMAGE_ID) {
+                closure.call()
+            }
         }
     }
 }
