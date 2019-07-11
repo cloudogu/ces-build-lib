@@ -55,7 +55,7 @@ node('docker') {
             sonarQube.analyzeWith(mvn)
 
             if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
-                currentBuild.result = 'UNSTABLE'
+                unstable("Pipeline unstable due to SonarQube quality gate failure")
             }
         }
     }
