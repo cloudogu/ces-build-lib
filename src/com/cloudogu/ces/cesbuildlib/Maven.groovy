@@ -307,7 +307,7 @@ abstract class Maven implements Serializable {
         String snapshotRepository
         String releasesRepository
 
-        Nexus3(String id, String url, String credentialsIdUsernameAndPassword, String snapshotRepository, String releasesRepository) {
+        Configurable(String id, String url, String credentialsIdUsernameAndPassword, String snapshotRepository, String releasesRepository) {
             super(id, url, credentialsIdUsernameAndPassword)
             this.snapshotRepository = snapshotRepository
             this.releasesRepository = releasesRepository
