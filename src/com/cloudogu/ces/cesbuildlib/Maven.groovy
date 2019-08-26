@@ -62,7 +62,11 @@ abstract class Maven implements Serializable {
         String id = config['id']
         String url = config['url']
         String creds = config['credentialsId']
-        if ('Nexus2'.equals(config['type'])) {
+        if ('Configurable'.equals(config['type'])) {
+            String snapshotRepository = config['snapshotRepository']
+            String releaseRepository = config['releaseRepository']
+            deploymentRepository = new Configurable(id, url, creds, snapshotRepository, releaseRepository)
+        } else if ('Nexus2'.equals(config['type'])) {
             deploymentRepository = new Nexus2(id, url, creds)
         } else {
             if (!'Nexus3'.equals(config['type'])) {
@@ -296,6 +300,17 @@ abstract class Maven implements Serializable {
 
         Nexus3(String id, String url, String credentialsIdUsernameAndPassword) {
             super(id, url, credentialsIdUsernameAndPassword)
+        }
+    }
+
+    static class Configurable extends Repository {
+        String snapshotRepository
+        String releasesRepository
+
+        Nexus3(String id, String url, String credentialsIdUsernameAndPassword, String snapshotRepository, String releasesRepository) {
+            super(id, url, credentialsIdUsernameAndPassword)
+            this.snapshotRepository = snapshotRepository
+            this.releasesRepository = releasesRepository
         }
     }
 
