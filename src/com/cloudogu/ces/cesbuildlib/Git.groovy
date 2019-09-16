@@ -180,13 +180,14 @@ class Git implements Serializable {
      * @param workspaceFolder
      * @param commitMessage
      */
-    void pushGitHubPagesBranch(String workspaceFolder, String commitMessage) {
+    void pushGitHubPagesBranch(String workspaceFolder, String commitMessage, String subFolder = '.') {
         def ghPagesTempDir = '.gh-pages'
         try {
             script.dir(ghPagesTempDir) {
                 git url: repositoryUrl, branch: 'gh-pages', changelog: false, poll: false
 
-                script.sh "cp -rf ../${workspaceFolder}/* ."
+                script.sh "mkdir -p ${subFolder}"
+                script.sh "cp -rf ../${workspaceFolder}/* ${subFolder}"
                 add '.'
                 commit commitMessage
                 push 'gh-pages'

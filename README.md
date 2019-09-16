@@ -442,7 +442,11 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
    * Uses the name and email of the last committer as author and committer.
    * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
    * Don't forget to create a git object with credentials.
-   * Example: [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/) 
+   * Optional: You can deploy to a sub folder of your GitHub Pages branch using a third parameter
+   * Examples:
+      * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
+      * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
+   * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
 
 
 # Docker
