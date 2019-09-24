@@ -210,6 +210,15 @@ class MavenTest {
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
+    @Test
+    void testDeploySiteToNexusRepositoryWithoutUrl() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
+                [id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2'],
+                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+    }
+
     void deployToNexusRepositoryWithSignature(DeployGoal goal, String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
 
         def expectedAdditionalArgs = 'expectedAdditionalArgs'

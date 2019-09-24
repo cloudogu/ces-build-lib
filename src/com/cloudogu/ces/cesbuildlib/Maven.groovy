@@ -335,8 +335,8 @@ abstract class Maven implements Serializable {
 
         String createGoal(Repository repository, String additionalDeployArgs) {
 
-            goal.replace('${id}', repository.id)
-                .replace('${url}', repository.url)
+            goal.replace('${id}', (repository.id ? repository.id : ""))
+                .replace('${url}', (repository.url ? repository.url : ""))
                 .replace('${additionalDeployArgs}', additionalDeployArgs)
         }
 
