@@ -27,6 +27,21 @@ class SonarQube implements Serializable {
     }
 
     /**
+     * Executes a SonarQube analysis using a SonarQube Scanner installed by Jenkins.
+     *
+     * When building a PullRequest, only a preview analysis is done. The result of this analysis can be added to the PR,
+     * see {@link #updateAnalysisResultOfPullRequestsToGitHub(java.lang.String)}.
+     *
+     * The current branch name is added to the SonarQube project name. Paid versions of GitHub offer the branch plugin.
+     * If available set {@link #isUsingBranchPlugin} to {@code true}.
+     *
+     */
+    void analyzeWith(SonarQubeScanner scanner) {
+        scanner.additionalArgs += createAnalysisArgs()
+        determineAnalysisStrategy(scanner).execute()
+    }
+
+    /**
      * Executes a SonarQube analysis using maven.
      *
      * When building a PullRequest, only a preview analysis is done. The result of this analysis can be added to the PR,
@@ -37,8 +52,8 @@ class SonarQube implements Serializable {
      *
      */
     void analyzeWith(Maven mvn) {
-        initMaven(mvn)
-        determineAnalysisStrategy().executeWith(mvn)
+        mvn.additionalArgs += createAnalysisArgs()
+        determineAnalysisStrategy(new MavenAnalysisTool(mvn)).execute()
     }
 
     /**
@@ -49,7 +64,7 @@ class SonarQube implements Serializable {
      *
      * If there is no webhook or SonarQube does not respond within 2 minutes, the build fails.
      * So make sure to set up a webhook in SonarQube global administration or per project to
-     * {@code <JenkinsInstance>/sonarqube-webhook/}.
+     * {@code <JenkinsInstance> /sonarqube-webhook/}.
      * See https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins
      *
      * If this build is a Pull Request, this method will not wait, because usually PRs are analyzed locally.
@@ -99,19 +114,20 @@ class SonarQube implements Serializable {
         this.gitHubRepoName = new Git(script).repositoryName
     }
 
-    protected void initMaven(Maven mvn) {
+    protected String createAnalysisArgs() {
         if (script.isPullRequest()) {
-            initMavenForPullRequest(mvn)
+            createAnalysisArgsForPullRequest()
         } else {
-            initMavenForRegularAnalysis(mvn)
+            createAnalysisArgsForRegularAnalysis()
         }
     }
 
-    protected void initMavenForRegularAnalysis(Maven mvn) {
+    protected String createAnalysisArgsForRegularAnalysis() {
         script.echo "SonarQube analyzing branch ${script.env.BRANCH_NAME}"
+        String args = ''
 
         if (isIgnoringBranches) {
-            return
+            return ''
         }
 
         // Run SQ analysis in specific project for feature, hotfix, etc.
@@ -119,29 +135,32 @@ class SonarQube implements Serializable {
         // However, the alternative (the branch plugin is paid version only)
         // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
         if (isUsingBranchPlugin) {
-            mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
+            args += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
             if (!"master".equals(script.env.BRANCH_NAME)) {
                 // Avoid exception "The main branch must not have a target" on master branch
-                mvn.additionalArgs += " -Dsonar.branch.target=master "
+                args += " -Dsonar.branch.target=master "
             }
         } else if (script.env.BRANCH_NAME) {
-            mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
+            args += " -Dsonar.branch=${script.env.BRANCH_NAME} "
         }
+        return args
     }
 
-    protected void initMavenForPullRequest(Maven mvn) {
+    protected String createAnalysisArgsForPullRequest() {
         script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
+        String args = ''
 
         // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
-        mvn.additionalArgs += " -Dsonar.analysis.mode=preview"
-        mvn.additionalArgs += " -Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
+        args += " -Dsonar.analysis.mode=preview"
+        args += " -Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
 
         if (gitHubCredentials != null && !gitHubCredentials.isEmpty()) {
-            mvn.additionalArgs += "-Dsonar.github.repository=$gitHubRepoName "
+            args += "-Dsonar.github.repository=$gitHubRepoName "
             script.withCredentials([script.string(credentialsId: gitHubCredentials, variable: 'PASSWORD')]) {
-                mvn.additionalArgs += "-Dsonar.github.oauth=${script.env.PASSWORD} "
+                args += "-Dsonar.github.oauth=${script.env.PASSWORD} "
             }
         }
+        return args
     }
 
     protected void validateFieldPresent(Map config, String fieldKey) {
@@ -150,20 +169,21 @@ class SonarQube implements Serializable {
         }
     }
 
-    protected AnalysisStrategy determineAnalysisStrategy() {
+    protected AnalysisStrategy determineAnalysisStrategy(AnalysisTool analysisTool) {
         // If private may fail for SonarCloud with:
         // No signature of method: com.cloudogu.ces.cesbuildlib.SonarCloud.determineAnalysisStrategy() is applicable for argument types: () values: []
 
         if (config['sonarQubeEnv']) {
-            return new EnvAnalysisStrategy(script, config['sonarQubeEnv'])
+            return new EnvAnalysisStrategy(script, analysisTool, config['sonarQubeEnv'])
 
         } else if (config['token']) {
             validateMandatoryFieldsWithoutSonarQubeEnv()
-            return new TokenAnalysisStrategy(script, config['token'], config['sonarHostUrl'])
+            return new TokenAnalysisStrategy(script, analysisTool, config['token'], config['sonarHostUrl'])
 
         } else if (config['usernamePassword']) {
             validateMandatoryFieldsWithoutSonarQubeEnv()
-            return new UsernamePasswordAnalysisStrategy(script, config['usernamePassword'], config['sonarHostUrl'])
+            return new UsernamePasswordAnalysisStrategy(script, analysisTool, config['usernamePassword'],
+                    config['sonarHostUrl'])
 
         } else {
             script.error "Requires either 'sonarQubeEnv', 'token' or 'usernamePassword' parameter."
@@ -174,40 +194,61 @@ class SonarQube implements Serializable {
         validateFieldPresent(config, 'sonarHostUrl')
     }
 
+    interface AnalysisTool {
+        void setAdditionalArgs(String additionalArgs)
+        void analyze(String sonarMavenGoal, String sonarHostUrl, String sonarLogin, String sonarExtraProps)
+    }
+
+    private static class MavenAnalysisTool implements AnalysisTool {
+
+        Maven mvn
+
+        MavenAnalysisTool(Maven mvn) {
+            this.mvn = mvn
+        }
+
+        void setAdditionalArgs(String additionalArgs) {
+            mvn.additionalArgs = additionalArgs
+        }
+
+        void analyze(String sonarMavenGoal, String sonarHostUrl, String sonarLogin, String sonarExtraProps) {
+            //Using mvn(), i.e. implicit mvn.call() results in
+            // groovy.lang.MissingMethodException: No signature of method: java.lang.Class.mvn() is applicable
+
+            mvn.call("${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}")
+        }
+    }
+
     private static abstract class AnalysisStrategy {
 
         def script
+        protected AnalysisTool analysisTool
 
-        AnalysisStrategy(script) {
+        AnalysisStrategy(script,  AnalysisTool analysisTool) {
             this.script = script
+            this.analysisTool = analysisTool
         }
 
-        abstract executeWith(Maven mvn)
-
-        protected analyzeWith(Maven mvn, String sonarMavenGoal, String sonarHostUrl, String sonarLogin,
-                              String sonarExtraProps = '') {
-
-            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}"
-        }
+        abstract execute()
     }
 
     private static class EnvAnalysisStrategy extends AnalysisStrategy {
 
         String sonarQubeEnv
 
-        EnvAnalysisStrategy(script, String sonarQubeEnv) {
-            super(script)
+        EnvAnalysisStrategy(script, AnalysisTool analysisTool, String sonarQubeEnv) {
+            super(script, analysisTool)
             this.sonarQubeEnv = sonarQubeEnv
         }
 
-        def executeWith(Maven mvn) {
+        def execute() {
             script.withSonarQubeEnv(sonarQubeEnv) {
                 String sonarExtraProps = script.env.SONAR_EXTRA_PROPS
                 if (sonarExtraProps == null) {
                     sonarExtraProps = ""
                 }
 
-                analyzeWith(mvn, script.env.SONAR_MAVEN_GOAL, script.env.SONAR_HOST_URL, script.env.SONAR_AUTH_TOKEN,
+                analysisTool.analyze(script.env.SONAR_MAVEN_GOAL, script.env.SONAR_HOST_URL, script.env.SONAR_AUTH_TOKEN,
                         sonarExtraProps)
             }
         }
@@ -218,15 +259,15 @@ class SonarQube implements Serializable {
         String token
         String host
 
-        TokenAnalysisStrategy(script, String tokenCredential, String host) {
-            super(script)
+        TokenAnalysisStrategy(script, AnalysisTool analysisTool, String tokenCredential, String host) {
+            super(script, analysisTool)
             this.token = tokenCredential
             this.host = host
         }
 
-        def executeWith(Maven mvn) {
+        def execute() {
             script.withCredentials([script.string(credentialsId: token, variable: 'SONAR_AUTH_TOKEN')]) {
-                analyzeWith(mvn, 'sonar:sonar', host, script.env.SONAR_AUTH_TOKEN)
+                analysisTool.analyze('sonar:sonar', host, script.env.SONAR_AUTH_TOKEN, '')
             }
         }
     }
@@ -236,16 +277,16 @@ class SonarQube implements Serializable {
         String usernameAndPasswordCredential
         String host
 
-        UsernamePasswordAnalysisStrategy(script, String usernameAndPasswordCredential, String host) {
-            super(script)
+        UsernamePasswordAnalysisStrategy(script, AnalysisTool analysisTool, String usernameAndPasswordCredential, String host) {
+            super(script, analysisTool)
             this.usernameAndPasswordCredential = usernameAndPasswordCredential
             this.host = host
         }
 
-        def executeWith(Maven mvn) {
+        def execute() {
             script.withCredentials([script.usernamePassword(credentialsId: usernameAndPasswordCredential,
                     passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
-                analyzeWith(mvn, 'sonar:sonar', host, script.env.USERNAME,
+                analysisTool.analyze('sonar:sonar', host, script.env.USERNAME,
                         "-Dsonar.password=${script.env.PASSWORD} ")
             }
         }

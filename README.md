@@ -44,6 +44,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Additional features provided by the `Docker.Image` class](#additional-features-provided-by-the-dockerimage-class)
 - [SonarQube](#sonarqube)
   - [Constructors](#constructors)
+  - [Analyses](#analyses)
   - [A complete example](#a-complete-example)
   - [Branches](#branches)
   - [SonarCloud](#sonarcloud)
@@ -616,7 +617,21 @@ In general, you can analyse with or without the [SonarQube Plugin for Jenkins](h
 With the `SonarQube` instance you can now analyze your code. When using the plugin (i.e. `sonarQubeEnv`) you can also
 wait for the quality gate status, that is computed by SonarQube asynchronously. Note that this does **not** work for `token`
 and `usernamePassword`.
- 
+
+## Analyses
+
+The actual analyses can either be done using 
+
+* maven: e.g.  
+  ```groovy
+  sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
+  ```
+* or a SonarQube Scanner configured as Jenkins tool (set up at `https://yourJenkinsInstance/configureTools/`)
+  ```groovy
+  def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+  sonarQube.analyzeWith(new SonarQubeScanner(this, scannerHome))
+  ```
+
 ## A complete example
 
 ```groovy

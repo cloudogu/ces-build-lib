@@ -209,6 +209,27 @@ class SonarQubeTest {
     }
 
     @Test
+    void analyzeWithScanner() throws Exception {
+        scriptMock.env = [
+                SONAR_MAVEN_GOAL : 'sonar:sonar',
+                SONAR_HOST_URL   : 'host',
+                SONAR_AUTH_TOKEN : 'auth',
+                SONAR_EXTRA_PROPS: '-DextraKey=extraValue',
+                BRANCH_NAME      : 'develop'
+        ]
+
+        def scanner = new SonarQubeScanner(scriptMock, 'home')
+        scanner.additionalArgs = '-Dadditional'
+
+        new SonarQube(scriptMock, 'sqEnv').analyzeWith(scanner)
+
+        //assert mavenMock.args == 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
+        assert scriptMock.actualShStringArgs[0].trim() == "home/bin/sonar-scanner -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue -Dadditional -Dsonar.branch=develop"
+        assert scanner.additionalArgs.contains('-Dsonar.branch=develop')
+        assert scriptMock.actualSonarQubeEnv == 'sqEnv'
+    }
+
+    @Test
     void waitForQualityGate() throws Exception {
         scriptMock.expectedQGate = [status: 'OK']
 
