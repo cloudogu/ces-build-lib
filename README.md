@@ -248,6 +248,17 @@ mvn {
 }
 ```
 
+## Repository Credentials
+
+TODO describe how to use
+
+```
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
+```
+More info needed for deployments (see bellow!)
+
+TODO Try out with all maven variants (Local, Docker, Wrapper)
+
 ## Deploying to Nexus repository 
 
 ### Deploying artifacts
@@ -259,13 +270,13 @@ the nexus staging plugin (as necessary for Maven Central or other Nexus reposito
 
 The most simple use case is to deploy to a nexus repo (*not* Maven Central):
  
-* Just set the repository using `Maven.useDeploymentRepository()` passing a repository ID (you can choose), the URL as 
+* Just set the repository using `Maven.useRepositoryCredentials()` passing a repository ID (you can choose), the URL as 
   well as a nexus username and password/access token as jenkins username and password credential.
 * Call `Maven.deployToNexusRepository()`. And that is it. 
 
 Simple Example: 
 ```
-mvn.useDeploymentRepository([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+mvn.useRepositoryCredentials([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
 mvn.deployToNexusRepository()    
 ```
 
@@ -313,12 +324,12 @@ central you need to add the following:
 </distributionManagement>
 ```
 The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
-to ces-build-lib using `useDeploymentRepository()`.
+to ces-build-lib using `useRepositoryCredentials()`.
 
 Summing up, here is an example for deploying to Maven Central:
 
 ```
-mvn.useDeploymentRepository([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
+mvn.useRepositoryCredentials([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            
 ```
@@ -351,7 +362,7 @@ Where `Site-repo` is the name of the raw repository that must exist in Nexus to 
 Then, you can deploy the site as follows:
 
 ```groovy
-mvn.useDeploymentRepository([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
 mvn.deploySiteToNexus()
 ```
 
