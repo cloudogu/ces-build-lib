@@ -1,6 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -8,6 +9,13 @@ class SonarQubeTest {
 
     def scriptMock = new ScriptMock()
     def mavenMock = new MavenMock(scriptMock)
+
+    @Before
+    void setup()  {
+        mavenMock.mockedArtifactId = "ces-build-lib"
+        mavenMock.mockedGroupId = "com.cloudogu.ces"
+        mavenMock.mockedName = "ces build lib"
+    }
 
     @After
     void tearDown() throws Exception {
@@ -38,7 +46,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=auth '
-        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
+        assertBranchName()
         assert scriptMock.actualStringArgs['credentialsId'] == 'secretTextCred'
     }
 
@@ -66,7 +74,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
-        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
+        assertBranchName()
         assert scriptMock.actualUsernamePasswordArgs['credentialsId'] == 'usrPwCred'
     }
 
@@ -119,7 +127,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
-        assert mavenMock.additionalArgs.contains('-Dsonar.branch=develop')
+        assertBranchName()
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
 
@@ -262,5 +270,9 @@ class SonarQubeTest {
         }
 
         assert exception.message == "Missing required 'sonarHostUrl' parameter."
+    }
+
+    void assertBranchName() {
+        assert mavenMock.additionalArgs.contains("-Dsonar.projectKey=com.cloudogu.ces:ces-build-lib:develop -Dsonar.projectName=ces-build-lib:develop ")
     }
 }

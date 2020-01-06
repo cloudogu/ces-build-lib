@@ -10,6 +10,11 @@ import static org.junit.Assert.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
+    private static final String POM_EXPECTED_VERSION = "1.0.0"
+    private static final String POM_EXPECTED_ARTIFACT = "ces-build-lib"
+    private static final String POM_EXPECTED_GROUP = "com.cloudogu.ces"
+    private static final String POM_EXPECTED_NAME = "ces-build-lib name"
+    private static final String POM_XML = "<project><artifactId>${POM_EXPECTED_ARTIFACT}</artifactId><groupId>${POM_EXPECTED_GROUP}</groupId><name>${POM_EXPECTED_NAME}</name><version>${POM_EXPECTED_VERSION}</version><dependencies><dependency><groupId>grp</groupId><artifactId>groovy-cps</artifactId><version>unexpected</version></dependency></dependencies></project>"
 
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     def expectedDeploymentGoalWithStaging =
@@ -43,20 +48,54 @@ class MavenTest {
 
     @Test
     void testGetVersion() {
-        String expectedVersion = "1.0.0"
-        def scriptMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version><dependencies><dependency><groupId>grp</groupId><artifactId>groovy-cps</artifactId><version>unexpected</version></dependency></dependencies></project>"
-        }] as Object
+        def scriptMock = [readFile: { POM_XML }] as Object
         Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+        assertEquals("Unexpected version returned", POM_EXPECTED_VERSION, mvn.getVersion())
     }
 
     @Test
     void testGetVersionMissing() {
-        String expectedVersion = ""
         def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
+        assertEquals("Unexpected version returned", "", new MavenForTest(scriptMock).getVersion())
+    }
+
+    @Test
+    void testGetArtifactId() {
+        def scriptMock = [readFile: { POM_XML }] as Object
         Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+        assertEquals("Unexpected artifact returned", POM_EXPECTED_ARTIFACT, mvn.getArtifactId())
+    }
+
+    @Test
+    void testGetArtifactIdMissing() {
+        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
+        assertEquals("Unexpected artifact returned", "", new MavenForTest(scriptMock).getArtifactId())
+    }
+
+    @Test
+    void testGetGroupId() {
+        def scriptMock = [readFile: { POM_XML }] as Object
+        Maven mvn = new MavenForTest(scriptMock)
+        assertEquals("Unexpected group returned", POM_EXPECTED_GROUP, mvn.getGroupId())
+    }
+
+    @Test
+    void testGetGroupMissing() {
+        def scriptMock = [readFile: { "<project><artifactId>ces</artifactId></project>" }] as Object
+        assertEquals("Unexpected group returned", "", new MavenForTest(scriptMock).getGroupId())
+    }
+
+    @Test
+    void testGetName() {
+        def scriptMock = [readFile: { POM_XML }] as Object
+        Maven mvn = new MavenForTest(scriptMock)
+        assertEquals("Unexpected name returned", POM_EXPECTED_NAME, mvn.getName())
+    }
+
+    @Test
+    void testGetNameMissing() {
+        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
+        assertEquals("Unexpected name returned", "", new MavenForTest(scriptMock).getName())
     }
 
     @Test
@@ -91,7 +130,7 @@ class MavenTest {
         Maven mvn = new MavenForTest(scriptMock)
         assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
     }
-    
+
     @Test
     void testDeployToNexusRepositoryNoRepository() {
         def exception = shouldFail {

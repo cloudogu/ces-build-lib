@@ -385,6 +385,8 @@ arguments to the deployment like so: `mvn.deployToNexusRepositoryWithStaging('-X
 Available from both local Maven and Maven in Docker.
 
 * `mvn.getVersion()`
+* `mvn.getArtifactId()`
+* `mvn.getGroupId()`
 * `mvn.getProperty('project.build.sourceEncoding')`
 
 See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
@@ -656,11 +658,14 @@ Note that
   
 ## Branches
 
-By default, the `SonarQube` class uses the old logic, of passing the branch name to SonarQube, which will create one 
-project per branch. This is deprecated from SonarQube 6.x, but the alternative is the paid-version-only 
-[Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
+By default, the `SonarQube` legacy logic, of creating one project per branch in a Jenkins Multibranch Pipeline project.
 
-You can enable the branch plugin like so:
+A more convenient alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin)
+or the [sonarqube-community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin), which has 
+similar features but is difficult to install, not supported officially and does not allow for migration to the official 
+branch plugin later on.
+
+You can enable either branch plugins like so:
 
 ```groovy
 sonarQube.isUsingBranchPlugin = true

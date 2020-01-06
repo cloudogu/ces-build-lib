@@ -60,6 +60,21 @@ abstract class Maven implements Serializable {
         matcher ? matcher[0][1] : ""
     }
 
+    String getGroupId() {
+        def matcher = script.readFile('pom.xml') =~ '<groupId>(.+?)</groupId>'
+        matcher ? matcher[0][1] : ""
+    }
+
+    String getArtifactId() {
+        def matcher = script.readFile('pom.xml') =~ '<artifactId>(.+?)</artifactId>'
+        matcher ? matcher[0][1] : ""
+    }
+
+    String getName() {
+        def matcher = script.readFile('pom.xml') =~ '<name>(.+?)</name>'
+        matcher ? matcher[0][1] : ""
+    }
+
     String getMavenProperty(String propertyKey) {
         // Match multi line = (?s)
         def matcher = script.readFile('pom.xml') =~ "(?s)<properties>.*<$propertyKey>(.+)</$propertyKey>.*</properties>"
