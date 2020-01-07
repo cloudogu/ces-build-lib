@@ -32,20 +32,23 @@ abstract class Maven implements Serializable {
         }
     }
 
-    protected abstract def mvn(String args, boolean returnStdout = false)
+    /**
+     * @param printStdOut - returns output of mvn as String instead of printing to console
+     */
+    protected abstract def mvn(String args, boolean printStdOut = true)
 
-    def mvnw(String args, Boolean returnStdout) {
-        sh("./mvnw ${createCommandLineArgs(args)}", returnStdout)
+    def mvnw(String args, boolean printStdOut) {
+        sh("./mvnw ${createCommandLineArgs(args)}", printStdOut)
     }
 
-    void sh(String command, boolean returnStdout) {
-        //script.echo "executing sh: ${command}, return Stdout: ${returnStdout}"
-        if (returnStdout) {
-            new Sh(script).returnStdOut command
-        } else {
+    void sh(String command, boolean printStdOut) {
+        script.echo "executing sh: ${command}, return Stdout: ${printStdOut}"
+        if (printStdOut) {
             // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
-            // Don't use this in returnStdout!
+            // Don't use this with sh(returnStdout: true ..) !
             script.sh "${command} -V"
+        } else {
+            new Sh(script).returnStdOut command
         }
     }
 
@@ -90,7 +93,7 @@ abstract class Maven implements Serializable {
 
     String evaluateExpression(String expression) {
         // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
-        mvn("help:evaluate -Dexpression=${expression} -q -DforceStdout", true)
+        mvn("help:evaluate -Dexpression=${expression} -q -DforceStdout", false)
     }
 
     @Deprecated
@@ -249,16 +252,16 @@ abstract class Maven implements Serializable {
                 passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
 
             mvn "-DskipTests " +
-                // TODO when using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
-                // https://oss.sonatype.org/service/local/staging/deploy/maven2 and
-                // https://oss.sonatype.org/content/repositories/snapshots
-                // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
-                // See: https://issues.sonatype.org/browse/NEXUS-15464
-                // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
-                "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
-                "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " +
-                "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
-                deployGoal
+                    // TODO when using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
+                    // https://oss.sonatype.org/service/local/staging/deploy/maven2 and
+                    // https://oss.sonatype.org/content/repositories/snapshots
+                    // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
+                    // See: https://issues.sonatype.org/browse/NEXUS-15464
+                    // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
+                    "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
+                    "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " +
+                    "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
+                    deployGoal
         }
     }
 
@@ -353,19 +356,19 @@ abstract class Maven implements Serializable {
                 // Build sources and javadoc first, because they need to be signed as well.
                 // Otherwise we'll run into an NPE here: https://github.com/kohsuke/pgp-maven-plugin/blob/master/src/main/java/org/kohsuke/maven/pgp/PgpMojo.java#L188
                 SOURCE_JAVADOC_PACKAGE +
-                '${additionalDeployArgs} ' +
-                // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
-                'deploy:deploy',
+                        '${additionalDeployArgs} ' +
+                        // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
+                        'deploy:deploy',
                 ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
         NEXUS_STAGING(
                 SOURCE_JAVADOC_PACKAGE +
-                '${additionalDeployArgs} ' +
-                // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
-                // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
-                'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
-                '-DserverId=${id} -DnexusUrl=${url} ' +
-                '-DautoReleaseAfterClose=true ',
+                        '${additionalDeployArgs} ' +
+                        // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
+                        // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
+                        'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+                        '-DserverId=${id} -DnexusUrl=${url} ' +
+                        '-DautoReleaseAfterClose=true ',
                 ['id', 'url', 'credentialsIdUsernameAndPassword']
         ),
         SITE('${additionalDeployArgs} ' +
@@ -385,8 +388,8 @@ abstract class Maven implements Serializable {
         String createGoal(Repository repository, String additionalDeployArgs) {
 
             goal.replace('${id}', (repository.id ? repository.id : ""))
-                .replace('${url}', (repository.url ? repository.url : ""))
-                .replace('${additionalDeployArgs}', additionalDeployArgs)
+                    .replace('${url}', (repository.url ? repository.url : ""))
+                    .replace('${additionalDeployArgs}', additionalDeployArgs)
         }
 
         String validateMandatoryFields(Repository repository) {

@@ -21,11 +21,11 @@ abstract class MavenInDockerBase extends Maven {
     }
 
     @Override
-    def mvn(String args, boolean returnStdout = true) {
-        call ({ args }, returnStdout)
+    def mvn(String args, boolean printStdOut = true) {
+        call ({ args }, printStdOut)
     }
 
-    abstract def call(Closure closure, boolean returnStdout);
+    abstract def call(Closure closure, boolean printStdOut);
 
     String createDockerRunArgs() {
         String runArgs = ""

@@ -27,15 +27,15 @@ class MavenWrapper extends Maven {
     }
 
     @Override
-    def mvn(String args, boolean returnStdout = false) {
+    def mvn(String args, boolean printStdOut = true) {
 
         if (javaHome) {
             // PATH+something prepends to PATH
             script.withEnv(["JAVA_HOME=${javaHome}", "PATH+JDK=${script.env.JAVA_HOME}/bin"]) {
-                mvnw(args, returnStdout)
+                mvnw(args, printStdOut)
             }
         } else {
-            mvnw(args, returnStdout)
+            mvnw(args, printStdOut)
         }
     }
 }

@@ -277,7 +277,7 @@ class MavenTest {
             super(script)
         }
 
-        def mvn(String args, boolean returnStdout) {
+        def mvn(String args, boolean printStdOut) {
             mvnArgs = args
             return args
         }

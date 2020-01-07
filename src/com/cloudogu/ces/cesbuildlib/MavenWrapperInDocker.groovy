@@ -18,9 +18,9 @@ class MavenWrapperInDocker extends MavenInDockerBase {
     }
 
     @Override
-    def call(Closure closure, boolean returnStdout) {
+    def call(Closure closure, boolean printStdOut) {
         inDocker(imageId) {
-            mvnw(closure.call(), returnStdout)
+            mvnw(closure.call(), printStdOut)
         }
     }
 }

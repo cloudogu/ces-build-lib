@@ -17,7 +17,7 @@ class MavenMock extends Maven {
         super(scriptMock)
     }
 
-    def mvn(String args, boolean returnStdout) {
+    def mvn(String args, boolean printStdOut) {
         this.args = args
     }
 
