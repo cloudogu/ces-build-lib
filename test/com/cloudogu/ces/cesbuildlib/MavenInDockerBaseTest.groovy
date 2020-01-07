@@ -82,7 +82,7 @@ class MavenInDockerBaseTest {
             super(script)
         }
 
-        def call(Closure closure) {
+        def call(Closure closure, boolean returnStdout) {
             inDocker(IMAGE_ID) {
                 closure.call()
             }

@@ -17,7 +17,7 @@ class MavenMock extends Maven {
         super(scriptMock)
     }
 
-    def mvn(String args) {
+    def mvn(String args, boolean returnStdout) {
         this.args = args
     }
 
@@ -45,4 +45,5 @@ class MavenMock extends Maven {
 
     @Override
     String getName() { mockedName }
+
 }

@@ -25,9 +25,9 @@ class MavenInDocker extends MavenInDockerBase {
     }
 
     @Override
-    def call(Closure closure) {
+    def call(Closure closure, boolean returnStdout) {
         inDocker("maven:$dockerBaseImageVersion") {
-            script.sh("mvn ${createCommandLineArgs(closure.call())}")
+            sh("mvn ${createCommandLineArgs(closure.call())}", returnStdout)
         }
     }
 }

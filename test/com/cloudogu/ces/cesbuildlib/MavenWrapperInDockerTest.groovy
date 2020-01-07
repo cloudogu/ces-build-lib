@@ -14,7 +14,7 @@ class MavenWrapperInDockerTest {
         Docker docker = setupDockerMock(mvn)
         mvn 'clean install'
 
-        assert scriptMock.actualShStringArgs[0].trim().endsWith('clean install')
+        assert scriptMock.actualShStringArgs[0].trim().contains('clean install')
         verify(docker).image('adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine')
     }
 }

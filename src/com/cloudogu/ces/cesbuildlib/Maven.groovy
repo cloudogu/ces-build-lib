@@ -32,22 +32,35 @@ abstract class Maven implements Serializable {
         }
     }
 
-    protected abstract def mvn(String args)
+    protected abstract def mvn(String args, boolean returnStdout = false)
 
-    protected def mvnw(String args) {
-        script.sh "./mvnw ${createCommandLineArgs(args)}"
+    def mvnw(String args, Boolean returnStdout) {
+        sh("./mvnw ${createCommandLineArgs(args)}", returnStdout)
+    }
+
+    void sh(String command, boolean returnStdout) {
+        //script.echo "executing sh: ${command}, return Stdout: ${returnStdout}"
+        if (returnStdout) {
+            new Sh(script).returnStdOut command
+        } else {
+            // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
+            // Don't use this in returnStdout!
+            script.sh "${command} -V"
+        }
     }
 
     String createCommandLineArgs(String args) {
         // Apache Maven related side notes:
         // --batch-mode : recommended in CI to inform maven to not run in interactive mode (less logs)
-        // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
         //      Very useful to be quickly sure the selected versions were the ones you think.
         // -U : force maven to update snapshots each time (default : once an hour, makes no sense in CI).
         // -Dsurefire.useFile=false : useful in CI. Displays test errors in the logs directly (instead of
         //                            having to crawl the workspace files to see the cause).
 
-        String commandLineArgs = "--batch-mode -V -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs} "
+        // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
+        // --> Only used when not returning to stdout! See sh()
+
+        String commandLineArgs = "--batch-mode -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs} "
         if (repository) {
             commandLineArgs += "-s \"${settingsXmlPath}\" " // Not needed for MavenInDocker (but does no harm) but for MavenLocal
         }
@@ -56,29 +69,28 @@ abstract class Maven implements Serializable {
     }
 
     String getVersion() {
-        def matcher = script.readFile('pom.xml') =~ '<version>(.+?)</version>'
-        matcher ? matcher[0][1] : ""
+        return evaluateExpression('project.version')
     }
 
     String getGroupId() {
-        def matcher = script.readFile('pom.xml') =~ '<groupId>(.+?)</groupId>'
-        matcher ? matcher[0][1] : ""
+        return evaluateExpression('project.groupId')
     }
 
     String getArtifactId() {
-        def matcher = script.readFile('pom.xml') =~ '<artifactId>(.+?)</artifactId>'
-        matcher ? matcher[0][1] : ""
+        return evaluateExpression('project.artifactId')
     }
 
     String getName() {
-        def matcher = script.readFile('pom.xml') =~ '<name>(.+?)</name>'
-        matcher ? matcher[0][1] : ""
+        return evaluateExpression('project.name')
     }
 
     String getMavenProperty(String propertyKey) {
-        // Match multi line = (?s)
-        def matcher = script.readFile('pom.xml') =~ "(?s)<properties>.*<$propertyKey>(.+)</$propertyKey>.*</properties>"
-        matcher ? matcher[0][1] : ""
+        return evaluateExpression(propertyKey)
+    }
+
+    String evaluateExpression(String expression) {
+        // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
+        mvn("help:evaluate -Dexpression=${expression} -q -DforceStdout", true)
     }
 
     @Deprecated

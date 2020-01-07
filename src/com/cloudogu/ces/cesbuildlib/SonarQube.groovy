@@ -134,8 +134,9 @@ class SonarQube implements Serializable {
             // Even this didn't help: https://gist.github.com/Faheetah/e11bd0315c34ed32e681616e41279ef4
             // So change it to "<maven artifact>:<branch name>", as artifact is not allowed to consist spaces
 
-            mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${mvn.artifactId}:${script.env.BRANCH_NAME}"  +
-                    " -Dsonar.projectName=${mvn.artifactId.trim()}:${script.env.BRANCH_NAME} "
+            def artifactId = mvn.artifactId.trim()
+            mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${artifactId}:${script.env.BRANCH_NAME}"  +
+                    " -Dsonar.projectName=${artifactId}:${script.env.BRANCH_NAME} "
         }
     }
 

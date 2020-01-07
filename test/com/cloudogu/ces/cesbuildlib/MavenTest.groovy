@@ -10,11 +10,6 @@ import static org.junit.Assert.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
-    private static final String POM_EXPECTED_VERSION = "1.0.0"
-    private static final String POM_EXPECTED_ARTIFACT = "ces-build-lib"
-    private static final String POM_EXPECTED_GROUP = "com.cloudogu.ces"
-    private static final String POM_EXPECTED_NAME = "ces-build-lib name"
-    private static final String POM_XML = "<project><artifactId>${POM_EXPECTED_ARTIFACT}</artifactId><groupId>${POM_EXPECTED_GROUP}</groupId><name>${POM_EXPECTED_NAME}</name><version>${POM_EXPECTED_VERSION}</version><dependencies><dependency><groupId>grp</groupId><artifactId>groovy-cps</artifactId><version>unexpected</version></dependency></dependencies></project>"
 
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     def expectedDeploymentGoalWithStaging =
@@ -38,7 +33,7 @@ class MavenTest {
 
     @Test
     void testCall() throws Exception {
-        Maven mvn = new MavenForTest(null)
+        Maven mvn = new MavenForTest()
         mvn.metaClass.mvn = { String args ->
             return args
         }
@@ -48,87 +43,37 @@ class MavenTest {
 
     @Test
     void testGetVersion() {
-        def scriptMock = [readFile: { POM_XML }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", POM_EXPECTED_VERSION, mvn.getVersion())
-    }
-
-    @Test
-    void testGetVersionMissing() {
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        assertEquals("Unexpected version returned", "", new MavenForTest(scriptMock).getVersion())
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected version returned",
+                "help:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
     }
 
     @Test
     void testGetArtifactId() {
-        def scriptMock = [readFile: { POM_XML }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected artifact returned", POM_EXPECTED_ARTIFACT, mvn.getArtifactId())
-    }
-
-    @Test
-    void testGetArtifactIdMissing() {
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        assertEquals("Unexpected artifact returned", "", new MavenForTest(scriptMock).getArtifactId())
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected artifact returned",
+                "help:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId())
     }
 
     @Test
     void testGetGroupId() {
-        def scriptMock = [readFile: { POM_XML }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected group returned", POM_EXPECTED_GROUP, mvn.getGroupId())
-    }
-
-    @Test
-    void testGetGroupMissing() {
-        def scriptMock = [readFile: { "<project><artifactId>ces</artifactId></project>" }] as Object
-        assertEquals("Unexpected group returned", "", new MavenForTest(scriptMock).getGroupId())
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected group returned",
+                "help:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId())
     }
 
     @Test
     void testGetName() {
-        def scriptMock = [readFile: { POM_XML }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected name returned", POM_EXPECTED_NAME, mvn.getName())
-    }
-
-    @Test
-    void testGetNameMissing() {
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        assertEquals("Unexpected name returned", "", new MavenForTest(scriptMock).getName())
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected name returned",
+                "help:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName())
     }
 
     @Test
     void testGetMavenProperty() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = "expectedValue"
-        def scriptMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties>" +
-                    EOL +
-                    "<dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey>" +
-                    EOL +
-                    "</properties></project>"
-        }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
-    }
-
-    @Test
-    void testGetMavenPropertyNoProperties() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = ""
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
-    }
-
-    @Test
-    void testGetMavenPropertyNoProperty() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = ""
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected name returned",
+                "help:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
     }
 
     @Test
@@ -324,11 +269,15 @@ class MavenTest {
 
     class MavenForTest extends Maven {
 
+        MavenForTest() {
+            this(null)
+        }
+
         MavenForTest(Object script) {
             super(script)
         }
 
-        def mvn(String args) {
+        def mvn(String args, boolean returnStdout) {
             mvnArgs = args
             return args
         }
