@@ -45,35 +45,35 @@ class MavenTest {
     void testGetVersion() {
         Maven mvn = new MavenForTest()
         assertEquals("Unexpected version returned",
-                "help:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
     }
 
     @Test
     void testGetArtifactId() {
         Maven mvn = new MavenForTest()
         assertEquals("Unexpected artifact returned",
-                "help:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId())
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId())
     }
 
     @Test
     void testGetGroupId() {
         Maven mvn = new MavenForTest()
         assertEquals("Unexpected group returned",
-                "help:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId())
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId())
     }
 
     @Test
     void testGetName() {
         Maven mvn = new MavenForTest()
         assertEquals("Unexpected name returned",
-                "help:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName())
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName())
     }
 
     @Test
     void testGetMavenProperty() {
         Maven mvn = new MavenForTest()
         assertEquals("Unexpected name returned",
-                "help:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
     }
 
     @Test

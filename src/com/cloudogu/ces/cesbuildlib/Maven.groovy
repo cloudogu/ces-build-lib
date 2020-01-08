@@ -93,7 +93,7 @@ abstract class Maven implements Serializable {
 
     String evaluateExpression(String expression) {
         // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
-        mvn("help:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
     }
 
     @Deprecated
