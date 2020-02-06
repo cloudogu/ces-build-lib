@@ -93,13 +93,6 @@ class MavenTest {
     }
 
     @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularUrl() {
-        mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
-        assertMissingRepositoryParameter('url',
-                { mvn.deployToNexusRepository() })
-    }
-
-    @Test
     void testDeployToNexusRepositoryMissingRequiredFieldsRegularCredentials() {
         mvn.useRepositoryCredentials([id: 'id', url: 'url'])
         assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
@@ -110,13 +103,6 @@ class MavenTest {
     void testDeployToNexusRepositoryMissingRequiredFieldsStagingId() {
         mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds'])
         assertMissingRepositoryParameter('id',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingUrl() {
-        mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
-        assertMissingRepositoryParameter('url',
                 { mvn.deployToNexusRepositoryWithStaging() })
     }
 
@@ -252,8 +238,13 @@ class MavenTest {
         assert actualSettingsXml.contains("<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD}</password>")
 
         assert mvnArgs.startsWith('-DskipTests ')
-        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
-        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
+        if (expectedUrl) {
+            assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
+            assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
+        } else {
+            assert !mvnArgs.contains("-DaltReleaseDeploymentRepository")
+            assert !mvnArgs.contains("-DaltSnapshotDeploymentRepository")
+        }
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$beforeAdditionalArgs $actualAdditionalArgs $expectedDeploymentGoal")
     }

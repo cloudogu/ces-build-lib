@@ -255,7 +255,7 @@ TODO describe how to use
 ```
 mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
 ```
-More info needed for deployments (see bellow!)
+More info might be needed for deployments (see bellow!)
 
 TODO Try out with all maven variants (Local, Docker, Wrapper)
 
@@ -270,8 +270,10 @@ the nexus staging plugin (as necessary for Maven Central or other Nexus reposito
 
 The most simple use case is to deploy to a nexus repo (*not* Maven Central):
  
-* Just set the repository using `Maven.useRepositoryCredentials()` passing a repository ID (you can choose), the URL as 
-  well as a nexus username and password/access token as jenkins username and password credential.
+* Just set the repository using `Maven.useRepositoryCredentials()` by passing a nexus username and password/access token as jenkins username and password credential and
+  * either a repository ID (you can choose) and the URL
+  * or a repository ID that matches a repository defined in your `pom.xml` (then, no `url` is needed)    
+    (`distributionManagement` > `snapshotRepositor` or `repository` (depending on the `version`) > `id`)
 * Call `Maven.deployToNexusRepository()`. And that is it. 
 
 Simple Example: 
@@ -323,12 +325,27 @@ central you need to add the following:
     </repository>
 </distributionManagement>
 ```
-The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
-to ces-build-lib using `useRepositoryCredentials()`.
+In addition you eihter have to pass an `url` to `useRepositoryCredentials()` or specify the nexus-staging-maven plugin in your pom.xml:
+
+```xml
+  <plugin>
+    <groupId>org.sonatype.plugins</groupId>
+    <artifactId>nexus-staging-maven-plugin</artifactId>
+    <!-- ... -->
+    <configuration>
+      <serverId>ossrh</serverId>
+      <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+    </configuration>
+  </plugin>
+```
+          
+Either way, the repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) in 
+`distributionManagement` and `nexus-staging-maven plugin` must conform to each other.
 
 Summing up, here is an example for deploying to Maven Central:
 
 ```
+// url is optional, if described in nexus-staging-maven-plugin in pom.xml 
 mvn.useRepositoryCredentials([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            

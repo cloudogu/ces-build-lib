@@ -245,7 +245,7 @@ abstract class Maven implements Serializable {
     protected void doDeployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
 
         script.echo "creating goal with additionalDeployArgs=$additionalDeployArgs"
-        String deployGoal = goal.createGoal(repository, additionalDeployArgs)
+        String deployGoal = goal.create(repository, additionalDeployArgs)
         script.echo "created goal $deployGoal"
 
         script.withCredentials([script.usernamePassword(credentialsId: repository.credentialsIdUsernameAndPassword,
@@ -258,8 +258,11 @@ abstract class Maven implements Serializable {
                     // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
                     // Sonatype won't fix this issue, though: https://issues.sonatype.org/browse/NEXUS-15464
                     // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
+                    // So: When usin nexus staging (e.g. for maven central), the user will have to specify those in the pom.xml
+                    (repository.url ? 
                             "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
-                    "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " +
+                            "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " 
+                            : '') +
                     "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                     deployGoal
         }
@@ -352,46 +355,34 @@ abstract class Maven implements Serializable {
     }
 
     enum DeployGoal {
-        REGULAR(
+        REGULAR( { repository, String additionalDeployArgs ->
                 // Build sources and javadoc first, because they need to be signed as well.
                 // Otherwise we'll run into an NPE here: https://github.com/kohsuke/pgp-maven-plugin/blob/master/src/main/java/org/kohsuke/maven/pgp/PgpMojo.java#L188
                 SOURCE_JAVADOC_PACKAGE +
-                        '${additionalDeployArgs} ' +
                         // Deploy last to make sure package, source/javadoc jars, signature and potential additional goals are executed first
-                        'deploy:deploy',
-                ['id', 'url', 'credentialsIdUsernameAndPassword']
+                        "${additionalDeployArgs} deploy:deploy" }
         ),
-        NEXUS_STAGING(
+        NEXUS_STAGING( { repository, String additionalDeployArgs ->
                 SOURCE_JAVADOC_PACKAGE +
-                        '${additionalDeployArgs} ' +
+                        additionalDeployArgs +
                         // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
                         // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
-                        'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
-                        '-DserverId=${id} -DnexusUrl=${url} ' +
-                        '-DautoReleaseAfterClose=true ',
-                ['id', 'url', 'credentialsIdUsernameAndPassword']
+                        ' org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+                        (repository.id ? "-DserverId=${repository.id} " : '') +
+                        (repository.url ? "-DnexusUrl=${repository.url} " : '') +
+                        '-DautoReleaseAfterClose=true ' }
         ),
-        SITE('${additionalDeployArgs} ' +
-                'site:deploy',
-                ['id', 'credentialsIdUsernameAndPassword'])
+        SITE({ repository, String additionalDeployArgs ->
+                "${additionalDeployArgs} site:deploy" })
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
+        private final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
+        Closure<String> create
 
-        final String goal
-        final List mandatoryFields
-
-        private DeployGoal(String goal, mandatoryFields) {
-            this.goal = goal
-            this.mandatoryFields = mandatoryFields
+        private DeployGoal(Closure goal) {
+            this.create = goal
         }
         
-        String createGoal(Repository repository, String additionalDeployArgs) {
-
-            goal.replace('${id}', (repository.id ? repository.id : ""))
-                    .replace('${url}', (repository.url ? repository.url : ""))
-                    .replace('${additionalDeployArgs}', additionalDeployArgs)
-        }
-
         String validateMandatoryFields(Repository repository) {
             for (String fieldKey  : mandatoryFields) {
                 // Note: "[]" syntax (and also getProperty()) leads to
