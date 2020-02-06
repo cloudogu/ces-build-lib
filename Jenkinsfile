@@ -15,7 +15,6 @@ node('docker') {
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
 
-    // TODO refactor this in an object-oriented way and move to build-lib
     if ("master".equals(env.BRANCH_NAME)) {
         mvn.additionalArgs = "-DperformRelease"
         currentBuild.description = mvn.getVersion()

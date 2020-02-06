@@ -252,13 +252,13 @@ abstract class Maven implements Serializable {
                 passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
 
             mvn "-DskipTests " +
-                    // TODO when using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
+                    // When using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
                     // https://oss.sonatype.org/service/local/staging/deploy/maven2 and
                     // https://oss.sonatype.org/content/repositories/snapshots
                     // However, nexus-staging-maven-plugin does not seem to pick up the -DaltDeploymentRepository parameters
-                    // See: https://issues.sonatype.org/browse/NEXUS-15464
+                    // Sonatype won't fix this issue, though: https://issues.sonatype.org/browse/NEXUS-15464
                     // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
-                    "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
+                            "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
                     "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " +
                     "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                     deployGoal
@@ -384,7 +384,7 @@ abstract class Maven implements Serializable {
             this.goal = goal
             this.mandatoryFields = mandatoryFields
         }
-
+        
         String createGoal(Repository repository, String additionalDeployArgs) {
 
             goal.replace('${id}', (repository.id ? repository.id : ""))
