@@ -108,7 +108,6 @@ abstract class Maven implements Serializable {
         useRepositoryCredentials(config)
     }
 
-    // TODO implement for multiple repositories, rename to addRepositoryCredentials()
     void useRepositoryCredentials(Map config) {
         // Naming this method set..() causes Groovy issues on Jenkins because the parameters are a Map but the object is a Repository:
         // Cannot cast object 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3@11f9131c' with class 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3' to class 'java.util.Map'
