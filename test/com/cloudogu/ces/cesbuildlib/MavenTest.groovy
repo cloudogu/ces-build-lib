@@ -86,45 +86,15 @@ class MavenTest {
     }
 
     @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularId() {
-        mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds'])
+    void testUseRepositoryCredentialsMissingRequiredFieldsId() {
         assertMissingRepositoryParameter('id',
-                { mvn.deployToNexusRepository() })
+                { mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds']) } )
     }
-
+    
     @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularCredentials() {
-        mvn.useRepositoryCredentials([id: 'id', url: 'url'])
+    void testUseRepositoryCredentialsMissingRequiredFields() {
         assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deployToNexusRepository() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingId() {
-        mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds'])
-        assertMissingRepositoryParameter('id',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingCredentials() {
-        mvn.useRepositoryCredentials([id: 'id', url: 'url'])
-        assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsSiteId() {
-        mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds'])
-        assertMissingRepositoryParameter('id',
-                { mvn.deploySiteToNexus() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsSiteCredentials() {
-        mvn.useRepositoryCredentials([id: 'id', url: 'url'])
-        assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deploySiteToNexus() })
+                { mvn.useRepositoryCredentials([url: 'url', id: 'id']) } )
     }
 
     @Test

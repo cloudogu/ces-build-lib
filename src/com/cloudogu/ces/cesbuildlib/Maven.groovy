@@ -117,14 +117,22 @@ abstract class Maven implements Serializable {
         String id = config['id']
         String url = config['url']
         String creds = config['credentialsId']
+        
+        Repository potentialRepository
         if ('Nexus2'.equals(config['type'])) {
-            repository = new Nexus2(id, url, creds)
+            potentialRepository = new Nexus2(id, url, creds)
         } else {
             if (!'Nexus3'.equals(config['type'])) {
                 script.echo "useRepositoryCredentials() - Repository type \"${config['type']}\" empty or unknown. Defaulting to Nexus 3."
             }
-            repository = new Nexus3(id, url, creds)
+            potentialRepository = new Nexus3(id, url, creds)
         }
+
+        def missingMandatoryField = potentialRepository.validateMandatoryFields()
+        if (missingMandatoryField) {
+            script.error missingMandatoryField
+        }
+        repository = potentialRepository
 
         // The deploy plugin does not provide an option of passing server credentials via command line
         // So, create settings.xml that contains custom properties that can be set via command line (property
@@ -214,10 +222,6 @@ abstract class Maven implements Serializable {
     protected void deployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
         if (!repository) {
             script.error 'No deployment repository set. Cannot perform maven deploy.'
-        }
-        def missingMandatoryField = goal.validateMandatoryFields(repository)
-        if (missingMandatoryField) {
-            script.error missingMandatoryField
         }
 
         if (signatureCredentials) {
@@ -310,6 +314,8 @@ abstract class Maven implements Serializable {
         String id
         String url
         String credentialsIdUsernameAndPassword
+        
+        private final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
 
         Repository(String id, String url, String credentialsIdUsernameAndPassword) {
             this.id = id
@@ -319,6 +325,18 @@ abstract class Maven implements Serializable {
 
         abstract String getSnapshotRepository()
         abstract String getReleasesRepository()
+
+        String validateMandatoryFields() {
+            for (String fieldKey  : mandatoryFields) {
+                // Note: "[]" syntax (and also getProperty()) leads to
+                // Scripts not permitted to use staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt
+                if (!(this."$fieldKey")) {
+                    // We can't access "script" variable here to call script.error directly. So just return a string
+                    return "Missing required '${fieldKey}' parameter."
+                }
+            }
+            return ""
+        }
     }
 
     /**
@@ -375,23 +393,10 @@ abstract class Maven implements Serializable {
                 "${additionalDeployArgs} site:deploy" })
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
-        private final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
         Closure<String> create
 
         private DeployGoal(Closure goal) {
             this.create = goal
-        }
-        
-        String validateMandatoryFields(Repository repository) {
-            for (String fieldKey  : mandatoryFields) {
-                // Note: "[]" syntax (and also getProperty()) leads to
-                // Scripts not permitted to use staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods getAt
-                if (!(repository."$fieldKey")) {
-                    // We can't access "script" variable here to call script.error directly. So just return a string
-                    return "Missing required '${fieldKey}' parameter."
-                }
-            }
-            return ""
         }
     }
 }
