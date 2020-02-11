@@ -423,10 +423,15 @@ ret
                 "${additionalDeployArgs} site:deploy" })
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
-        Closure<String> create
-
-        private DeployGoal(Closure goal) {
-            this.create = goal
+        private Closure<String> createGoal
+        
+        String create(Repository repository, String additionalDeployArgs) {
+            // Making createGoal accessible and calling it directly would require script approval
+            createGoal.call(repository, additionalDeployArgs)
+        }
+        
+        private DeployGoal(Closure createGoal) {
+            this.createGoal = createGoal
         }
     }
 }
