@@ -75,7 +75,7 @@ class SonarQubeTest {
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
         assertBranchName()
-        assert scriptMock.actualUsernamePasswordArgs['credentialsId'] == 'usrPwCred'
+        assert scriptMock.actualUsernamePasswordArgs[0]['credentialsId'] == 'usrPwCred'
     }
 
     @Test
@@ -111,7 +111,7 @@ class SonarQubeTest {
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
         assert !mavenMock.additionalArgs.contains('-Dsonar.branch')
-        assert scriptMock.actualUsernamePasswordArgs['credentialsId'] == 'usrPwCred'
+        assert scriptMock.actualUsernamePasswordArgs[0]['credentialsId'] == 'usrPwCred'
     }
 
     void analyzeWith(SonarQube sonarQube) throws Exception {

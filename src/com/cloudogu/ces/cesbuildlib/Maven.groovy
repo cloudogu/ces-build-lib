@@ -7,7 +7,9 @@ abstract class Maven implements Serializable {
     String additionalArgs = ""
 
     // Private vars lead to exceptions when accessing them from methods of this class. So, don't make them private...
-    Repository repository = null
+    Repository deploymentRepository = null
+    List<Repository> repositories = []
+    
     SignatureCredentials signatureCredentials = null
 
     // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
@@ -16,15 +18,13 @@ abstract class Maven implements Serializable {
 
     String settingsXmlPath
 
-
     Maven(script) {
         this.script = script
     }
 
     def call(String args) {
-        if (repository) {
-            script.withCredentials([script.usernamePassword(credentialsId: repository.credentialsIdUsernameAndPassword,
-                    passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
+        if (!repositories.isEmpty()) {
+            script.withCredentials(createRepositoryCredentials(repositories)) {
                 mvn(args)
             }
         } else {
@@ -64,7 +64,7 @@ abstract class Maven implements Serializable {
         // --> Only used when not returning to stdout! See sh()
 
         String commandLineArgs = "--batch-mode -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs} "
-        if (repository) {
+        if (!repositories.isEmpty()) {
             commandLineArgs += "-s \"${settingsXmlPath}\" " // Not needed for MavenInDocker (but does no harm) but for MavenLocal
         }
 
@@ -104,15 +104,31 @@ abstract class Maven implements Serializable {
 
     @Deprecated
     void useDeploymentRepository(Map config) {
-        // Legacy. The same mechanism is also used to resolve depedencies, not only for deploying
+        // Legacy. The same mechanism is also used to resolve dependencies, not only for deploying
         useRepositoryCredentials(config)
     }
 
-    void useRepositoryCredentials(Map config) {
-        // Naming this method set..() causes Groovy issues on Jenkins because the parameters are a Map but the object is a Repository:
-        // Cannot cast object 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3@11f9131c' with class 'com.cloudogu.ces.cesbuildlib.Maven$Nexus3' to class 'java.util.Map'
+    void useRepositoryCredentials(Map... configs) {
 
-        script.echo "Setting deployment repository with config ${config}"
+        for (int i=0; i<configs.size(); i++) {
+            def repository = createRepository(configs[i])
+            repositories.add(repository)
+            
+            if (configs[i].url) {
+                if (deploymentRepository) {
+                    script.error "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo."
+                }
+                script.echo "WARNING: Using useRepositoryCredentials() with 'url' parameter is deprecated and might be removed in future. Better describe this in maven pom.xml and remove 'url' parameter from Jenkins."
+                // Pass this repo's URL explicitly as altDeploymentRepository to maven
+                deploymentRepository = repository
+            }
+        }
+
+        writeSettingsXml()
+    }
+
+    Repository createRepository(config) {
+        script.echo "Adding repository with config ${config}"
 
         String id = config['id']
         String url = config['url']
@@ -123,7 +139,7 @@ abstract class Maven implements Serializable {
             potentialRepository = new Nexus2(id, url, creds)
         } else {
             if (!'Nexus3'.equals(config['type'])) {
-                script.echo "useRepositoryCredentials() - Repository type \"${config['type']}\" empty or unknown. Defaulting to Nexus 3."
+                script.echo "Adding Maven repository with type \"${config['type']}\" empty or unknown. Defaulting to Nexus 3."
             }
             potentialRepository = new Nexus3(id, url, creds)
         }
@@ -132,14 +148,8 @@ abstract class Maven implements Serializable {
         if (missingMandatoryField) {
             script.error missingMandatoryField
         }
-        repository = potentialRepository
-
-        // The deploy plugin does not provide an option of passing server credentials via command line
-        // So, create settings.xml that contains custom properties that can be set via command line (property
-        // interpolation) - https://stackoverflow.com/a/28074776/1845976
-        writeSettingsXmlWithServer(repository.id,
-                "\${env.${usernameProperty}}",
-                "\${env.${passwordProperty}}")
+        
+        potentialRepository
     }
 
     /**
@@ -220,10 +230,6 @@ abstract class Maven implements Serializable {
     }
 
     protected void deployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
-        if (!repository) {
-            script.error 'No deployment repository set. Cannot perform maven deploy.'
-        }
-
         if (signatureCredentials) {
             script.withCredentials([script.file(credentialsId: signatureCredentials.secretKeyAscFile, variable: 'ascFile'),
                                     script.string(credentialsId: signatureCredentials.secretKeyPassPhrase, variable: 'passphrase')
@@ -248,11 +254,10 @@ abstract class Maven implements Serializable {
     protected void doDeployToNexusRepository(DeployGoal goal, String additionalDeployArgs = '') {
 
         script.echo "creating goal with additionalDeployArgs=$additionalDeployArgs"
-        String deployGoal = goal.create(repository, additionalDeployArgs)
+        String deployGoal = goal.create(deploymentRepository, additionalDeployArgs)
         script.echo "created goal $deployGoal"
 
-        script.withCredentials([script.usernamePassword(credentialsId: repository.credentialsIdUsernameAndPassword,
-                passwordVariable: passwordProperty, usernameVariable: usernameProperty)]) {
+        script.withCredentials(createRepositoryCredentials(repositories)) {
 
             mvn "-DskipTests " +
                     // When using nexus staging, we might have to deploy to two different repos. E.g. for maven central:
@@ -262,9 +267,9 @@ abstract class Maven implements Serializable {
                     // Sonatype won't fix this issue, though: https://issues.sonatype.org/browse/NEXUS-15464
                     // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
                     // So: When usin nexus staging (e.g. for maven central), the user will have to specify those in the pom.xml
-                    (repository.url ? 
-                            "-DaltReleaseDeploymentRepository=${repository.id}::default::${repository.url}${repository.releasesRepository} " +
-                            "-DaltSnapshotDeploymentRepository=${repository.id}::default::${repository.url}${repository.snapshotRepository} " 
+                    ( (deploymentRepository && deploymentRepository.url) ? 
+                            "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.releasesRepository} " +
+                            "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} " 
                             : '') +
                     "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                     deployGoal
@@ -292,19 +297,42 @@ abstract class Maven implements Serializable {
      *
      * @return
      */
-    void writeSettingsXmlWithServer(def serverId, def serverUsername, def serverPassword) {
+    void writeSettingsXml() {
+
+        // Maven does not provide an option of passing server credentials via command line
+        // So, create settings.xml that contains custom properties that can be set via command line (property
+        // interpolation) - https://stackoverflow.com/a/28074776/1845976
+
         settingsXmlPath = "${script.pwd()}/.m2/settings.xml"
         script.echo "Writing $settingsXmlPath"
+
+        
         script.writeFile file: settingsXmlPath, text: """
 <settings>
     <servers>
-        <server>
-          <id>$serverId</id>
-          <username>$serverUsername</username>
-          <password>$serverPassword</password>
-        </server>
+${String ret="" 
+for (int i = 0; i < repositories.size(); i++) {
+    def serverId = repositories[i].id
+    def serverUsername = "\${env.${usernameProperty}_${i}}"
+    def serverPassword = "\${env.${passwordProperty}_${i}}"
+    ret +="          <server><id>${serverId}</id><username>${serverUsername}</username><password>${serverPassword}</password></server>\n"
+}
+ret
+}
     </servers>
 </settings>"""
+    }
+
+    List createRepositoryCredentials(List<Repository> allRepositories) {
+        def credentials = []
+        for (int i = 0; i < allRepositories.size(); i++) {
+            credentials.add(
+                    script.usernamePassword(credentialsId: allRepositories[i].credentialsIdUsernameAndPassword,
+                            passwordVariable: "${passwordProperty}_${i}",
+                            usernameVariable: "${usernameProperty}_${i}")
+            )
+        }
+        return credentials
     }
 
     // Unfortunately, inner classes cannot be accessed from Jenkinsfile: unable to resolve class Maven.Repository
@@ -315,7 +343,7 @@ abstract class Maven implements Serializable {
         String url
         String credentialsIdUsernameAndPassword
         
-        private final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
+        final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
 
         Repository(String id, String url, String credentialsIdUsernameAndPassword) {
             this.id = id
@@ -380,13 +408,15 @@ abstract class Maven implements Serializable {
                         "${additionalDeployArgs} deploy:deploy" }
         ),
         NEXUS_STAGING( { repository, String additionalDeployArgs ->
+                def repoId = repository ? repository.id : null
+                def repoUrl = repository ? repository.url : null
                 SOURCE_JAVADOC_PACKAGE +
                         additionalDeployArgs +
                         // Use nexus-staging-maven-plugin instead of maven-deploy-plugin
                         // https://github.com/sonatype/nexus-maven-plugins/tree/master/staging/maven-plugin#maven2-only-or-explicit-maven3-mode
                         ' org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
-                        (repository.id ? "-DserverId=${repository.id} " : '') +
-                        (repository.url ? "-DnexusUrl=${repository.url} " : '') +
+                        (repoId ? "-DserverId=${repoId} " : '') +
+                        (repoUrl ? "-DnexusUrl=${repoUrl} " : '') +
                         '-DautoReleaseAfterClose=true ' }
         ),
         SITE({ repository, String additionalDeployArgs ->

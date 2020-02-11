@@ -12,7 +12,7 @@ class ScriptMock {
     def expectedShRetValueForScript = [:]
 
     String actualSonarQubeEnv
-    Map actualUsernamePasswordArgs
+    List<Map> actualUsernamePasswordArgs = []
     List<String> actualShStringArgs = new LinkedList<>()
     List<String> actualEcho = new LinkedList<>()
 
@@ -68,12 +68,12 @@ class ScriptMock {
         closure.call()
     }
 
-    void withCredentials(List args, Closure closure) {
+    def withCredentials(List args, Closure closure) {
         closure.call()
     }
 
     void usernamePassword(Map args) {
-        actualUsernamePasswordArgs = args
+        actualUsernamePasswordArgs.add(args)
     }
 
     void file(Map args) {

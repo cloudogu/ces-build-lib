@@ -6,7 +6,7 @@ import org.junit.Before
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertEquals 
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
@@ -33,12 +33,39 @@ class MavenTest {
 
     @Test
     void testCall() throws Exception {
-        Maven mvn = new MavenForTest()
-        mvn.metaClass.mvn = { String args ->
-            return args
-        }
         def result = mvn "test"
         assertEquals("test", result)
+    }
+    
+    @Test
+    void testCallWithCredentials() throws Exception {
+        mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
+        def result = mvn "test"
+        assertEquals("test", result)
+
+        assert 'creds' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
+
+        assertSettingsXml('id')
+    }
+    
+    @Test
+    void testCallWithMultipleCredentials() throws Exception {
+        mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'],
+                                      [id: 'number1', credentialsId: 'creds1'])
+        def result = mvn "test"
+        assertEquals("test", result)
+
+        assert 'creds0' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
+        
+        assert 'creds1' == scriptMock.actualUsernamePasswordArgs[1]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_1" == scriptMock.actualUsernamePasswordArgs[1]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_1" == scriptMock.actualUsernamePasswordArgs[1]['usernameVariable']
+
+        assertSettingsXml('number0', 'number1')
     }
 
     @Test
@@ -78,11 +105,10 @@ class MavenTest {
 
     @Test
     void testDeployToNexusRepositoryNoRepository() {
-        def exception = shouldFail {
-            mvn.deployToNexusRepository()
-        }
+        mvn.deployToNexusRepository()
 
-        assert 'No deployment repository set. Cannot perform maven deploy.' == exception.getMessage()
+        assert !mvnArgs.contains("-DaltReleaseDeploymentRepository")
+        assert !mvnArgs.contains("-DaltSnapshotDeploymentRepository")
     }
 
     @Test
@@ -102,6 +128,26 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(DeployGoal.REGULAR, expectedAdditionalArgs, actualAdditionalArgs, 'deploy:deploy')
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithMultipleCredentials() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
+                [[id: 'expectedId', credentialsId: 'expectedCredentials'],
+                 [id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus2']],
+                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithMultipleUrls() {
+        def exception = shouldFail {
+            mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds', url: '1'],
+                                         [id: '2', credentialsId: 'creds2', url: '2'])
+        }
+        
+        assert "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo." == exception.getMessage()
     }
 
     @Test
@@ -146,7 +192,7 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [id: 'expectedId', credentialsId: 'expectedCredentials',  url: 'https://expected.url', type: 'Nexus2'],
+                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
@@ -155,7 +201,7 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2'],
+                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
@@ -181,31 +227,39 @@ class MavenTest {
     private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
                                     String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
         deployToNexusRepository(actualAdditionalArgs, expectedDeploymentGoal,
-                [id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials',
-                 type: 'Nexus2'],
+                [[id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials', type: 'Nexus2']],
                 { mvn.deployToNexusRepository(goal, expectedAdditionalArgs)},
                 beforeAdditionalArgs
         )
     }
 
-    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, Map deploymentRepo,
+    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, List<Map> repos,
                                     Closure methodUnderTest, String beforeAdditionalArgs = '') {
+        def deploymentRepo = repos[0]
+        for (Map repo : repos) {
+            if (repo.url) {
+                deploymentRepo = repo
+            }
+        }
+
         String deploymentRepoId = deploymentRepo.id
         def expectedCredentials = deploymentRepo.credentialsId
         def expectedUrl = deploymentRepo.url
 
-        mvn.useRepositoryCredentials(deploymentRepo)
+        mvn.useRepositoryCredentials(repos.toArray(new Map[0]))
         methodUnderTest.call()
 
-        assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
-        assert "NEXUS_REPO_CREDENTIALS_PASSWORD" == scriptMock.actualUsernamePasswordArgs['passwordVariable']
-        assert "NEXUS_REPO_CREDENTIALS_USERNAME" == scriptMock.actualUsernamePasswordArgs['usernameVariable']
+        def repoIds = []
+        for (int i = 0; i < repos.size(); i++) {
+            def repo = repos[i]
 
-        assert scriptMock.writeFileParams.size() == 1
-        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
-        assert actualSettingsXml.contains("<id>${deploymentRepoId}</id>")
-        assert actualSettingsXml.contains("<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME}</username>")
-        assert actualSettingsXml.contains("<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD}</password>")
+            assert repo.credentialsId == scriptMock.actualUsernamePasswordArgs[i]['credentialsId']
+            assert "NEXUS_REPO_CREDENTIALS_PASSWORD_${i}" == scriptMock.actualUsernamePasswordArgs[i]['passwordVariable']
+            assert "NEXUS_REPO_CREDENTIALS_USERNAME_${i}" == scriptMock.actualUsernamePasswordArgs[i]['usernameVariable']
+            repoIds + repo.id
+        }
+        
+        assertSettingsXml(repoIds.toArray(new String[0]))
 
         assert mvnArgs.startsWith('-DskipTests ')
         if (expectedUrl) {
@@ -217,6 +271,19 @@ class MavenTest {
         }
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$beforeAdditionalArgs $actualAdditionalArgs $expectedDeploymentGoal")
+    }
+
+    private void assertSettingsXml(String... deploymentRepoIds) {
+        assert scriptMock.writeFileParams.size() == 1
+        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
+        for (int i = 0; i < deploymentRepoIds.size(); i++) {
+            def deploymentRepoId = deploymentRepoIds[i]
+
+            def string = "<server><id>${deploymentRepoId}</id>" +
+                    "<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME_${i}}</username>" +
+                    "<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD_${i}}</password></server>"
+            assert actualSettingsXml.contains(string)
+        }
     }
 
 

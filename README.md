@@ -23,6 +23,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
       - [Maven starts new containers](#maven-starts-new-containers)
       - [Local repo](#local-repo)
       - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
+  - [Repository Credentials](#repository-credentials)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
     - [Deploying artifacts](#deploying-artifacts)
       - [Simple deployment](#simple-deployment)
@@ -250,14 +251,16 @@ mvn {
 
 ## Repository Credentials
 
-TODO describe how to use
+If you specified one or more `<repository>` in your `pom.xml` that requires authentication, you can pass these 
+credentials to your ces-build-lib `Maven` instance like so:
 
+```bash
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'],
+                             [id: 'another', credentialsId: 'nexusSystemUserCredential'])
 ```
-mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
-```
-More info might be needed for deployments (see bellow!)
 
-TODO Try out with all maven variants (Local, Docker, Wrapper)
+Note that the `id` must match the one specified in your `pom.xml` and the credentials ID must belong to a username and
+ password credential defined in Jenkins.
 
 ## Deploying to Nexus repository 
 
@@ -270,20 +273,26 @@ the nexus staging plugin (as necessary for Maven Central or other Nexus reposito
 
 The most simple use case is to deploy to a nexus repo (*not* Maven Central):
  
-* Just set the repository using `Maven.useRepositoryCredentials()` by passing a nexus username and password/access token as jenkins username and password credential and
-  * either a repository ID (you can choose) and the URL
-  * or a repository ID that matches a repository defined in your `pom.xml` (then, no `url` is needed)    
-    (`distributionManagement` > `snapshotRepositor` or `repository` (depending on the `version`) > `id`)
+* Just set the repository using `Maven.useRepositoryCredentials()` by passing a nexus username and password/access token
+  as jenkins username and password credential and
+  * either a repository ID that matches a `<distributionManagement><repository>` (or `<snapshotRepository>`, examples 
+    bellow) defined in your `pom.xml` (then, no `url` or `type` parameters are needed)    
+    (`distributionManagement` > `snapshotRepository` or `repository` (depending on the `version`) > `id`)
+  * or a repository ID (you can choose) and the URL.  
+    In this case you can alos specifiy a `type: 'Nexus2'` (defaults to Nexus3) - as the base-URLs differ.
+    **This approach is deprecated and might be removed from ces-build-lib in the future.**
 * Call `Maven.deployToNexusRepository()`. And that is it. 
 
 Simple Example: 
 ```
-mvn.useRepositoryCredentials([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+# <distributionManagement> in pom.xml (preferred)
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
+# Alternative: Distribution management via Jenkins (deprecated)
+mvn.useRepositoryCredentials([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus2'])
+
+# Deploy
 mvn.deployToNexusRepository()    
 ```
-
-Right now, the two supported repository types are `Nexus2` and `Nexus3`, where Nexus 3 is used when `type` parameter is 
-not set.
 
 Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
 snapshot repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/snapshots/)). Otherwise, 
@@ -325,7 +334,8 @@ central you need to add the following:
     </repository>
 </distributionManagement>
 ```
-In addition you eihter have to pass an `url` to `useRepositoryCredentials()` or specify the nexus-staging-maven plugin in your pom.xml:
+
+In addition you either have to pass an `url` to `useRepositoryCredentials()` or specify the nexus-staging-maven plugin in your pom.xml:
 
 ```xml
   <plugin>
