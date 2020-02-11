@@ -125,7 +125,18 @@ class SonarQube implements Serializable {
                 mvn.additionalArgs += " -Dsonar.branch.target=master "
             }
         } else if (script.env.BRANCH_NAME) {
-            mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
+            // From SonarQube 7.9 "-Dsonar.branch" leads to an exception, because it's deprecated.
+            //mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
+            // In order to not break behavior of ces-build-lib, we re-implement similar behavior in ces-build-lib.
+
+            // Note that the legacy "-Dsonar.branch" resulted in the display name "<maven name> <branch name>"
+            // We can't do that because the blank sends us to jenkis-shell-quoting-hell.
+            // Even this didn't help: https://gist.github.com/Faheetah/e11bd0315c34ed32e681616e41279ef4
+            // So change it to "<maven artifact>:<branch name>", as artifact is not allowed to consist spaces
+
+            def artifactId = mvn.artifactId.trim()
+            mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${artifactId}:${script.env.BRANCH_NAME}"  +
+                    " -Dsonar.projectName=${artifactId}:${script.env.BRANCH_NAME} "
         }
     }
 

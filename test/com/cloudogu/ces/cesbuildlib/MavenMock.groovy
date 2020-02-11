@@ -9,12 +9,15 @@ import static org.mockito.Mockito.when
 
 class MavenMock extends Maven {
     String args
+    String mockedGroupId = ""
+    String mockedArtifactId = ""
+    String mockedName = ""
 
     MavenMock(scriptMock) {
         super(scriptMock)
     }
 
-    def mvn(String args) {
+    def mvn(String args, boolean printStdOut) {
         this.args = args
     }
 
@@ -33,4 +36,14 @@ class MavenMock extends Maven {
         })
         mvn.docker = dockerMock
     }
+
+    @Override
+    String getArtifactId() { mockedArtifactId }
+
+    @Override
+    String getGroupId() { mockedGroupId }
+
+    @Override
+    String getName() { mockedName }
+
 }
