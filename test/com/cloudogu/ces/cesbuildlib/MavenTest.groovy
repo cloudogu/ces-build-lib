@@ -104,6 +104,21 @@ class MavenTest {
     }
 
     @Test
+    void testGetMavenPropertyWithMavenWrapper() {
+        Maven mvn = new MavenWrapperForTest()
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
+    @Test
+    void testGetMavenPropertyWithMavenWrapperNotYetDownloaded() {
+        Maven mvn = new MavenWrapperForTest()
+        mvn.downloaded = false
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
+    @Test
     void testDeployToNexusRepositoryNoRepository() {
         mvn.deployToNexusRepository()
 
@@ -308,6 +323,31 @@ class MavenTest {
         def mvn(String args, boolean printStdOut) {
             mvnArgs = args
             return args
+        }
+    }
+
+    class MavenWrapperForTest extends Maven {
+
+        private boolean downloaded = true
+
+        MavenWrapperForTest() {
+            this(null)
+        }
+
+        MavenWrapperForTest(Object script) {
+            super(script)
+        }
+
+        def mvn(String args, boolean printStdOut) {
+            // maven wrapper starts mostly with the current working directory
+            String out = "/home/tricia/heartOfGold"
+            if (!downloaded) {
+                out += '\n--2020-03-11 15:07:29--  https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.5.5/maven-wrapper-0.5.5.jar'
+                out += '\nResolving repo.maven.apache.org (repo.maven.apache.org)... 151.101.12.215'
+                out += '\nMuch much more lines ...'
+            }
+            mvnArgs = args
+            return out + '\n' + args
         }
     }
 }
