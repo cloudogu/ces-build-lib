@@ -128,11 +128,12 @@ class Git implements Serializable {
     }
 
     String getTag() {
-        return sh.returnStdOut("git name-rev --name-only --tags HEAD")
+        // Note that "git name-rev --name-only --tags HEAD" always seems to append a caret (e.g. "1.0.0^") 
+        return sh.returnStdOut("git tag --points-at HEAD")
     }
 
     boolean isTag() {
-        return getTag() != "undefined"
+        return !getTag().isEmpty()
     }
 
     def add(String pathspec) {

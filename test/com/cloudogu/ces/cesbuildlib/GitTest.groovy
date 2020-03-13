@@ -183,7 +183,7 @@ class GitTest {
 
     @Test
     void isNotATag() {
-        String expectedReturnValue = "undefined"
+        String expectedReturnValue = ""
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"
         assertFalse(git.isTag())
     }

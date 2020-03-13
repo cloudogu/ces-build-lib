@@ -465,8 +465,9 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.commitHashShort` -  e.g. `fb1c882`
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
-* `git.tag` -  e.g. `1.0.0` or `undefined` if not set
-* `git.isTag()` - is there a tag on the current commit?
+* Tags - Note that the git plugin might not fetch tags for all builds. Run `sh "git fetch --tags"` to make sure.
+    * `git.tag` -  e.g. `1.0.0` or `undefined` if not set
+    * `git.isTag()` - is there a tag on the current commit?
 
 ### Changes to local repository
 
