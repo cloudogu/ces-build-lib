@@ -99,7 +99,7 @@ class Git implements Serializable {
      * @return the URL of the Git repository, e.g. {@code https://github.com/orga/repo.git}
      */
     String getRepositoryUrl() {
-        sh.returnStdOut "git config --get remote.origin.url"
+        sh.returnStdOut "git remote get-url origin"
     }
 
     /**

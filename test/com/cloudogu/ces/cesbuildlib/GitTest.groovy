@@ -227,7 +227,7 @@ class GitTest {
     @Test
     void pushGitHubPagesBranch() {
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git config --get remote.origin.url', "https://repo.url")
+        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         git.pushGitHubPagesBranch('website', 'Deploys new version of website')
 
@@ -237,7 +237,7 @@ class GitTest {
     @Test
     void pushGitHubPagesBranchToSubFolder() {
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git config --get remote.origin.url', "https://repo.url")
+        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         git.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
 
