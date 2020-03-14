@@ -202,6 +202,43 @@ class GitTest {
     }
 
     @Test
+    void fetch() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.fetch()
+
+        assert scriptMock.actualShStringArgs[0] == "git config 'remote.origin.fetch +refs/heads/*:refs/remotes/origin/*'"
+        assert scriptMock.actualShStringArgs[1] == "git fetch --all"
+    }
+
+    @Test
+    void checkout() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.checkout("master")
+
+        assert scriptMock.actualShStringArgs[0] == "git checkout master"
+    }
+
+    @Test
+    void merge() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.merge("master")
+
+        assert scriptMock.actualShStringArgs[0] == "git merge master"
+    }
+
+    @Test
+    void mergeFastForwardOnly() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.mergeFastForwardOnly("master")
+
+        assert scriptMock.actualShStringArgs[0] == "git merge --ff-only master"
+    }
+
+    @Test
     void createRepoUrlWithCredentials() throws Exception {
         Git git = new Git(new ScriptMock())
 

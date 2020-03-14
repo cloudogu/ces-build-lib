@@ -128,7 +128,7 @@ class Git implements Serializable {
     }
 
     String getTag() {
-        // Note that "git name-rev --name-only --tags HEAD" always seems to append a caret (e.g. "1.0.0^") 
+        // Note that "git name-rev --name-only --tags HEAD" always seems to append a caret (e.g. "1.0.0^")
         return sh.returnStdOut("git tag --points-at HEAD")
     }
 
@@ -159,6 +159,52 @@ class Git implements Serializable {
                         "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
             script.sh "git commit -m \"$message\""
         }
+    }
+
+    /**
+     * Fetch remote branches from origin.
+     */
+    void fetch() {
+        // we need to configure remote,
+        // because jenkins configures the remote only for the current branch
+        script.sh "git config 'remote.origin.fetch +refs/heads/*:refs/remotes/origin/*'"
+        script.sh "git fetch --all"
+    }
+
+    /**
+     * Switch branch of the local repository.
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before checkout.
+     *
+     * @param branchName name of branch to switch to
+     */
+    void checkout(String branchName) {
+        script.sh "git checkout ${branchName}"
+    }
+
+    /**
+     * Merge branch into the current checked out branch.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     */
+    void merge(String branchName) {
+        script.sh "git merge ${branchName}"
+    }
+
+    /**
+     * Resolve the merge as a fast-forward when possible. When not possible,
+     * refuse to merge and fails the build.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     */
+    void mergeFastForwardOnly(String branchName) {
+        script.sh "git merge --ff-only ${branchName}"
     }
 
     /**

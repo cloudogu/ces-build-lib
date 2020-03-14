@@ -474,6 +474,9 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
+* `git.fetch()`
+* `git.merge('develop')`
+* `git.mergeFastForwardOnly('master')`
 
 ### Changes to remote repository
 
