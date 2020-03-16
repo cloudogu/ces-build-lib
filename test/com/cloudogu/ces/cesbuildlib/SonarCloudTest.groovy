@@ -56,7 +56,7 @@ class SonarCloudTest {
         sonarCloud.analyzeWith(mavenMock)
 
         assertEquals(
-                '-Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
+                ' -Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
                 '-Dsonar.pullrequest.key=PR-42 -Dsonar.pullrequest.provider=GitHub ' +
                 '-Dsonar.pullrequest.github.repository=owner/repo ',
                 mavenMock.additionalArgs)
@@ -132,7 +132,7 @@ class SonarCloudTest {
         sonarCloud.analyzeWith(mavenMock)
 
         assertEquals(
-                '-Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
+                ' -Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
                         '-Dsonar.pullrequest.key=PR-42 -Dsonar.pullrequest.provider=bitbucketcloud ' +
                         '-Dsonar.pullrequest.bitbucketcloud.owner=orga ' +
                         '-Dsonar.pullrequest.bitbucketcloud.repository=repo ',
