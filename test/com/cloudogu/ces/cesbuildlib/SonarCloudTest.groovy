@@ -63,6 +63,27 @@ class SonarCloudTest {
     }
 
     @Test
+    void pullRequestAnalysisWithExistingAdditionalArgs() {
+        scriptMock.expectedIsPullRequest = true
+        scriptMock.env = [
+                CHANGE_ID : 'PR-42',
+                CHANGE_TARGET : 'develop',
+                CHANGE_BRANCH : 'feature/something'
+        ]
+        scriptMock.expectedDefaultShRetValue = 'github.com/owner/repo'
+
+        mavenMock.additionalArgs = "-Pci"
+        sonarCloud.analyzeWith(mavenMock)
+
+        assertEquals(
+                '-Pci ' +
+                '-Dsonar.pullrequest.base=develop -Dsonar.pullrequest.branch=feature/something ' +
+                '-Dsonar.pullrequest.key=PR-42 -Dsonar.pullrequest.provider=GitHub ' +
+                '-Dsonar.pullrequest.github.repository=owner/repo ',
+                mavenMock.additionalArgs)
+    }
+
+    @Test
     void waitForQualityGatePullRequest() throws Exception {
         scriptMock.expectedQGate = [status: 'OK']
         scriptMock.expectedIsPullRequest = true
