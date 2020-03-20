@@ -20,9 +20,8 @@ class SonarCloud extends SonarQube {
         return doWaitForQualityGateWebhookToBeCalled()
     }
 
-    @Override
     void initMavenForPullRequest(Maven mvn) {
-        script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
+        script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}."
 
         def git = new Git(script)
         String repoUrl = git.repositoryUrl
@@ -53,7 +52,11 @@ class SonarCloud extends SonarQube {
 
     @Override
     protected void initMaven(Maven mvn) {
-        super.initMaven(mvn)
+        if (script.isPullRequest()) {
+            initMavenForPullRequest(mvn)
+        } else {
+            initMavenForRegularAnalysis(mvn)
+        }
 
         if (config['sonarOrganization']) {
             mvn.additionalArgs += " -Dsonar.organization=${config['sonarOrganization']} "
