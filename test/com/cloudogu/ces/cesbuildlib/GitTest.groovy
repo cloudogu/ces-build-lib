@@ -202,75 +202,22 @@ class GitTest {
     }
 
     @Test
-    void createRepoUrlWithCredentials() throws Exception {
-        Git git = new Git(new ScriptMock())
-
-        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("https://repo.url", "u", "pw")
-        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
-    }
-
-    @Test
-    void createRepoUrlWithCredentialsUrlWithUserName() throws Exception {
-        Git git = new Git(new ScriptMock())
-
-        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("https://u@repo.url", "u", "pw")
-        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
-    }
-
-    @Test
-    void createRepoUrlWithCredentialsUrlWithCredentials() throws Exception {
-        Git git = new Git(new ScriptMock())
-        def repoUrlWithCredentials = git.createRepoUrlWithCredentials("https://u:pw@repo.url", "u", "pw")
-        assertEquals("https://u:pw@repo.url", repoUrlWithCredentials)
-    }
-
-    @Test
     void push() {
-        prepareGitPush()
         git = new Git(scriptMock, 'creds')
-
         git.push('master')
-
-        assert scriptMock.actualEcho.get(0) == 'Contains\nOur ****\n And ****'
-        assertRemoteRestored()
-    }
-
-    @Test
-    void pushRestoreRemoteInCaseOfError() {
-        scriptMock= new ScriptMock() {
-            String sh(String params) {
-                String ret = super.sh(params)
-                if (params.contains('push')) {
-                    throw new RuntimeException("MockedException")
-                }
-                ret
-            }
-        }
-        git = new Git(scriptMock, 'creds')
-        prepareGitPush()
-
-        try {
-            git.push('master')
-            fail("Expected exception")
-        } catch (RuntimeException e) {
-            assertRemoteRestored()
-        }
     }
 
     @Test
     void pushNonHttps() {
-        prepareGitPush()
-        scriptMock.expectedShRetValueForScript.put('git config --get remote.origin.url', "git@github.com:cloudogu/ces-build-lib.git")
-
+        git = new Git(scriptMock, 'creds')
         git.push('master')
 
         assert scriptMock.actualShStringArgs.size() == 1
-        assert scriptMock.actualShStringArgs.get(0) == 'git push origin master'
+        assert scriptMock.actualShStringArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
     }
 
     @Test
     void pushNoCredentials() {
-        prepareGitPush()
         git.push('master')
 
         assert scriptMock.actualShStringArgs.size() == 1
@@ -279,8 +226,8 @@ class GitTest {
 
     @Test
     void pushGitHubPagesBranch() {
-        prepareGitPush()
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
+        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         git.pushGitHubPagesBranch('website', 'Deploys new version of website')
 
@@ -289,31 +236,12 @@ class GitTest {
 
     @Test
     void pushGitHubPagesBranchToSubFolder() {
-        prepareGitPush()
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
+        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         git.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
 
         assertGitHubPagesBranchToSubFolder('some-folder')
-    }
-
-    private void prepareGitPush() {
-        scriptMock.env = new Object() {
-            String BUILD_TAG = "ourBuildTag"
-            String USERNAME = "username"
-            String PASSWORD = "thePassword"
-        }
-        scriptMock.expectedShRetValueForScript.put('git config --get remote.origin.url', "https://repo.url")
-        def shellOutputWithCredentials = "Contains\nOur username\n And thePassword"
-        scriptMock.expectedShRetValueForScript.put('cat /tmp/ourBuildTag-shellout', shellOutputWithCredentials)
-    }
-
-    private assertRemoteRestored() {
-        assert scriptMock.actualShStringArgs.contains('git push origin master > /tmp/ourBuildTag-shellout 2>&1')
-        assert scriptMock.actualShStringArgs.contains(expectedRemoteWithCredentials)
-        assert scriptMock.actualShStringArgs.findIndexOf { it == expectedRemoteWithoutCredentials } >
-                scriptMock.actualShStringArgs.findIndexOf { it == expectedRemoteWithCredentials }
-        assert scriptMock.actualShStringArgs.last == 'rm -f /tmp/ourBuildTag-shellout'
     }
 
     private void assertGitHubPagesBranchToSubFolder(String subFolder) {
