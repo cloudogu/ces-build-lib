@@ -93,7 +93,10 @@ abstract class Maven implements Serializable {
 
     String evaluateExpression(String expression) {
         // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
-        mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        def evaluatedString = mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        // we take only the last line of the evaluated expression,
+        // because in the case of maven wrapper the home and sometimes the download is printed before
+        return evaluatedString.trim().readLines().last()
     }
 
     @Deprecated
