@@ -14,12 +14,6 @@ class SonarCloud extends SonarQube {
         this.isUsingBranchPlugin = true
     }
 
-    @Override
-    boolean doWaitForPullRequestQualityGateWebhookToBeCalled() {
-        // PRs are now also analyzed on the SonarCloud server, no more preview. Analyze normally.
-        return doWaitForQualityGateWebhookToBeCalled()
-    }
-
     void initMavenForPullRequest(Maven mvn) {
         script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}."
 

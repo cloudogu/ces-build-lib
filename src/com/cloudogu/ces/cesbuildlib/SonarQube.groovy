@@ -60,15 +60,7 @@ class SonarQube implements Serializable {
             script.error "waitForQualityGate will only work when using the SonarQube Plugin for Jenkins, via the 'sonarQubeEnv' parameter"
         }
 
-        if (!script.isPullRequest()) {
-            return doWaitForQualityGateWebhookToBeCalled()
-        }
-        return doWaitForPullRequestQualityGateWebhookToBeCalled()
-    }
-
-    protected boolean doWaitForPullRequestQualityGateWebhookToBeCalled() {
-        // Pull Requests are analyzed locally, so no calling of the QGate webhook
-        true
+        return doWaitForQualityGateWebhookToBeCalled()
     }
 
     protected boolean doWaitForQualityGateWebhookToBeCalled() {
@@ -114,7 +106,7 @@ class SonarQube implements Serializable {
         if (isUsingBranchPlugin) {
             mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
             if (!"master".equals(script.env.BRANCH_NAME)) {
-                String targetBranch = env.CHANGE_TARGET ? env.CHANGE_TARGET : "master"
+                String targetBranch = script.env.CHANGE_TARGET ? script.env.CHANGE_TARGET : "master"
                 // Avoid exception "The main branch must not have a target" on master branch
                 mvn.additionalArgs += " -Dsonar.branch.target=${targetBranch} "
             }
