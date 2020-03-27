@@ -40,7 +40,9 @@ node('docker') {
         }
 
         stage('Unit Test') {
-            mvn 'test'
+            mvn 'test -Dmaven.test.failure.ignore=true'
+            // Archive Unit and integration test results, if any
+            junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
         }
 
         stage('SonarQube') {
@@ -55,9 +57,6 @@ node('docker') {
             }
         }
     }
-
-    // Archive Unit and integration test results, if any
-    junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
 
     mailIfStatusChanged(findEmailRecipients(emailRecipients))
 }

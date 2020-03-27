@@ -12,8 +12,6 @@ class SonarQube implements Serializable {
     // If enabled uses the branch plugin, available for developer edition and above
     boolean isUsingBranchPlugin = false
     boolean isIgnoringBranches = false
-    private String gitHubRepoName = ""
-    private String gitHubCredentials = ""
     protected Map config
 
     @Deprecated
@@ -28,9 +26,6 @@ class SonarQube implements Serializable {
 
     /**
      * Executes a SonarQube analysis using maven.
-     *
-     * When building a PullRequest, only a preview analysis is done. The result of this analysis can be added to the PR,
-     * see {@link #updateAnalysisResultOfPullRequestsToGitHub(java.lang.String)}.
      *
      * The current branch name is added to the SonarQube project name. Paid versions of GitHub offer the branch plugin.
      * If available set {@link #isUsingBranchPlugin} to {@code true}.
@@ -65,15 +60,7 @@ class SonarQube implements Serializable {
             script.error "waitForQualityGate will only work when using the SonarQube Plugin for Jenkins, via the 'sonarQubeEnv' parameter"
         }
 
-        if (!script.isPullRequest()) {
-            return doWaitForQualityGateWebhookToBeCalled()
-        }
-        return doWaitForPullRequestQualityGateWebhookToBeCalled()
-    }
-
-    protected boolean doWaitForPullRequestQualityGateWebhookToBeCalled() {
-        // Pull Requests are analyzed locally, so no calling of the QGate webhook
-        true
+        return doWaitForQualityGateWebhookToBeCalled()
     }
 
     protected boolean doWaitForQualityGateWebhookToBeCalled() {
@@ -94,17 +81,13 @@ class SonarQube implements Serializable {
      *
      * See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
      */
+    @Deprecated
     void updateAnalysisResultOfPullRequestsToGitHub(String gitHubCredentials) {
-        this.gitHubCredentials = gitHubCredentials
-        this.gitHubRepoName = new Git(script).repositoryName
+        script.echo "WARNING: Decorating PRs was deprecated in SonarQube. See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin"
     }
 
     protected void initMaven(Maven mvn) {
-        if (script.isPullRequest()) {
-            initMavenForPullRequest(mvn)
-        } else {
-            initMavenForRegularAnalysis(mvn)
-        }
+        initMavenForRegularAnalysis(mvn)
     }
 
     protected void initMavenForRegularAnalysis(Maven mvn) {
@@ -113,16 +96,19 @@ class SonarQube implements Serializable {
         if (isIgnoringBranches) {
             return
         }
-
+        
         // Run SQ analysis in specific project for feature, hotfix, etc.
         // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
         // However, the alternative (the branch plugin is paid version only)
         // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
+        // An alternative could be this: 
+        // https://github.com/mc1arke/sonarqube-community-branch-plugin
         if (isUsingBranchPlugin) {
             mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
             if (!"master".equals(script.env.BRANCH_NAME)) {
+                String targetBranch = script.env.CHANGE_TARGET ? script.env.CHANGE_TARGET : "master"
                 // Avoid exception "The main branch must not have a target" on master branch
-                mvn.additionalArgs += " -Dsonar.branch.target=master "
+                mvn.additionalArgs += " -Dsonar.branch.target=${targetBranch} "
             }
         } else if (script.env.BRANCH_NAME) {
             // From SonarQube 7.9 "-Dsonar.branch" leads to an exception, because it's deprecated.
@@ -134,24 +120,18 @@ class SonarQube implements Serializable {
             // Even this didn't help: https://gist.github.com/Faheetah/e11bd0315c34ed32e681616e41279ef4
             // So change it to "<maven artifact>:<branch name>", as artifact is not allowed to consist spaces
 
+            // We also apply this logic to PRs, since GitHub Plugin is deprecated from 7.2+.
+            // From SonarQube 6.6 "-Dsonar.analysis.mode" leads to an exception, because it's deprecated.
+            // There seems to be no replacement in the community version.
+            // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
+            // Some examples for Env Vars when building PRs. 
+            // BRANCH_NAME=PR-26
+            // CHANGE_BRANCH=feature/simpify_git_push
+            // CHANGE_TARGET=develop
+            
             def artifactId = mvn.artifactId.trim()
             mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${artifactId}:${script.env.BRANCH_NAME}"  +
                     " -Dsonar.projectName=${artifactId}:${script.env.BRANCH_NAME} "
-        }
-    }
-
-    protected void initMavenForPullRequest(Maven mvn) {
-        script.echo "SonarQube analyzing PullRequest ${script.env.CHANGE_ID}. Using preview mode. "
-
-        // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
-        mvn.additionalArgs += " -Dsonar.analysis.mode=preview"
-        mvn.additionalArgs += " -Dsonar.github.pullRequest=${script.env.CHANGE_ID} "
-
-        if (gitHubCredentials != null && !gitHubCredentials.isEmpty()) {
-            mvn.additionalArgs += "-Dsonar.github.repository=$gitHubRepoName "
-            script.withCredentials([script.string(credentialsId: gitHubCredentials, variable: 'PASSWORD')]) {
-                mvn.additionalArgs += "-Dsonar.github.oauth=${script.env.PASSWORD} "
-            }
         }
     }
 
