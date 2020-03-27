@@ -751,21 +751,17 @@ Note that SonarCloud uses the Branch Plugin, so the first analysis has to be don
 
 ## Pull Requests in SonarQube
 
-As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. You can also do this from a regular SonarQube using the [GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin).
-To do so, `SonarQube` needs credentials for the GitHub repo, defined as Jenkins credentials. Please see [here](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) how to create those in GitHub.
-Then save the GitHub access token as secret text in Jenkins at
+As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. 
+It is no longer possible to do this from a regular community edition SonarQube, as the 
+[GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) is deprecated.
 
-* `https://yourJenkinsInstance/credentials/` or
-* `https://yourJenkinsInstance/job/yourJob/credentials/`.
+So a PR build is treated just like any other. That is, 
 
-Finally pass the credentialsId to `SonarQube` in your pipleine like so
+* without branch plugin: A new project using the `BRANCH_NAME` from env is created. 
+* with Branch Plugin: A new branch is analysed using the `BRANCH_NAME` from env.
 
-```groovy
-sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh')
-sonarQube.analyzeWith(mvn)
-```
+The Jenkins GitHub Plugin sets `BRANCH_NAME` to the PR Name, e.g. `PR-42`.
 
-Note: When analysing the Pull Request using the `SonarQube` class, `SonarQube.analyzeWith()` will only perform a preview analysis. That is, the results are not sent to the server.
 
 # Steps
 
