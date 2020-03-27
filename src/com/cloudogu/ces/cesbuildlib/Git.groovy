@@ -162,6 +162,52 @@ class Git implements Serializable {
     }
 
     /**
+     * Fetch remote branches from origin.
+     */
+    void fetch() {
+        // we need to configure remote,
+        // because jenkins configures the remote only for the current branch
+        script.sh "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
+        script.sh "git fetch --all"
+    }
+
+    /**
+     * Switch branch of the local repository.
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before checkout.
+     *
+     * @param branchName name of branch to switch to
+     */
+    void checkout(String branchName) {
+        script.sh "git checkout ${branchName}"
+    }
+
+    /**
+     * Merge branch into the current checked out branch.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     */
+    void merge(String branchName) {
+        script.sh "git merge ${branchName}"
+    }
+
+    /**
+     * Resolve the merge as a fast-forward when possible. When not possible,
+     * refuse to merge and fails the build.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     */
+    void mergeFastForwardOnly(String branchName) {
+        script.sh "git merge --ff-only ${branchName}"
+    }
+
+    /**
      * Pushes local to remote repo.
      *
      * @param refSpec branch or tag name
