@@ -29,6 +29,8 @@ class SonarCloud extends SonarQube {
         String repoName = git.repositoryName
 
         mvn.additionalArgs +=
+                // an additional space is required in the case of pre existing additionalArgs
+                " " +
                 "-Dsonar.pullrequest.base=${script.env.CHANGE_TARGET} " +
                 "-Dsonar.pullrequest.branch=${script.env.CHANGE_BRANCH} " +
                 "-Dsonar.pullrequest.key=${script.env.CHANGE_ID} "

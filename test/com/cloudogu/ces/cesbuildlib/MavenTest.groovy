@@ -6,7 +6,7 @@ import org.junit.Before
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assert.assertEquals 
+import static org.junit.Assert.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
@@ -36,7 +36,7 @@ class MavenTest {
         def result = mvn "test"
         assertEquals("test", result)
     }
-    
+
     @Test
     void testCallWithCredentials() throws Exception {
         mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
@@ -49,7 +49,7 @@ class MavenTest {
 
         assertSettingsXml('id')
     }
-    
+
     @Test
     void testCallWithMultipleCredentials() throws Exception {
         mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'],
@@ -60,7 +60,7 @@ class MavenTest {
         assert 'creds0' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
         assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
-        
+
         assert 'creds1' == scriptMock.actualUsernamePasswordArgs[1]['credentialsId']
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD_1" == scriptMock.actualUsernamePasswordArgs[1]['passwordVariable']
         assert "NEXUS_REPO_CREDENTIALS_USERNAME_1" == scriptMock.actualUsernamePasswordArgs[1]['usernameVariable']
@@ -104,6 +104,35 @@ class MavenTest {
     }
 
     @Test
+    void testSetVersion() {
+        Maven mvn = new MavenForTest()
+        mvn.setVersion("2.1.0")
+        assert mvnArgs.contains("versions:set -DgenerateBackupPoms=false -DnewVersion=2.1.0")
+    }
+
+    @Test
+    void testSetVersionToNextMinorSnapshot() {
+        Maven mvn = new MavenForTest()
+        mvn.setVersionToNextMinorSnapshot()
+        assert mvnArgs.contains("build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion='\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'")
+    }
+
+    @Test
+    void testGetMavenPropertyWithMavenWrapper() {
+        Maven mvn = new MavenWrapperForTest()
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
+    @Test
+    void testGetMavenPropertyWithMavenWrapperNotYetDownloaded() {
+        Maven mvn = new MavenWrapperForTest()
+        mvn.downloaded = false
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
+    @Test
     void testDeployToNexusRepositoryNoRepository() {
         mvn.deployToNexusRepository()
 
@@ -116,7 +145,7 @@ class MavenTest {
         assertMissingRepositoryParameter('id',
                 { mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds']) } )
     }
-    
+
     @Test
     void testUseRepositoryCredentialsMissingRequiredFields() {
         assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
@@ -146,7 +175,7 @@ class MavenTest {
             mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds', url: '1'],
                                          [id: '2', credentialsId: 'creds2', url: '2'])
         }
-        
+
         assert "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo." == exception.getMessage()
     }
 
@@ -258,7 +287,7 @@ class MavenTest {
             assert "NEXUS_REPO_CREDENTIALS_USERNAME_${i}" == scriptMock.actualUsernamePasswordArgs[i]['usernameVariable']
             repoIds + repo.id
         }
-        
+
         assertSettingsXml(repoIds.toArray(new String[0]))
 
         assert mvnArgs.startsWith('-DskipTests ')
@@ -308,6 +337,31 @@ class MavenTest {
         def mvn(String args, boolean printStdOut) {
             mvnArgs = args
             return args
+        }
+    }
+
+    class MavenWrapperForTest extends Maven {
+
+        private boolean downloaded = true
+
+        MavenWrapperForTest() {
+            this(null)
+        }
+
+        MavenWrapperForTest(Object script) {
+            super(script)
+        }
+
+        def mvn(String args, boolean printStdOut) {
+            // maven wrapper starts mostly with the current working directory
+            String out = "/home/tricia/heartOfGold"
+            if (!downloaded) {
+                out += '\n--2020-03-11 15:07:29--  https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.5.5/maven-wrapper-0.5.5.jar'
+                out += '\nResolving repo.maven.apache.org (repo.maven.apache.org)... 151.101.12.215'
+                out += '\nMuch much more lines ...'
+            }
+            mvnArgs = args
+            return out + '\n' + args
         }
     }
 }

@@ -9,7 +9,7 @@ abstract class Maven implements Serializable {
     // Private vars lead to exceptions when accessing them from methods of this class. So, don't make them private...
     Repository deploymentRepository = null
     List<Repository> repositories = []
-    
+
     SignatureCredentials signatureCredentials = null
 
     // When using "env.x", x may not contain dots, and may not start with a number (e.g. subdomains, IP addresses)
@@ -93,7 +93,10 @@ abstract class Maven implements Serializable {
 
     String evaluateExpression(String expression) {
         // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
-        mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        def evaluatedString = mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        // we take only the last line of the evaluated expression,
+        // because in the case of maven wrapper the home and sometimes the download is printed before
+        return evaluatedString.trim().readLines().last()
     }
 
     @Deprecated
@@ -113,7 +116,7 @@ abstract class Maven implements Serializable {
         for (int i=0; i<configs.size(); i++) {
             def repository = createRepository(configs[i])
             repositories.add(repository)
-            
+
             if (configs[i].url) {
                 if (deploymentRepository) {
                     script.error "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo."
@@ -133,7 +136,7 @@ abstract class Maven implements Serializable {
         String id = config['id']
         String url = config['url']
         String creds = config['credentialsId']
-        
+
         Repository potentialRepository
         if ('Nexus2'.equals(config['type'])) {
             potentialRepository = new Nexus2(id, url, creds)
@@ -148,7 +151,7 @@ abstract class Maven implements Serializable {
         if (missingMandatoryField) {
             script.error missingMandatoryField
         }
-        
+
         potentialRepository
     }
 
@@ -162,6 +165,22 @@ abstract class Maven implements Serializable {
      */
     void setSignatureCredentials(String secretKeyAscFile, String secretKeyPassPhrase) {
         signatureCredentials = new SignatureCredentials(secretKeyAscFile, secretKeyPassPhrase)
+    }
+
+    /**
+     * Set version of maven project including all modules.
+     *
+     * @param newVersion new project version
+     */
+    void setVersion(String newVersion) {
+        mvn "versions:set -DgenerateBackupPoms=false -DnewVersion=${newVersion}"
+    }
+
+    /**
+     * Set version to next minor snapshot e.g.: 2.0.1 becomes 2.1.0-SNAPSHOT
+     */
+    void setVersionToNextMinorSnapshot() {
+        mvn "build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion='\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'"
     }
 
     /**
@@ -267,9 +286,9 @@ abstract class Maven implements Serializable {
                     // Sonatype won't fix this issue, though: https://issues.sonatype.org/browse/NEXUS-15464
                     // "-DaltDeploymentRepository=${repository.id}::default::${repository.url}/content/repositories/snapshots " +
                     // So: When usin nexus staging (e.g. for maven central), the user will have to specify those in the pom.xml
-                    ( (deploymentRepository && deploymentRepository.url) ? 
+                    ( (deploymentRepository && deploymentRepository.url) ?
                             "-DaltReleaseDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.releasesRepository} " +
-                            "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} " 
+                            "-DaltSnapshotDeploymentRepository=${deploymentRepository.id}::default::${deploymentRepository.url}${deploymentRepository.snapshotRepository} "
                             : '') +
                     "-s \"${settingsXmlPath}\" " + // Not needed for MavenInDocker (but does no harm) but for MavenLocal
                     deployGoal
@@ -306,7 +325,7 @@ abstract class Maven implements Serializable {
         settingsXmlPath = "${script.pwd()}/.m2/settings.xml"
         script.echo "Writing $settingsXmlPath"
 
-        
+
         script.writeFile file: settingsXmlPath, text: """
 <settings>
     <servers>
@@ -342,7 +361,7 @@ ret
         String id
         String url
         String credentialsIdUsernameAndPassword
-        
+
         final List mandatoryFields = ['id', 'credentialsIdUsernameAndPassword']
 
         Repository(String id, String url, String credentialsIdUsernameAndPassword) {
@@ -424,12 +443,12 @@ ret
 
         private static final String SOURCE_JAVADOC_PACKAGE = 'source:jar javadoc:jar package '
         private Closure<String> createGoal
-        
+
         String create(Repository repository, String additionalDeployArgs) {
             // Making createGoal accessible and calling it directly would require script approval
             createGoal.call(repository, additionalDeployArgs)
         }
-        
+
         private DeployGoal(Closure createGoal) {
             this.createGoal = createGoal
         }
