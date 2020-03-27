@@ -23,12 +23,12 @@ abstract class Maven implements Serializable {
     }
 
     def call(String args) {
-        if (!repositories.isEmpty()) {
+        if (repositories.isEmpty()) {
+            mvn(args)
+        } else {
             script.withCredentials(createRepositoryCredentials(repositories)) {
                 mvn(args)
             }
-        } else {
-            mvn(args)
         }
     }
 

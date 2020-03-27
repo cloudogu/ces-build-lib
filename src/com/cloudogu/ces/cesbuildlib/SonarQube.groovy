@@ -84,6 +84,9 @@ class SonarQube implements Serializable {
     @Deprecated
     void updateAnalysisResultOfPullRequestsToGitHub(String gitHubCredentials) {
         script.echo "WARNING: Decorating PRs was deprecated in SonarQube. See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin"
+        // As this is a deprecated method, the signature can't be changed. Still, the parameter is not needed. Ignore warnings. 
+        // @SuppressWarnings(["grvy:org.codenarc.rule.unused.UnusedMethodParameterRule"]) does not seem to wirk
+        gitHubCredentials
     }
 
     protected void initMaven(Maven mvn) {
