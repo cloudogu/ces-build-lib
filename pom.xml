@@ -7,11 +7,11 @@
     <groupId>com.cloudogu.ces</groupId>
     <artifactId>ces-build-lib</artifactId>
     <name>ces-build-lib</name>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jacoco.version>0.7.8</jacoco.version>
+        <jacoco.version>0.8.5</jacoco.version>
     </properties>
 
     <dependencies>
@@ -128,6 +128,12 @@
                                     <goal>prepare-agent</goal>
                                 </goals>
                             </execution>
+                            <execution>
+                                <id>report</id>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
@@ -135,3 +141,4 @@
         </profile>
     </profiles>
 </project>
+

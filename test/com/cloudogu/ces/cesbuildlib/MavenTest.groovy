@@ -33,128 +33,123 @@ class MavenTest {
 
     @Test
     void testCall() throws Exception {
-        Maven mvn = new MavenForTest(null)
-        mvn.metaClass.mvn = { String args ->
-            return args
-        }
         def result = mvn "test"
         assertEquals("test", result)
     }
 
     @Test
-    void testGetVersion() {
-        String expectedVersion = "1.0.0"
-        def scriptMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><version>$expectedVersion</version><dependencies><dependency><groupId>grp</groupId><artifactId>groovy-cps</artifactId><version>unexpected</version></dependency></dependencies></project>"
-        }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+    void testCallWithCredentials() throws Exception {
+        mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
+        def result = mvn "test"
+        assertEquals("test", result)
+
+        assert 'creds' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
+
+        assertSettingsXml('id')
     }
 
     @Test
-    void testGetVersionMissing() {
-        String expectedVersion = ""
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId></project>" }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedVersion, mvn.getVersion())
+    void testCallWithMultipleCredentials() throws Exception {
+        mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'],
+                                      [id: 'number1', credentialsId: 'creds1'])
+        def result = mvn "test"
+        assertEquals("test", result)
+
+        assert 'creds0' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
+
+        assert 'creds1' == scriptMock.actualUsernamePasswordArgs[1]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_1" == scriptMock.actualUsernamePasswordArgs[1]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_1" == scriptMock.actualUsernamePasswordArgs[1]['usernameVariable']
+
+        assertSettingsXml('number0', 'number1')
+    }
+
+    @Test
+    void testGetVersion() {
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected version returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
+    }
+
+    @Test
+    void testGetArtifactId() {
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected artifact returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId())
+    }
+
+    @Test
+    void testGetGroupId() {
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected group returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId())
+    }
+
+    @Test
+    void testGetName() {
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected name returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName())
     }
 
     @Test
     void testGetMavenProperty() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = "expectedValue"
-        def scriptMock = [readFile: {
-            "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties>" +
-                    EOL +
-                    "<dont>care</dont><$expectedPropertyKey>$expectedPropertyValue</$expectedPropertyKey>" +
-                    EOL +
-                    "</properties></project>"
-        }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+        Maven mvn = new MavenForTest()
+        assertEquals("Unexpected name returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
     }
 
     @Test
-    void testGetMavenPropertyNoProperties() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = ""
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey></project>" }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+    void testSetVersion() {
+        Maven mvn = new MavenForTest()
+        mvn.setVersion("2.1.0")
+        assert mvnArgs.contains("versions:set -DgenerateBackupPoms=false -DnewVersion=2.1.0")
     }
 
     @Test
-    void testGetMavenPropertyNoProperty() {
-        String expectedPropertyKey = "expectedPropertyKey"
-        String expectedPropertyValue = ""
-        def scriptMock = [readFile: { "<project><groupId>com.cloudogu.ces</groupId><$expectedPropertyKey>NotInProperties!</$expectedPropertyKey><properties><dont>care</dont></properties></project>" }] as Object
-        Maven mvn = new MavenForTest(scriptMock)
-        assertEquals("Unexpected version returned", expectedPropertyValue, mvn.getMavenProperty(expectedPropertyKey))
+    void testSetVersionToNextMinorSnapshot() {
+        Maven mvn = new MavenForTest()
+        mvn.setVersionToNextMinorSnapshot()
+        assert mvnArgs.contains("build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion='\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'")
     }
-    
+
+    @Test
+    void testGetMavenPropertyWithMavenWrapper() {
+        Maven mvn = new MavenWrapperForTest()
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
+    @Test
+    void testGetMavenPropertyWithMavenWrapperNotYetDownloaded() {
+        Maven mvn = new MavenWrapperForTest()
+        mvn.downloaded = false
+        assertEquals("Unexpected property returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+    }
+
     @Test
     void testDeployToNexusRepositoryNoRepository() {
-        def exception = shouldFail {
-            mvn.deployToNexusRepository()
-        }
+        mvn.deployToNexusRepository()
 
-        assert 'No deployment repository set. Cannot perform maven deploy.' == exception.getMessage()
+        assert !mvnArgs.contains("-DaltReleaseDeploymentRepository")
+        assert !mvnArgs.contains("-DaltSnapshotDeploymentRepository")
     }
 
     @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularId() {
-        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
-        assertMissingDeploymentRepositoryParameter('id',
-                { mvn.deployToNexusRepository() })
+    void testUseRepositoryCredentialsMissingRequiredFieldsId() {
+        assertMissingRepositoryParameter('id',
+                { mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds']) } )
     }
 
     @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularUrl() {
-        mvn.useDeploymentRepository([id: 'id', credentialsId: 'creds'])
-        assertMissingDeploymentRepositoryParameter('url',
-                { mvn.deployToNexusRepository() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsRegularCredentials() {
-        mvn.useDeploymentRepository([id: 'id', url: 'url'])
-        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deployToNexusRepository() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingId() {
-        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
-        assertMissingDeploymentRepositoryParameter('id',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingUrl() {
-        mvn.useDeploymentRepository([id: 'id', credentialsId: 'creds'])
-        assertMissingDeploymentRepositoryParameter('url',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsStagingCredentials() {
-        mvn.useDeploymentRepository([id: 'id', url: 'url'])
-        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deployToNexusRepositoryWithStaging() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsSiteId() {
-        mvn.useDeploymentRepository([url: 'url', credentialsId: 'creds'])
-        assertMissingDeploymentRepositoryParameter('id',
-                { mvn.deploySiteToNexus() })
-    }
-
-    @Test
-    void testDeployToNexusRepositoryMissingRequiredFieldsSiteCredentials() {
-        mvn.useDeploymentRepository([id: 'id', url: 'url'])
-        assertMissingDeploymentRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.deploySiteToNexus() })
+    void testUseRepositoryCredentialsMissingRequiredFields() {
+        assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
+                { mvn.useRepositoryCredentials([url: 'url', id: 'id']) } )
     }
 
     @Test
@@ -165,8 +160,28 @@ class MavenTest {
     }
 
     @Test
+    void testDeployToNexusRepositoryWithMultipleCredentials() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
+                [[id: 'expectedId', credentialsId: 'expectedCredentials'],
+                 [id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus2']],
+                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+    }
+
+    @Test
+    void testDeployToNexusRepositoryWithMultipleUrls() {
+        def exception = shouldFail {
+            mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds', url: '1'],
+                                         [id: '2', credentialsId: 'creds2', url: '2'])
+        }
+
+        assert "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo." == exception.getMessage()
+    }
+
+    @Test
     void testDeployToNexus3Repository() {
-        mvn.useDeploymentRepository([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
+        mvn.useRepositoryCredentials([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
         mvn.deployToNexusRepository()
 
         assert mvnArgs.contains("-DaltReleaseDeploymentRepository=id::default::https://expected.url/repository/maven-releases ")
@@ -189,7 +204,7 @@ class MavenTest {
 
     @Test
     void testDeployToNexus3RepositoryWithStaging() {
-        mvn.useDeploymentRepository([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
+        mvn.useRepositoryCredentials([id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus3'])
         mvn.deployToNexusRepositoryWithStaging()
 
         assert mvnArgs.contains("-DaltReleaseDeploymentRepository=id::default::https://expected.url/repository/maven-releases ")
@@ -206,7 +221,16 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [id: 'expectedId', credentialsId: 'expectedCredentials',  url: 'https://expected.url', type: 'Nexus2'],
+                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
+                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+    }
+
+    @Test
+    void testDeploySiteToNexusRepositoryWithoutUrl() {
+        def expectedAdditionalArgs = 'expectedAdditionalArgs'
+        def actualAdditionalArgs = 'expectedAdditionalArgs'
+        deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
+                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
                 { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
@@ -232,41 +256,67 @@ class MavenTest {
     private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
                                     String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
         deployToNexusRepository(actualAdditionalArgs, expectedDeploymentGoal,
-                [id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials',
-                 type: 'Nexus2'],
+                [[id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials', type: 'Nexus2']],
                 { mvn.deployToNexusRepository(goal, expectedAdditionalArgs)},
                 beforeAdditionalArgs
         )
     }
 
-    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, Map deploymentRepo,
+    private deployToNexusRepository(String actualAdditionalArgs, String expectedDeploymentGoal, List<Map> repos,
                                     Closure methodUnderTest, String beforeAdditionalArgs = '') {
+        def deploymentRepo = repos[0]
+        for (Map repo : repos) {
+            if (repo.url) {
+                deploymentRepo = repo
+            }
+        }
+
         String deploymentRepoId = deploymentRepo.id
         def expectedCredentials = deploymentRepo.credentialsId
         def expectedUrl = deploymentRepo.url
 
-        mvn.useDeploymentRepository(deploymentRepo)
+        mvn.useRepositoryCredentials(repos.toArray(new Map[0]))
         methodUnderTest.call()
 
-        assert expectedCredentials == scriptMock.actualUsernamePasswordArgs['credentialsId']
-        assert "NEXUS_REPO_CREDENTIALS_PASSWORD" == scriptMock.actualUsernamePasswordArgs['passwordVariable']
-        assert "NEXUS_REPO_CREDENTIALS_USERNAME" == scriptMock.actualUsernamePasswordArgs['usernameVariable']
+        def repoIds = []
+        for (int i = 0; i < repos.size(); i++) {
+            def repo = repos[i]
 
-        assert scriptMock.writeFileParams.size() == 1
-        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
-        assert actualSettingsXml.contains("<id>${deploymentRepoId}</id>")
-        assert actualSettingsXml.contains("<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME}</username>")
-        assert actualSettingsXml.contains("<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD}</password>")
+            assert repo.credentialsId == scriptMock.actualUsernamePasswordArgs[i]['credentialsId']
+            assert "NEXUS_REPO_CREDENTIALS_PASSWORD_${i}" == scriptMock.actualUsernamePasswordArgs[i]['passwordVariable']
+            assert "NEXUS_REPO_CREDENTIALS_USERNAME_${i}" == scriptMock.actualUsernamePasswordArgs[i]['usernameVariable']
+            repoIds + repo.id
+        }
+
+        assertSettingsXml(repoIds.toArray(new String[0]))
 
         assert mvnArgs.startsWith('-DskipTests ')
-        assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
-        assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
+        if (expectedUrl) {
+            assert mvnArgs.contains("-DaltReleaseDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/releases ")
+            assert mvnArgs.contains("-DaltSnapshotDeploymentRepository=${deploymentRepoId}::default::${expectedUrl}/content/repositories/snapshots ")
+        } else {
+            assert !mvnArgs.contains("-DaltReleaseDeploymentRepository")
+            assert !mvnArgs.contains("-DaltSnapshotDeploymentRepository")
+        }
         assert mvnArgs.contains('-s "/home/jenkins/workspaces/NAME/.m2/settings.xml" ')
         assert mvnArgs.endsWith("$beforeAdditionalArgs $actualAdditionalArgs $expectedDeploymentGoal")
     }
 
+    private void assertSettingsXml(String... deploymentRepoIds) {
+        assert scriptMock.writeFileParams.size() == 1
+        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
+        for (int i = 0; i < deploymentRepoIds.size(); i++) {
+            def deploymentRepoId = deploymentRepoIds[i]
 
-    private static void assertMissingDeploymentRepositoryParameter(String fieldKey, Closure methodUnderTest) {
+            def string = "<server><id>${deploymentRepoId}</id>" +
+                    "<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME_${i}}</username>" +
+                    "<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD_${i}}</password></server>"
+            assert actualSettingsXml.contains(string)
+        }
+    }
+
+
+    private static void assertMissingRepositoryParameter(String fieldKey, Closure methodUnderTest) {
         def exception = shouldFail {
             methodUnderTest.call()
         }
@@ -276,13 +326,42 @@ class MavenTest {
 
     class MavenForTest extends Maven {
 
+        MavenForTest() {
+            this(null)
+        }
+
         MavenForTest(Object script) {
             super(script)
         }
 
-        def mvn(String args) {
+        def mvn(String args, boolean printStdOut) {
             mvnArgs = args
             return args
+        }
+    }
+
+    class MavenWrapperForTest extends Maven {
+
+        private boolean downloaded = true
+
+        MavenWrapperForTest() {
+            this(null)
+        }
+
+        MavenWrapperForTest(Object script) {
+            super(script)
+        }
+
+        def mvn(String args, boolean printStdOut) {
+            // maven wrapper starts mostly with the current working directory
+            String out = "/home/tricia/heartOfGold"
+            if (!downloaded) {
+                out += '\n--2020-03-11 15:07:29--  https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.5.5/maven-wrapper-0.5.5.jar'
+                out += '\nResolving repo.maven.apache.org (repo.maven.apache.org)... 151.101.12.215'
+                out += '\nMuch much more lines ...'
+            }
+            mvnArgs = args
+            return out + '\n' + args
         }
     }
 }

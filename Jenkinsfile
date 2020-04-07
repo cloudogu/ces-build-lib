@@ -15,13 +15,9 @@ node('docker') {
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
 
-    // TODO refactor this in an object-oriented way and move to build-lib
     if ("master".equals(env.BRANCH_NAME)) {
         mvn.additionalArgs = "-DperformRelease"
         currentBuild.description = mvn.getVersion()
-    } else if (!"develop".equals(env.BRANCH_NAME)) {
-        // run SQ analysis in specific project for feature, hotfix, etc.
-        mvn.additionalArgs = "-Dsonar.branch=" + env.BRANCH_NAME
     }
 
     String emailRecipients = env.EMAIL_RECIPIENTS
@@ -44,11 +40,13 @@ node('docker') {
         }
 
         stage('Unit Test') {
-            mvn 'test'
+            mvn 'test -Dmaven.test.failure.ignore=true'
+            // Archive Unit and integration test results, if any
+            junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
         }
 
         stage('SonarQube') {
-
+            generateCoverageReportForSonarQube(mvn)
             def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
             sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh-token')
 
@@ -60,10 +58,11 @@ node('docker') {
         }
     }
 
-    // Archive Unit and integration test results, if any
-    junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
-
     mailIfStatusChanged(findEmailRecipients(emailRecipients))
+}
+
+static void generateCoverageReportForSonarQube(def mvn) {
+    mvn 'org.jacoco:jacoco-maven-plugin:0.8.5:report'
 }
 
 def libraryFromLocalRepo() {

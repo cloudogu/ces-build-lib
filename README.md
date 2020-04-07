@@ -23,6 +23,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
       - [Maven starts new containers](#maven-starts-new-containers)
       - [Local repo](#local-repo)
       - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
+  - [Repository Credentials](#repository-credentials)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
     - [Deploying artifacts](#deploying-artifacts)
       - [Simple deployment](#simple-deployment)
@@ -248,6 +249,19 @@ mvn {
 }
 ```
 
+## Repository Credentials
+
+If you specified one or more `<repository>` in your `pom.xml` that requires authentication, you can pass these 
+credentials to your ces-build-lib `Maven` instance like so:
+
+```bash
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'],
+                             [id: 'another', credentialsId: 'nexusSystemUserCredential'])
+```
+
+Note that the `id` must match the one specified in your `pom.xml` and the credentials ID must belong to a username and
+ password credential defined in Jenkins.
+
 ## Deploying to Nexus repository 
 
 ### Deploying artifacts
@@ -259,18 +273,26 @@ the nexus staging plugin (as necessary for Maven Central or other Nexus reposito
 
 The most simple use case is to deploy to a nexus repo (*not* Maven Central):
  
-* Just set the repository using `Maven.useDeploymentRepository()` passing a repository ID (you can choose), the URL as 
-  well as a nexus username and password/access token as jenkins username and password credential.
+* Just set the repository using `Maven.useRepositoryCredentials()` by passing a nexus username and password/access token
+  as jenkins username and password credential and
+  * either a repository ID that matches a `<distributionManagement><repository>` (or `<snapshotRepository>`, examples 
+    bellow) defined in your `pom.xml` (then, no `url` or `type` parameters are needed)    
+    (`distributionManagement` > `snapshotRepository` or `repository` (depending on the `version`) > `id`)
+  * or a repository ID (you can choose) and the URL.  
+    In this case you can alos specifiy a `type: 'Nexus2'` (defaults to Nexus3) - as the base-URLs differ.
+    **This approach is deprecated and might be removed from ces-build-lib in the future.**
 * Call `Maven.deployToNexusRepository()`. And that is it. 
 
 Simple Example: 
 ```
-mvn.useDeploymentRepository([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus3'])
+# <distributionManagement> in pom.xml (preferred)
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
+# Alternative: Distribution management via Jenkins (deprecated)
+mvn.useRepositoryCredentials([id: 'ces', url: 'https://ecosystem.cloudogu.com/nexus', credentialsId: 'nexusSystemUserCredential', type: 'Nexus2'])
+
+# Deploy
 mvn.deployToNexusRepository()    
 ```
-
-Right now, the two supported repository types are `Nexus2` and `Nexus3`, where Nexus 3 is used when `type` parameter is 
-not set.
 
 Note that if the pom.xml's version contains `-SNAPSHOT`, the artifacts are automatically deployed to the 
 snapshot repository ([e.g. on oss.sonatype.org](https://oss.sonatype.org/content/repositories/snapshots/)). Otherwise, 
@@ -312,13 +334,29 @@ central you need to add the following:
     </repository>
 </distributionManagement>
 ```
-The repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) must match the one passed
-to ces-build-lib using `useDeploymentRepository()`.
+
+In addition you either have to pass an `url` to `useRepositoryCredentials()` or specify the nexus-staging-maven plugin in your pom.xml:
+
+```xml
+  <plugin>
+    <groupId>org.sonatype.plugins</groupId>
+    <artifactId>nexus-staging-maven-plugin</artifactId>
+    <!-- ... -->
+    <configuration>
+      <serverId>ossrh</serverId>
+      <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+    </configuration>
+  </plugin>
+```
+          
+Either way, the repository ID (here: `ossrh`) and the base nexus URL (here: `https://oss.sonatype.org`) in 
+`distributionManagement` and `nexus-staging-maven plugin` must conform to each other.
 
 Summing up, here is an example for deploying to Maven Central:
 
 ```
-mvn.useDeploymentRepository([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
+// url is optional, if described in nexus-staging-maven-plugin in pom.xml 
+mvn.useRepositoryCredentials([id: 'ossrh', url: 'https://oss.sonatype.org', credentialsId: 'mavenCentral-UsernameAndAcccessTokenCredential', type: 'Nexus2'])
 mvn.setSignatureCredentials('mavenCentral-secretKey-asc-file','mavenCentral-secretKey-Passphrase')
 mvn.deployToNexusRepositoryWithStaging()            
 ```
@@ -351,7 +389,7 @@ Where `Site-repo` is the name of the raw repository that must exist in Nexus to 
 Then, you can deploy the site as follows:
 
 ```groovy
-mvn.useDeploymentRepository([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
+mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'])
 mvn.deploySiteToNexus()
 ```
 
@@ -374,6 +412,8 @@ arguments to the deployment like so: `mvn.deployToNexusRepositoryWithStaging('-X
 Available from both local Maven and Maven in Docker.
 
 * `mvn.getVersion()`
+* `mvn.getArtifactId()`
+* `mvn.getGroupId()`
 * `mvn.getProperty('project.build.sourceEncoding')`
 
 See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
@@ -425,14 +465,18 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.commitHashShort` -  e.g. `fb1c882`
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
-* `git.tag` -  e.g. `1.0.0` or `undefined` if not set
-* `git.isTag()` - is there a tag on the current commit?
+* Tags - Note that the git plugin might not fetch tags for all builds. Run `sh "git fetch --tags"` to make sure.
+    * `git.tag` -  e.g. `1.0.0` or `undefined` if not set
+    * `git.isTag()` - is there a tag on the current commit?
 
 ### Changes to local repository
 
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
+* `git.fetch()`
+* `git.merge('develop')`
+* `git.mergeFastForwardOnly('master')`
 
 ### Changes to remote repository
 
@@ -442,7 +486,11 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
    * Uses the name and email of the last committer as author and committer.
    * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
    * Don't forget to create a git object with credentials.
-   * Example: [cloudogu/continuous-delivery-slides-example](https://github.com/cloudogu/continuous-delivery-slides-example/) 
+   * Optional: You can deploy to a sub folder of your GitHub Pages branch using a third parameter
+   * Examples:
+      * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
+      * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
+   * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
 
 
 # Docker
@@ -641,11 +689,14 @@ Note that
   
 ## Branches
 
-By default, the `SonarQube` class uses the old logic, of passing the branch name to SonarQube, which will create one 
-project per branch. This is deprecated from SonarQube 6.x, but the alternative is the paid-version-only 
-[Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
+By default, the `SonarQube` legacy logic, of creating one project per branch in a Jenkins Multibranch Pipeline project.
 
-You can enable the branch plugin like so:
+A more convenient alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin)
+or the [sonarqube-community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin), which has 
+similar features but is difficult to install, not supported officially and does not allow for migration to the official 
+branch plugin later on.
+
+You can enable either branch plugins like so:
 
 ```groovy
 sonarQube.isUsingBranchPlugin = true
@@ -703,21 +754,17 @@ Note that SonarCloud uses the Branch Plugin, so the first analysis has to be don
 
 ## Pull Requests in SonarQube
 
-As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. You can also do this from a regular SonarQube using the [GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin).
-To do so, `SonarQube` needs credentials for the GitHub repo, defined as Jenkins credentials. Please see [here](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) how to create those in GitHub.
-Then save the GitHub access token as secret text in Jenkins at
+As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. 
+It is no longer possible to do this from a regular community edition SonarQube, as the 
+[GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) is deprecated.
 
-* `https://yourJenkinsInstance/credentials/` or
-* `https://yourJenkinsInstance/job/yourJob/credentials/`.
+So a PR build is treated just like any other. That is, 
 
-Finally pass the credentialsId to `SonarQube` in your pipleine like so
+* without branch plugin: A new project using the `BRANCH_NAME` from env is created. 
+* with Branch Plugin: A new branch is analysed using the `BRANCH_NAME` from env.
 
-```groovy
-sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh')
-sonarQube.analyzeWith(mvn)
-```
+The Jenkins GitHub Plugin sets `BRANCH_NAME` to the PR Name, e.g. `PR-42`.
 
-Note: When analysing the Pull Request using the `SonarQube` class, `SonarQube.analyzeWith()` will only perform a preview analysis. That is, the results are not sent to the server.
 
 # Steps
 

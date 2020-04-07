@@ -1,12 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
 
-
 import org.junit.Test
 
 class MavenLocalTest {
 
     def scriptMock = new ScriptMock()
-
 
     @Test
     void testMvnHomeNull() throws Exception {

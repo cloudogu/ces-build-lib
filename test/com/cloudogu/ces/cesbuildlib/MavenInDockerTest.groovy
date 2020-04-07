@@ -14,7 +14,7 @@ class MavenInDockerTest {
         Docker docker = setupDockerMock(mvn)
         mvn 'clean install'
 
-        assert scriptMock.actualShStringArgs[0].trim().endsWith('clean install')
+        assert scriptMock.actualShStringArgs[0].trim().contains('clean install')
         verify(docker).image('maven:3.5.0-jdk8')
     }
 }
