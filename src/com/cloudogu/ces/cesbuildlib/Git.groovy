@@ -121,6 +121,30 @@ class Git implements Serializable {
     }
 
     /**
+     * Creates a release on Github and fills it with the changes provided
+     */
+    void addGithubRelease(String releaseVersion, String changes, Git git){
+        branchName = getSimpleBranchName()
+        if (credentials) {
+            echo "Creating Github release..."
+            script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+                body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"$      {releaseVersion}\", \"body\":\"${changes}\"}'"
+                apiUrl = "https://api.github.com/repos/cloudogu/${branchName}/releases"
+                flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
+                script = "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
+                output = sh (
+                    script: script,
+                    returnStdout: true
+                ).trim()
+                echo output
+            }
+            echo "Github release created..."
+        } else {
+            throw new Exception("Unable to create Github release without credentials")
+        }
+    }
+
+    /**
      * @return the name of the Repository, assuming it is the URL is formatted like {@code host/getRepositoryName}
      */
     String getRepositoryName() {
