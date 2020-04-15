@@ -71,7 +71,7 @@ class Git implements Serializable {
      * @return if this branch is a release branch according to git flow
      */
     boolean isReleaseBranch() {
-        return env.BRANCH_NAME.startsWith("release/");
+        return getBranchName.startsWith("release/");
     }
 
     /**
