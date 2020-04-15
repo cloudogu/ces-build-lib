@@ -3,9 +3,9 @@ package com.cloudogu.ces.cesbuildlib
 class Changelog implements Serializable {
 
 	String getChangelog(String releaseVersion){
-	    start = getChangelogStartIndex(releaseVersion)
-	    end = getChangelogEndIndex(start)
-	    output = sh (
+	    def start = getChangelogStartIndex(releaseVersion)
+	    def end = getChangelogEndIndex(start)
+	    def output = sh (
 	        script: "sed '${start},${end}!d' CHANGELOG.md",
 	        returnStdout: true
 	    ).trim()
@@ -13,9 +13,9 @@ class Changelog implements Serializable {
 	}
 
 	private int getChangelogStartIndex(String releaseVersion){
-	    startLineString = "## \\[${releaseVersion}\\]"
-	    script = "grep -n \"${startLineString}\" CHANGELOG.md | head -1 | sed s/\"^\\	([0-9]*\\)[:].*\$\"/\"\\1\"/g"
-	    output = sh (
+	    def startLineString = "## \\[${releaseVersion}\\]"
+	    def script = "grep -n \"${startLineString}\" CHANGELOG.md | head -1 | sed s/\"^\\	([0-9]*\\)[:].*\$\"/\"\\1\"/g"
+	    def output = sh (
 	        script: script,
 	        returnStdout: true
 	    ).trim()
@@ -23,8 +23,8 @@ class Changelog implements Serializable {
 	}
 
 	private String getChangelogEndIndex(int start){
-	    script = "tail -n +${start+1} CHANGELOG.md |grep -n \"^## \\[.*\\]\" | sed s/	\"^\\([0-9]*\\)[:].*\$\"/\"\\1\"/g | head -1"
-	    output = sh (
+	    def script = "tail -n +${start+1} CHANGELOG.md |grep -n \"^## \\[.*\\]\" | sed s/	\"^\\([0-9]*\\)[:].*\$\"/\"\\1\"/g | head -1"
+	    def output = sh (
 	        script: script,
 	        returnStdout: true
 	    ).trim()
