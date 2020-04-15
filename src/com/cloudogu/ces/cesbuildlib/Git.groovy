@@ -75,6 +75,29 @@ class Git implements Serializable {
     }
 
     /**
+     * @return true if this branch differs from the develop branch
+     */
+    boolean developHasChanged(String branchName){
+        if (credentials) {
+            withCredentials([usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+                diff = sh(
+                        script: "git log origin/${branchName}..origin/develop --oneline",
+                        returnStdout: true
+                ).trim()
+                if (diff.length() > 0) return true
+                return false
+            }
+        } else {
+            diff = sh(
+                    script: "git log origin/${branchName}..origin/develop --oneline",
+                    returnStdout: true
+            ).trim()
+            if (diff.length() > 0) return true
+            return false
+        }
+    }
+
+    /**
      * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
      */
     String getCommitAuthorComplete() {
