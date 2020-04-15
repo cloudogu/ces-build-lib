@@ -143,6 +143,26 @@ class Git implements Serializable {
         return !getTag().isEmpty()
     }
 
+    /**
+     * @return true if the specified tag exists
+     */
+    boolean tagExists(String tag){
+        if (credentials) {
+            script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+                tagFound = sh (
+                    script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
+                    returnStdout: true
+                ).trim()
+                if (tagFound.length() > 0) return true
+                return false
+            }
+        } else {
+            tagFound = sh ("git ls-remote origin refs/tags/${tag}").trim()
+            if (tagFound.length() > 0) return true
+            return false
+        }
+    }
+
     def add(String pathspec) {
         script.sh "git add $pathspec"
     }
