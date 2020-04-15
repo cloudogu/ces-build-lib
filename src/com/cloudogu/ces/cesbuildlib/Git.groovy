@@ -4,6 +4,8 @@ class Git implements Serializable {
     private script
     Sh sh
     def credentials = null
+    def retryTimeout = 500
+    def maxRetries = 5
 
     Git(script, credentials) {
         this(script)
@@ -13,6 +15,22 @@ class Git implements Serializable {
     Git(script) {
         this.script = script
         this.sh = new Sh(script)
+    }
+
+    /**
+     * You can set the timeout between retries, when git calls with credentials fail. The default is 500 ms.
+     * @param retryTimeout The new timeout in milli seconds.
+     */
+    void setRetryTimeout(def retryTimeout) {
+        this.retryTimeout = retryTimeout;
+    }
+
+    /**
+     * You can set the maximum number of retries, when git calls with credentials fail. The default is 5.
+     * @param maxRetries The new maximum number of retries.
+     */
+    void setMaxRetries(def maxRetries) {
+        this.maxRetries = maxRetries;
     }
 
     def call(args) {
@@ -248,13 +266,28 @@ class Git implements Serializable {
      * This method executes the git command with a bash function as credential helper,
      * which return username and password from jenkins credentials.
      *
+     * If the script failes with exit code 128, this will retry the call up to 5 times
+     * before failing.
+     *
      * @param args git arguments
      */
     protected void executeGitWithCredentials(String args) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
-                script.sh "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
+                def pushResultCode = 128
+                def retryCount = 0
+                while (pushResultCode == 128 && retryCount < maxRetries) {
+                    if (retryCount > 0) {
+                        script.echo "Got error code ${pushResultCode} - retrying in ${retryTimeout} ms ..."
+                        sleep(retryTimeout)
+                    }
+                    ++retryCount
+                    pushResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
+                }
+                if (pushResultCode != 0) {
+                    script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${pushResultCode}"
+                }
             }
         } else {
             script.sh "git ${args}"
