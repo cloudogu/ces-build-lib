@@ -80,7 +80,7 @@ class Git implements Serializable {
     boolean developHasChanged(String branchName){
         if (credentials) {
             withCredentials([usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                diff = sh(
+                diff = script.sh(
                         script: "git log origin/${branchName}..origin/develop --oneline",
                         returnStdout: true
                 ).trim()
@@ -88,7 +88,7 @@ class Git implements Serializable {
                 return false
             }
         } else {
-            diff = sh(
+            diff = script.sh(
                     script: "git log origin/${branchName}..origin/develop --oneline",
                     returnStdout: true
             ).trim()
@@ -155,7 +155,7 @@ class Git implements Serializable {
                 apiUrl = "https://api.github.com/repos/cloudogu/${branchName}/releases"
                 flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
                 script = "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
-                output = sh (
+                output = script.sh (
                     script: script,
                     returnStdout: true
                 ).trim()
@@ -196,7 +196,7 @@ class Git implements Serializable {
     boolean tagExists(String tag){
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                tagFound = sh (
+                tagFound = script.sh (
                     script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
                     returnStdout: true
                 ).trim()
@@ -204,7 +204,7 @@ class Git implements Serializable {
                 return false
             }
         } else {
-            tagFound = sh ("git ls-remote origin refs/tags/${tag}").trim()
+            tagFound = script.sh ("git ls-remote origin refs/tags/${tag}").trim()
             if (tagFound.length() > 0) return true
             return false
         }
