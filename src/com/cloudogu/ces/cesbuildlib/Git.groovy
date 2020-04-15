@@ -80,7 +80,7 @@ class Git implements Serializable {
     boolean developHasChanged(String branchName){
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                diff = script.sh(
+                def diff = script.sh(
                         script: "git log origin/${branchName}..origin/develop --oneline",
                         returnStdout: true
                 ).trim()
@@ -88,7 +88,7 @@ class Git implements Serializable {
                 return false
             }
         } else {
-            diff = script.sh(
+            def diff = script.sh(
                     script: "git log origin/${branchName}..origin/develop --oneline",
                     returnStdout: true
             ).trim()
