@@ -79,7 +79,7 @@ class Git implements Serializable {
      */
     boolean developHasChanged(String branchName){
         if (credentials) {
-            withCredentials([usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+            withCredentials([script.usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
                 diff = script.sh(
                         script: "git log origin/${branchName}..origin/develop --oneline",
                         returnStdout: true
@@ -196,7 +196,7 @@ class Git implements Serializable {
     boolean tagExists(String tag){
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                tagFound = script.sh (
+                def tagFound = script.sh (
                     script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
                     returnStdout: true
                 ).trim()
@@ -204,7 +204,7 @@ class Git implements Serializable {
                 return false
             }
         } else {
-            tagFound = script.sh ("git ls-remote origin refs/tags/${tag}").trim()
+            def tagFound = script.sh ("git ls-remote origin refs/tags/${tag}").trim()
             if (tagFound.length() > 0) return true
             return false
         }
