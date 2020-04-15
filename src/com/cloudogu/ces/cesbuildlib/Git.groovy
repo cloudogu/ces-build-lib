@@ -123,7 +123,7 @@ class Git implements Serializable {
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void addGithubRelease(String releaseVersion, String changes, Git git){
+    void addGithubRelease(String releaseVersion, String changes){
         branchName = getSimpleBranchName()
         if (credentials) {
             echo "Creating Github release..."
