@@ -128,7 +128,7 @@ class Git implements Serializable {
         if (credentials) {
             echo "Creating Github release..."
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"$      {releaseVersion}\", \"body\":\"${changes}\"}'"
+                body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
                 apiUrl = "https://api.github.com/repos/cloudogu/${branchName}/releases"
                 flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
                 script = "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
