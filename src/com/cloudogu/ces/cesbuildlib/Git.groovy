@@ -68,6 +68,13 @@ class Git implements Serializable {
     }
 
     /**
+     * @return if this branch is a release branch according to git flow
+     */
+    boolean isReleaseBranch() {
+        return env.BRANCH_NAME.startsWith("release/");
+    }
+
+    /**
      * @return the Git Author of HEAD, in the following form <code>User Name &lt;user.name@doma.in&gt;</code>
      */
     String getCommitAuthorComplete() {
