@@ -153,9 +153,8 @@ class Git implements Serializable {
                 def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
                 def apiUrl = "https://api.github.com/repos/cloudogu/${branchName}/releases"
                 def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
-                script = "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
                 String output = script.sh (
-                    script: script,
+                    script: "curl -u '\$GIT_AUTH_USR':'\$GIT_AUTH_PSW' ${flags} ${apiUrl}",
                     returnStdout: true
                 ).trim()
             }
