@@ -384,6 +384,6 @@ class Git implements Serializable {
         executeGitWithCredentials("push origin master")
         executeGitWithCredentials("push origin develop")
         executeGitWithCredentials("push origin --tags")
-        executeGitWithCredentials("push origin --delete ${env.BRANCH_NAME}")
+        executeGitWithCredentials("push origin --delete ${branchName}")
     }
 }
