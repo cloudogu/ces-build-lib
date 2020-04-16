@@ -71,7 +71,7 @@ class Git implements Serializable {
      * @return if this branch is a release branch according to git flow
      */
     boolean isReleaseBranch() {
-        return getBranchName().startsWith("release/");
+        return getBranchName().startsWith("release/")
     }
 
     /**
@@ -333,5 +333,61 @@ class Git implements Serializable {
         } else {
             script.sh "git ${args}"
         }
+    }
+
+    /**
+     * Finishes a git flow release and pushes all merged branches to remote
+     *
+     * Only execute this function if you are already on a release branch
+     *
+     * @param releaseVersion the version that is going to be released
+     */
+    void finishGitRelease(String releaseVersion) {
+        String branchName = getBranchName()
+        echo "Your release version is: ${releaseVersion}"
+
+        // Check if tag already exists
+        if (tagExists("${releaseVersion}")){
+            error("You cannot build this version, because it already exists.")
+        }
+
+        // Make sure all branches are fetched
+        script.sh "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
+        executeGitWithCredentials("fetch --all")
+
+        // Make sure there are no changes on develop
+        if (developHasChanged(branchName)){
+            error("There are changes on develop branch that are not merged into release. Please merge and restart process.")
+        }
+
+        // Make sure any branch we need exists locally
+        script.sh "git checkout ${branchName}"
+        executeGitWithCredentials("pull origin ${branchName}")
+        script.sh "git checkout develop"
+        executeGitWithCredentials("pull origin develop")
+        script.sh "git checkout master"
+        executeGitWithCredentials("pull origin master")
+
+        // Merge release branch into master
+        script.sh "git merge --no-ff ${branchName}"
+
+        // Create tag. Use -f because the created tag will persist when build has failed.
+        executeGitWithCredentials("tag -f -m 'release version ${releaseVersion}' ${releaseVersion}")
+
+        // Merge release branch into develop
+        script.sh "git checkout develop"
+        script.sh "git merge --no-ff ${branchName}"
+
+        // Delete release branch
+        script.sh "git branch -d ${branchName}"
+
+        // Checkout tag
+        script.sh "git checkout ${releaseVersion}"
+
+        // Push changes and tags
+        executeGitWithCredentials("push origin master")
+        executeGitWithCredentials("push origin develop")
+        executeGitWithCredentials("push origin --tags")
+        executeGitWithCredentials("push origin --delete ${env.BRANCH_NAME}")
     }
 }
