@@ -266,8 +266,8 @@ class Git implements Serializable {
      * This method executes the git command with a bash function as credential helper,
      * which return username and password from jenkins credentials.
      *
-     * If the script failes with exit code 128, this will retry the call up to 5 times
-     * before failing.
+     * If the script failes with exit code 128, this will retry the call up to the
+     * configured max retries before failing.
      *
      * @param args git arguments
      */
