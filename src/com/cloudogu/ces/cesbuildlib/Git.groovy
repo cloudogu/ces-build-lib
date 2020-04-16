@@ -149,7 +149,6 @@ class Git implements Serializable {
     void addGithubRelease(String releaseVersion, String changes){
         def branchName = getSimpleBranchName()
         if (credentials) {
-            println("Creating Github release...")
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
                 def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
                 def apiUrl = "https://api.github.com/repos/cloudogu/${branchName}/releases"
@@ -159,9 +158,7 @@ class Git implements Serializable {
                     script: script,
                     returnStdout: true
                 ).trim()
-                println(output)
             }
-            println("Github release created.")
         } else {
             throw new Exception("Unable to create Github release without credentials")
         }
@@ -344,7 +341,6 @@ class Git implements Serializable {
      */
     void finishGitRelease(String releaseVersion) {
         String branchName = getBranchName()
-        println("Your release version is: ${releaseVersion}")
 
         // Check if tag already exists
         if (tagExists("${releaseVersion}")){
