@@ -4,7 +4,7 @@ class Changelog implements Serializable {
 	private script
 	Sh sh
 
-	Git(script) {
+	Changelog(script) {
 		this.script = script
 		this.sh = new Sh(script)
 	}
