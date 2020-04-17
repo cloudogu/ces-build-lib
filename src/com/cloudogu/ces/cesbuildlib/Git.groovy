@@ -84,16 +84,14 @@ class Git implements Serializable {
                         script: "git log origin/${branchName}..origin/develop --oneline",
                         returnStdout: true
                 ).trim()
-                if (diff.length() > 0) return true
-                return false
+                return diff.length() > 0
             }
         } else {
             def diff = script.sh(
                     script: "git log origin/${branchName}..origin/develop --oneline",
                     returnStdout: true
             ).trim()
-            if (diff.length() > 0) return true
-            return false
+            return diff.length() > 0
         }
     }
 
