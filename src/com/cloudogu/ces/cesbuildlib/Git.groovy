@@ -191,13 +191,11 @@ class Git implements Serializable {
                     script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
                     returnStdout: true
                 ).trim()
-                if (tagFound.length() > 0) return true
-                return false
+                return tagFound.length() > 0
             }
         } else {
             def tagFound = script.sh ("git ls-remote origin refs/tags/${tag}").trim()
-            if (tagFound.length() > 0) return true
-            return false
+            return tagFound.length() > 0
         }
     }
 
