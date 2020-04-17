@@ -153,7 +153,9 @@ class Git implements Serializable {
                 def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
                 def apiUrl = "https://api.github.com/repos/cloudogu/${repositoryName}/releases"
                 def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
-                script.sh "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
+                def username='\$GIT_AUTH_USR'
+                def password='\$GIT_AUTH_PSW'
+                script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
             }
         } else {
             throw new Exception("Unable to create Github release without credentials")
@@ -396,19 +398,19 @@ class Git implements Serializable {
             changelogText = changelog.getChangelog(releaseVersion)
         } catch (Exception e) {
             script.unstable("Failed to read changes in changelog due to error: ${e}")
-            script.sh "echo \"Please manually update github release.\""
+            script.echo "Please manually update github release."
         }
 
         try {
             if (changelogText == "") {
                 throw new Exception("Changelog text is empty or has not been detected correctly")
             }
-            script.sh "echo \"The description of github release will be: >>>${changelogText}<<<\""
+            script.echo "The description of github release will be: >>>${changelogText}<<<"
             addGithubRelease(releaseVersion, changelogText)
 
         } catch (Exception e) {
             script.unstable("Release failed due to error: ${e}")
-            script.sh "echo \"Please manually update github release.\""
+            script.echo "Please manually update github release."
         }
     }
 }
