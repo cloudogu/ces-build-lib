@@ -398,19 +398,19 @@ class Git implements Serializable {
         try {
             changelogText = changelog.getChangelog(releaseVersion)
         } catch (Exception e) {
-            echo "Failed to read changes in changelog due to error: ${e}"
-            echo "Please manually update github release."
+            script.sh "echo \"Failed to read changes in changelog due to error: ${e}\""
+            script.sh "echo \"Please manually update github release.\""
         }
 
         try {
             if (changelogText == "") {
                 throw new Exception("Changelog text is empty or has not been detected correctly")
             }
-            echo "The description of github release will be: >>>${changelogText}<<<"
+            script.sh "echo \"The description of github release will be: >>>${changelogText}<<<\""
             addGithubRelease(releaseVersion, changelogText)
 
         } catch (Exception e) {
-            echo "Release failed due to error: ${e}"
+            script.sh "echo \"Release failed due to error: ${e}\""
         }
     }
 }
