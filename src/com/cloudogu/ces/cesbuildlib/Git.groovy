@@ -154,7 +154,7 @@ class Git implements Serializable {
                 def apiUrl = "https://api.github.com/repos/cloudogu/${repositoryName}/releases"
                 def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
                 String output = script.sh (
-                    script: "curl -u '\$GIT_AUTH_USR':'\$GIT_AUTH_PSW' ${flags} ${apiUrl}",
+                    script: "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}",
                     returnStdout: true
                 ).trim()
             }
