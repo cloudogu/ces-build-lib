@@ -385,4 +385,32 @@ class Git implements Serializable {
         executeGitWithCredentials("push origin --tags")
         executeGitWithCredentials("push origin --delete ${branchName}")
     }
+
+    /**
+     * Creates a new release on Github and adds changelog info to it
+     *
+     * @param releaseVersion the version for the github release
+     * @param changelog the changelog object to extract the release information from
+     */
+    void createGithubRelease(String releaseVersion, Changelog changelog) {
+        def changelogText = ""
+
+        try {
+            changelogText = changelog.getChangelog(releaseVersion)
+        } catch (Exception e) {
+            echo "Failed to read changes in changelog due to error: ${e}"
+            echo "Please manually update github release."
+        }
+
+        try {
+            if (changelogText == "") {
+                throw new Exception("Changelog text is empty or has not been detected correctly")
+            }
+            echo "The description of github release will be: >>>${changelogText}<<<"
+            addGithubRelease(releaseVersion, changelogText)
+
+        } catch (Exception e) {
+            echo "Release failed due to error: ${e}"
+        }
+    }
 }
