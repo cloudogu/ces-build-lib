@@ -87,6 +87,27 @@ class GitTest {
     }
 
     @Test
+    void testIsReleaseBranch() {
+        String branchPrefixRelease = "release"
+        String branchPrefixFeature = "feature"
+
+        def scriptMock1 = new ScriptMock()
+        scriptMock1.env= new Object() {
+            String BRANCH_NAME = "$branchPrefixRelease/something"
+        }
+        Git git1 = new Git(scriptMock1)
+
+        def scriptMock2 = new ScriptMock()
+        scriptMock2.env= new Object() {
+            String BRANCH_NAME = "$branchPrefixFeature/something"
+        }
+        Git git2 = new Git(scriptMock2)
+
+        assertTrue(git1.isReleaseBranch())
+        assertFalse(git2.isReleaseBranch())
+    }
+
+    @Test
     void getAuthorEmail() {
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         assertEquals("user.name@doma.in", git.commitAuthorEmail)
