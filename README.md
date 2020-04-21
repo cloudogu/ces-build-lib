@@ -437,8 +437,9 @@ stage('Checkout') {
 
 ## Credentials
 
-You can optionally pass `usernamePassword` credentials to `Git` during construction. These are then used for cloning 
-and pushing.
+You can optionally pass `usernamePassword` (i.e. a String containing the ID that refers to the 
+[Jenkins credentials](https://jenkins.io/doc/book/using/using-credentials/)) to `Git` during construction. 
+These are then used for cloning and pushing.
 
 ```
 Git annonymousGit = new Git(this)
