@@ -441,6 +441,10 @@ You can optionally pass `usernamePassword` (i.e. a String containing the ID that
 [Jenkins credentials](https://jenkins.io/doc/book/using/using-credentials/)) to `Git` during construction. 
 These are then used for cloning and pushing.
 
+Note that the username and passwort are processed by a shell. Special characters in username or password might cause 
+errors like `Unterminated quoted string`. So it's best to use a long password that only contains letters and numbers 
+for now.
+
 ```
 Git annonymousGit = new Git(this)
 Git gitWithCreds = new Git(this, 'ourCredentials')
