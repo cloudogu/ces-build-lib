@@ -201,6 +201,17 @@ class Git implements Serializable {
     }
 
     /**
+     * Switch branch of the local repository. Creates new Branch if it does not exist; otherwise, it is reset
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before checkout.
+     *
+     * @param branchName name of branch to switch to
+     */
+    void checkoutOrCreate(String branchName) {
+        script.sh "git checkout -B ${branchName}"
+    }
+
+    /**
      * Merge branch into the current checked out branch.
      *
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,

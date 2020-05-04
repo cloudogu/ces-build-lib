@@ -476,6 +476,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 
 ### Changes to local repository
 
+* `git.checkout('branchname')`
+* `git.checkoutOrCreate('branchname')` - Creates new Branch if it does not exist; otherwise, it is reset
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
