@@ -221,6 +221,15 @@ class GitTest {
     }
 
     @Test
+    void switchBranch() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.switchBranch("master")
+
+        assert scriptMock.actualShStringArgs[0] == "git checkout -B master"
+    }
+
+    @Test
     void merge() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
