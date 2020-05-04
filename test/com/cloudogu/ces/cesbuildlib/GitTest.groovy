@@ -224,7 +224,7 @@ class GitTest {
     void switchBranch() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
-        git.switchBranch("master")
+        git.checkoutOrCreate("master")
 
         assert scriptMock.actualShStringArgs[0] == "git checkout -B master"
     }
