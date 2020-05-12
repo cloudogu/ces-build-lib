@@ -184,6 +184,38 @@ class SonarQubeTest {
 
         assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=master '
     }
+
+    @Test
+    void analyzeWithBranchPluginOnConfiguredIntegrationBranch() throws Exception {
+        scriptMock.env = [
+                BRANCH_NAME: 'develop'
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, ['sonarQubeEnv': 'sqEnv', 'integrationBranch': 'develop'])
+        mavenMock.additionalArgs = '-X'
+        sonarQube.isUsingBranchPlugin = true
+        sonarQube.analyzeWith(mavenMock)
+
+        assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=develop '
+    }
+
+     @Test
+    void analyzeWithBranchPluginWithConfiguredIntegrationBranch() throws Exception {
+        scriptMock.env = [
+                BRANCH_NAME: 'feature'
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, ['sonarQubeEnv': 'sqEnv', 'integrationBranch': 'develop'])
+        mavenMock.additionalArgs = '-X'
+        sonarQube.isUsingBranchPlugin = true
+        sonarQube.analyzeWith(mavenMock)
+
+        def additionalArgs = mavenMock.additionalArgs.split("\\s+")
+        assert additionalArgs.size() == 3
+        assert additionalArgs[0].trim() == '-X'
+        assert additionalArgs[1].trim() == '-Dsonar.branch.name=feature'
+        assert additionalArgs[2].trim() == '-Dsonar.branch.target=develop'
+    }
     
     @Test
     void analyzeWithBranchPluginOnPullRequest() throws Exception {
