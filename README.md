@@ -710,6 +710,14 @@ sonarQube.isUsingBranchPlugin = true
 sonarQube.analyzeWith(mvn)
 ```
 
+The branch plugin is using `master` as integration branch, if you want use a different branch as `master` you have to use the `integrationBranch` parameter e.g.:
+
+```groovy
+def sonarQube = new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins', integrationBranch: 'develop'])
+sonarQube.isUsingBranchPlugin = true
+sonarQube.analyzeWith(mvn)
+```
+
 Note that using the branch plugin **requires a first analysis without branches**.
 
 You can do this on Jenkins or locally.
