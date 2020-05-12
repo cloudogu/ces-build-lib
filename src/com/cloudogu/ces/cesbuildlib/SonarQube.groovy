@@ -108,8 +108,10 @@ class SonarQube implements Serializable {
         // https://github.com/mc1arke/sonarqube-community-branch-plugin
         if (isUsingBranchPlugin) {
             mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
-            if (!"master".equals(script.env.BRANCH_NAME)) {
-                String targetBranch = script.env.CHANGE_TARGET ? script.env.CHANGE_TARGET : "master"
+
+            String integrationBranch = determineIntegrationBranch()
+            if (!integrationBranch.equals(script.env.BRANCH_NAME)) {
+                String targetBranch = script.env.CHANGE_TARGET ? script.env.CHANGE_TARGET : integrationBranch
                 // Avoid exception "The main branch must not have a target" on master branch
                 mvn.additionalArgs += " -Dsonar.branch.target=${targetBranch} "
             }
@@ -135,6 +137,14 @@ class SonarQube implements Serializable {
             def artifactId = mvn.artifactId.trim()
             mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${artifactId}:${script.env.BRANCH_NAME}"  +
                     " -Dsonar.projectName=${artifactId}:${script.env.BRANCH_NAME} "
+        }
+    }
+
+    protected String determineIntegrationBranch() {
+        if (config['integrationBranch']) {
+            return config['integrationBranch']
+        } else {
+            return 'master'
         }
     }
 

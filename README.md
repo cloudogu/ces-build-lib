@@ -437,8 +437,13 @@ stage('Checkout') {
 
 ## Credentials
 
-You can optionally pass `usernamePassword` credentials to `Git` during construction. These are then used for cloning 
-and pushing.
+You can optionally pass `usernamePassword` (i.e. a String containing the ID that refers to the 
+[Jenkins credentials](https://jenkins.io/doc/book/using/using-credentials/)) to `Git` during construction. 
+These are then used for cloning and pushing.
+
+Note that the username and passwort are processed by a shell. Special characters in username or password might cause 
+errors like `Unterminated quoted string`. So it's best to use a long password that only contains letters and numbers 
+for now.
 
 ```
 Git annonymousGit = new Git(this)
@@ -471,6 +476,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 
 ### Changes to local repository
 
+* `git.checkout('branchname')`
+* `git.checkoutOrCreate('branchname')` - Creates new Branch if it does not exist; otherwise, it is reset
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
@@ -699,6 +706,14 @@ branch plugin later on.
 You can enable either branch plugins like so:
 
 ```groovy
+sonarQube.isUsingBranchPlugin = true
+sonarQube.analyzeWith(mvn)
+```
+
+The branch plugin is using `master` as integration branch, if you want use a different branch as `master` you have to use the `integrationBranch` parameter e.g.:
+
+```groovy
+def sonarQube = new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins', integrationBranch: 'develop'])
 sonarQube.isUsingBranchPlugin = true
 sonarQube.analyzeWith(mvn)
 ```
