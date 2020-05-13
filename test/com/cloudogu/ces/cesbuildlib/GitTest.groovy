@@ -202,6 +202,15 @@ class GitTest {
     }
 
     @Test
+    void setTag() {
+        ScriptMock scriptMock = new ScriptMock()
+        Git git = new Git(scriptMock)
+        git.setTag("someTag", "someMessage")
+
+        assert scriptMock.actualShStringArgs[0] == "git tag -m 'someMessage' someTag"
+    }
+
+    @Test
     void fetch() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
@@ -221,7 +230,7 @@ class GitTest {
     }
 
     @Test
-    void switchBranch() {
+    void checkoutOrCreate() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
         git.checkoutOrCreate("master")

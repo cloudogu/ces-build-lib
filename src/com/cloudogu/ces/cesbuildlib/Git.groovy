@@ -180,6 +180,16 @@ class Git implements Serializable {
     }
 
     /**
+     * Sets a git Tag and message using the specific tag and message.
+     *
+     * @param tag
+     * @param message
+     */
+    void setTag(String tag, String message) {
+        script.sh "git tag -m '${message}' ${tag}"
+    }
+
+    /**
      * Fetch remote branches from origin.
      */
     void fetch() {

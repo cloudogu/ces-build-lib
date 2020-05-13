@@ -481,6 +481,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
+* `git.setTag('tag', 'message')` - Sets tag with specific message
 * `git.fetch()`
 * `git.merge('develop')`
 * `git.mergeFastForwardOnly('master')`
