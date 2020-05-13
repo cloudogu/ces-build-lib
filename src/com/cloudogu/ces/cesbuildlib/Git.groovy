@@ -180,6 +180,31 @@ class Git implements Serializable {
     }
 
     /**
+     * Sets Tag with message using the name and email of the last committer as author and committer.
+     *
+     * @param tag
+     * @param message
+     */
+    void setTag(String tag, String message) {
+        setTag(tag, message, commitAuthorName, commitAuthorEmail)
+    }
+
+    /**
+     * Sets a git Tag and message using the specific name and emails as author and committer.
+     *
+     * @param tag
+     * @param message
+     * @param authorName
+     * @param authorEmail
+     */
+    void setTag(String tag, String message, String authorName, String authorEmail) {
+        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
+                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+            script.sh "git tag -m \"${message}\" ${tag}"
+        }
+    }
+
+    /**
      * Fetch remote branches from origin.
      */
     void fetch() {
