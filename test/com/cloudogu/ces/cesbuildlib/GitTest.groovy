@@ -87,27 +87,6 @@ class GitTest {
     }
 
     @Test
-    void testIsReleaseBranch() {
-        String branchPrefixRelease = "release"
-        String branchPrefixFeature = "feature"
-
-        def scriptMock1 = new ScriptMock()
-        scriptMock1.env= new Object() {
-            String BRANCH_NAME = "$branchPrefixRelease/something"
-        }
-        Git git1 = new Git(scriptMock1)
-
-        def scriptMock2 = new ScriptMock()
-        scriptMock2.env= new Object() {
-            String BRANCH_NAME = "$branchPrefixFeature/something"
-        }
-        Git git2 = new Git(scriptMock2)
-
-        assertTrue(git1.isReleaseBranch())
-        assertFalse(git2.isReleaseBranch())
-    }
-
-    @Test
     void getAuthorEmail() {
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         assertEquals("user.name@doma.in", git.commitAuthorEmail)
@@ -280,42 +259,5 @@ class GitTest {
 
         assert scriptMock.actualShStringArgs.size() == 1
         assert scriptMock.actualShStringArgs.get(0) == 'git push origin master'
-    }
-
-    @Test
-    void pushGitHubPagesBranch() {
-        scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
-
-        git.pushGitHubPagesBranch('website', 'Deploys new version of website')
-
-        assertGitHubPagesBranchToSubFolder('.')
-    }
-
-    @Test
-    void pushGitHubPagesBranchToSubFolder() {
-        scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
-
-        git.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
-
-        assertGitHubPagesBranchToSubFolder('some-folder')
-    }
-
-    private void assertGitHubPagesBranchToSubFolder(String subFolder) {
-        assert scriptMock.actualGitArgs.url == "https://repo.url"
-        assert scriptMock.actualGitArgs.branch == "gh-pages"
-
-        assert scriptMock.actualDir == '.gh-pages'
-        assert scriptMock.actualShStringArgs.contains("cp -rf ../website/* ${subFolder}".toString())
-        assert scriptMock.actualShStringArgs.contains("mkdir -p ${subFolder}".toString())
-        assert scriptMock.actualShStringArgs.contains('git add .')
-        assert scriptMock.actualShStringArgs.contains('git commit -m "Deploys new version of website"')
-        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_NAME=User Name'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_NAME=User Name'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_EMAIL=user.name@doma.in'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
-        assert scriptMock.actualShStringArgs.contains('git push origin gh-pages')
-        assert scriptMock.actualShStringArgs.last == 'rm -rf .gh-pages'
     }
 }

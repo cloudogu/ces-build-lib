@@ -135,25 +135,6 @@ class Git implements Serializable {
     }
 
     /**
-     * Creates a release on Github and fills it with the changes provided
-     */
-    void addGithubRelease(String releaseVersion, String changes){
-        def repositoryName = getRepositoryName()
-        if (credentials) {
-            script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
-                def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
-                def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
-                def username='\$GIT_AUTH_USR'
-                def password='\$GIT_AUTH_PSW'
-                script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
-            }
-        } else {
-            throw new Exception("Unable to create Github release without credentials")
-        }
-    }
-
-    /**
      * @return the name of the Repository, assuming it is the URL is formatted like {@code host/getRepositoryName}
      */
     String getRepositoryName() {
@@ -285,6 +266,7 @@ class Git implements Serializable {
      * @param workspaceFolder
      * @param commitMessage
      */
+    @Deprecated
     void pushGitHubPagesBranch(String workspaceFolder, String commitMessage, String subFolder = '.') {
         def ghPagesTempDir = '.gh-pages'
         try {
@@ -372,34 +354,5 @@ class Git implements Serializable {
         executeGitWithCredentials("push origin develop")
         executeGitWithCredentials("push origin --tags")
         executeGitWithCredentials("push origin --delete ${branchName}")
-    }
-
-    /**
-     * Creates a new release on Github and adds changelog info to it
-     *
-     * @param releaseVersion the version for the github release
-     * @param changelog the changelog object to extract the release information from
-     */
-    void createGithubRelease(String releaseVersion, Changelog changelog) {
-        def changelogText = ""
-
-        try {
-            changelogText = changelog.getChangelog(releaseVersion)
-        } catch (Exception e) {
-            script.unstable("Failed to read changes in changelog due to error: ${e}")
-            script.echo "Please manually update github release."
-        }
-
-        try {
-            if (changelogText == "") {
-                throw new Exception("Changelog text is empty or has not been detected correctly")
-            }
-            script.echo "The description of github release will be: >>>${changelogText}<<<"
-            addGithubRelease(releaseVersion, changelogText)
-
-        } catch (Exception e) {
-            script.unstable("Release failed due to error: ${e}")
-            script.echo "Please manually update github release."
-        }
     }
 }
