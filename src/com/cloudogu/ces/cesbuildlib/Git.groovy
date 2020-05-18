@@ -353,7 +353,7 @@ class Git implements Serializable {
                 script: "git ${args}",
                 returnStdout: true
         )
-        println commandOutput
+        script.sh "echo ${commandOutput}"
         return commandOutput
     }
 
