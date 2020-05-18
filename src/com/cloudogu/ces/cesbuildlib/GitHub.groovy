@@ -16,22 +16,10 @@ class GitHub implements Serializable {
      * @param changelog the changelog object to extract the release information from
      */
     void createGithubRelease(String releaseVersion, Changelog changelog) {
-        def changelogText = ""
-
         try {
-            changelogText = changelog.getChangelog(releaseVersion)
-        } catch (Exception e) {
-            script.unstable("Failed to read changes in changelog due to error: ${e}")
-            script.echo "Please manually update github release."
-        }
-
-        try {
-            if (changelogText == "") {
-                throw new Exception("Changelog text is empty or has not been detected correctly")
-            }
+            def changelogText = changelog.getChangelog(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
             addGithubRelease(releaseVersion, changelogText)
-
         } catch (Exception e) {
             script.unstable("Release failed due to error: ${e}")
             script.echo "Please manually update github release."

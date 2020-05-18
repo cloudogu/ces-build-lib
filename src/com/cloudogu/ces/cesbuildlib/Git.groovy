@@ -326,7 +326,7 @@ class Git implements Serializable {
                 return script.sh(
                         script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}",
                         returnStdout: true
-                ).trim()
+                )
             }
         } else {
             script.sh "git ${args}"
