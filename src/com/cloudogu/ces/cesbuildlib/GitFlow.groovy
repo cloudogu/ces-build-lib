@@ -40,8 +40,7 @@ class GitFlow implements Serializable {
         }
 
         // Make sure all branches are fetched
-        script.sh "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
-        this.git.executeGitWithCredentials("fetch --all")
+        this.git.fetchWithCredentials()
 
         // Make sure there are no changes on develop
         if (this.git.developHasChanged(branchName)) {
@@ -49,28 +48,28 @@ class GitFlow implements Serializable {
         }
 
         // Make sure any branch we need exists locally
-        script.sh "git checkout ${branchName}"
-        this.gitexecuteGitWithCredentials("pull origin ${branchName}")
-        script.sh "git checkout develop"
+        this.git.checkout(branchName)
+        this.git.executeGitWithCredentials("pull origin ${branchName}")
+        this.git.checkout("develop")
         this.git.executeGitWithCredentials("pull origin develop")
-        script.sh "git checkout master"
+        this.git.checkout("master")
         this.git.executeGitWithCredentials("pull origin master")
 
         // Merge release branch into master
-        script.sh "git merge --no-ff ${branchName}"
+        this.git.mergeNoFastForward(branchName)
 
         // Create tag. Use -f because the created tag will persist when build has failed.
         this.git.executeGitWithCredentials("tag -f -m 'release version ${releaseVersion}' ${releaseVersion}")
 
         // Merge release branch into develop
-        script.sh "git checkout develop"
-        script.sh "git merge --no-ff ${branchName}"
+        this.git.checkout("develop")
+        this.git.mergeNoFastForward(branchName)
 
         // Delete release branch
         this.git.deleteLocalBranch(branchName)
 
         // Checkout tag
-        script.sh "git checkout ${releaseVersion}"
+        this.git.checkout(releaseVersion)
 
         // Push changes and tags
         this.git.push("master")

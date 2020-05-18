@@ -211,6 +211,16 @@ class Git implements Serializable {
     }
 
     /**
+     * Fetch remote branches from origin.
+     */
+    void fetchWithCredentials() {
+        // we need to configure remote,
+        // because jenkins configures the remote only for the current branch
+        script.sh "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
+        this.executeGitWithCredentials("fetch --all")
+    }
+
+    /**
      * Switch branch of the local repository.
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
      * so you have to call {@link #fetch()} before checkout.
