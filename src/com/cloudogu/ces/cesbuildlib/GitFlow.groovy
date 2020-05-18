@@ -67,7 +67,7 @@ class GitFlow implements Serializable {
         script.sh "git merge --no-ff ${branchName}"
 
         // Delete release branch
-        script.sh "git branch -d ${branchName}"
+        this.git.deleteLocalBranch(branchName)
 
         // Checkout tag
         script.sh "git checkout ${releaseVersion}"
