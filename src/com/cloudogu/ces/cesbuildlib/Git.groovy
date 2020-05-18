@@ -222,6 +222,16 @@ class Git implements Serializable {
     }
 
     /**
+     * Switch the branch of the local repository and then pull changes from origin.
+     *
+     * @param branchName The name of the branch to checkout and pull from.
+     */
+    void checkoutAndPull(branchName){
+        checkout(branchName)
+        script.sh "git pull origin ${branchName}"
+    }
+
+    /**
      * Merge branch into the current checked out branch.
      *
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,

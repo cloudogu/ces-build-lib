@@ -42,12 +42,9 @@ class GitFlow implements Serializable {
         }
 
         // Make sure any branch we need exists locally
-        this.git.checkout(branchName)
-        this.git.executeGitWithCredentials("pull origin ${branchName}")
-        this.git.checkout("develop")
-        this.git.executeGitWithCredentials("pull origin develop")
-        this.git.checkout("master")
-        this.git.executeGitWithCredentials("pull origin master")
+        this.git.checkoutAndPull(branchName)
+        this.git.checkoutAndPull("develop")
+        this.git.checkoutAndPull("master")
 
         // Merge release branch into master
         this.git.mergeNoFastForward(branchName)
