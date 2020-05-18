@@ -349,10 +349,12 @@ class Git implements Serializable {
      * @return Returns the console output.
      */
     protected String executeGit(String args){
-        return script.sh(
+        def commandOutput = script.sh(
                 script: "git ${args}",
                 returnStdout: true
         )
+        println commandOutput
+        return commandOutput
     }
 
 
