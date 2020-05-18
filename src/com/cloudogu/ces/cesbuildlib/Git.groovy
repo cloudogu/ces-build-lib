@@ -161,18 +161,8 @@ class Git implements Serializable {
      * @return true if the specified tag exists
      */
     boolean tagExists(String tag) {
-        if (credentials) {
-            script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                def tagFound = script.sh(
-                        script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
-                        returnStdout: true
-                ).trim()
-                return tagFound.length() > 0
-            }
-        } else {
-            def tagFound = script.sh("git ls-remote origin refs/tags/${tag}").trim()
-            return tagFound.length() > 0
-        }
+        def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")
+        return tagFound.length() > 0
     }
 
     def add(String pathspec) {
@@ -329,15 +319,20 @@ class Git implements Serializable {
      *
      * @param args git arguments
      */
-    protected void executeGitWithCredentials(String args) {
+    protected String executeGitWithCredentials(String args) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
-                script.sh "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
+                return script.sh(
+                        script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}",
+                        returnStdout: true
+                ).trim()
             }
         } else {
             script.sh "git ${args}"
         }
+
+        return ""
     }
 
     /**
