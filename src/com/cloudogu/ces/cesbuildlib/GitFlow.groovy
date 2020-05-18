@@ -73,9 +73,9 @@ class GitFlow implements Serializable {
         script.sh "git checkout ${releaseVersion}"
 
         // Push changes and tags
-        this.git.executeGitWithCredentials("push origin master")
-        this.git.executeGitWithCredentials("push origin develop")
-        this.git.executeGitWithCredentials("push origin --tags")
-        this.git.executeGitWithCredentials("push origin --delete ${branchName}")
+        this.git.push("master")
+        this.git.push("develop")
+        this.git.push("--tags")
+        this.git.deleteOriginBranch(branchName)
     }
 }
