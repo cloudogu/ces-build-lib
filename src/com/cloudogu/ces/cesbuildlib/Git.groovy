@@ -256,6 +256,15 @@ class Git implements Serializable {
     }
 
     /**
+     * Removes a branch at origin.
+     *
+     * @param refSpec branch name
+     */
+    void deleteOriginBranch(String refSpec) {
+        executeGitWithCredentials "push --delete origin ${refSpec}"
+    }
+
+    /**
      * Commits and pushes a folder to the <code>gh-pages</code> branch of the current repo.
      * Can be used to conveniently deliver websites. See https://pages.github.com/
      *
