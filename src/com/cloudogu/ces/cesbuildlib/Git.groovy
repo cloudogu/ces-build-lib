@@ -339,4 +339,15 @@ class Git implements Serializable {
             script.sh "git ${args}"
         }
     }
+
+    /**
+     * Creates a git tag.
+     *
+     * @param tagName The name of the tag.
+     * @param tagMessage The message of the tag.
+     * @param force Force tag creation when true.
+     */
+    void createTag(String tagName, String tagMessage, boolean force){
+        script.sh "git tag ${(force) ? '-f': ''} -m '${tagMessage}' ${tagName}"
+    }
 }

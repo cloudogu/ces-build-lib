@@ -59,7 +59,7 @@ class GitFlow implements Serializable {
         this.git.mergeNoFastForward(branchName)
 
         // Create tag. Use -f because the created tag will persist when build has failed.
-        this.git.executeGitWithCredentials("tag -f -m 'release version ${releaseVersion}' ${releaseVersion}")
+        this.git.createTag(releaseVersion, "release version ${releaseVersion}", true);
 
         // Merge release branch into develop
         this.git.checkout("develop")
