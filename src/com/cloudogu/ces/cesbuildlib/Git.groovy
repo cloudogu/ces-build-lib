@@ -228,7 +228,7 @@ class Git implements Serializable {
      */
     void checkoutAndPull(branchName){
         checkout(branchName)
-        script.sh "git pull origin ${branchName}"
+        executeGitWithCredentials("pull origin ${branchName}")
     }
 
     /**
