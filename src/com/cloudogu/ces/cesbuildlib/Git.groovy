@@ -263,6 +263,14 @@ class Git implements Serializable {
     void deleteOriginBranch(String refSpec) {
         executeGitWithCredentials "push --delete origin ${refSpec}"
     }
+    /**
+     * Removes a local branch.
+     *
+     * @param refSpec branch name
+     */
+    void deleteLocalBranch(String refSpec) {
+        script.sh "git branch -d ${refSpec}"
+    }
 
     /**
      * Commits and pushes a folder to the <code>gh-pages</code> branch of the current repo.
