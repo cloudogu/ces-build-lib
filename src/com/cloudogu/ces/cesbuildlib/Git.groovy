@@ -70,7 +70,7 @@ class Git implements Serializable {
     /**
      * @return true if this branch differs from the develop branch
      */
-    boolean developHasChanged(String branchName){
+    boolean developHasChanged(String branchName) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: 'cesmarvin', usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
                 def diff = script.sh(
@@ -160,17 +160,17 @@ class Git implements Serializable {
     /**
      * @return true if the specified tag exists
      */
-    boolean tagExists(String tag){
+    boolean tagExists(String tag) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-                def tagFound = script.sh (
-                    script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
-                    returnStdout: true
+                def tagFound = script.sh(
+                        script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo         password='\$GIT_AUTH_PSW'; }; f\" ls-remote origin refs/tags/${tag}",
+                        returnStdout: true
                 ).trim()
                 return tagFound.length() > 0
             }
         } else {
-            def tagFound = script.sh ("git ls-remote origin refs/tags/${tag}").trim()
+            def tagFound = script.sh("git ls-remote origin refs/tags/${tag}").trim()
             return tagFound.length() > 0
         }
     }
@@ -312,7 +312,7 @@ class Git implements Serializable {
         String branchName = getBranchName()
 
         // Check if tag already exists
-        if (tagExists("${releaseVersion}")){
+        if (tagExists("${releaseVersion}")) {
             error("You cannot build this version, because it already exists.")
         }
 
@@ -321,7 +321,7 @@ class Git implements Serializable {
         executeGitWithCredentials("fetch --all")
 
         // Make sure there are no changes on develop
-        if (developHasChanged(branchName)){
+        if (developHasChanged(branchName)) {
             error("There are changes on develop branch that are not merged into release. Please merge and restart process.")
         }
 

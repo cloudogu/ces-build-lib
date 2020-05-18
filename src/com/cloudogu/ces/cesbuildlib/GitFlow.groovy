@@ -1,6 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
-class GitFlow implements Serializable{
+class GitFlow implements Serializable {
     private script
     private git
     Sh sh

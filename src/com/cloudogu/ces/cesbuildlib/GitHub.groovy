@@ -41,15 +41,15 @@ class GitHub implements Serializable {
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void addGithubRelease(String releaseVersion, String changes){
+    void addGithubRelease(String releaseVersion, String changes) {
         def repositoryName = this.git.getRepositoryName()
         if (this.git.credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
                 def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
                 def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
                 def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
-                def username='\$GIT_AUTH_USR'
-                def password='\$GIT_AUTH_PSW'
+                def username = '\$GIT_AUTH_USR'
+                def password = '\$GIT_AUTH_PSW'
                 script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
             }
         } else {
