@@ -323,17 +323,28 @@ class Git implements Serializable {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
-                return script.sh(
-                        script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}",
-                        returnStdout: true
-                )
+                return executeGit("-c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}")
             }
         } else {
-            script.sh "git ${args}"
+            return executeGit(args)
         }
 
         return ""
     }
+
+    /**
+     * Executes a git command.
+     *
+     * @param args git arguments
+     * @return Returns the console output.
+     */
+    protected String executeGit(String args){
+        return script.sh(
+                script: "git ${args}",
+                returnStdout: true
+        )
+    }
+
 
     /**
      * Creates a git tag.

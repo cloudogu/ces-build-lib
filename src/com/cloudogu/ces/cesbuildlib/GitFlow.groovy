@@ -4,12 +4,6 @@ class GitFlow implements Serializable {
     private script
     private git
     Sh sh
-    def credentials = null
-
-    GitFlow(script, Git git, credentials) {
-        this(script, git)
-        this.credentials = credentials
-    }
 
     GitFlow(script, Git git) {
         this.script = script
