@@ -247,6 +247,18 @@ class Git implements Serializable {
     }
 
     /**
+     * Resolve the merge as a non-fast-forward.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     */
+    void mergeNoFastForward(String branchName) {
+        script.sh "git merge --no-ff ${branchName}"
+    }
+
+    /**
      * Pushes local to remote repo.
      *
      * @param refSpec branch or tag name
