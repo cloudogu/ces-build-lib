@@ -2,7 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 class Changelog {
     private String name
-    private sh
+    private Sh sh
 
     Changelog(String name, script) {
         this.name = name
