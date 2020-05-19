@@ -15,11 +15,11 @@ class GitHub implements Serializable {
      * @param releaseVersion the version for the github release
      * @param changelog the changelog object to extract the release information from
      */
-    void createGithubRelease(String releaseVersion, Changelog changelog) {
+    void createGithubReleaseByChangelog(String releaseVersion, Changelog changelog) {
         try {
             def changelogText = changelog.getChangelog(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
-            addGithubRelease(releaseVersion, changelogText)
+            createGithubRelease(releaseVersion, changelogText)
         } catch (Exception e) {
             script.unstable("Release failed due to error: ${e}")
             script.echo "Please manually update github release."
@@ -29,7 +29,7 @@ class GitHub implements Serializable {
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void addGithubRelease(String releaseVersion, String changes) {
+    void createGithubRelease(String releaseVersion, String changes) {
         def repositoryName = git.getRepositoryName()
         if (!git.credentials) {
             throw new Exception("Unable to create Github release without credentials")
