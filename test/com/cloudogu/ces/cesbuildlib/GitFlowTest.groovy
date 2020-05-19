@@ -57,6 +57,30 @@ class GitFlowTest extends GroovyTestCase {
         assertEquals("git push origin develop", scriptMock.allActualArgs[17])
         assertEquals("git push origin --tags", scriptMock.allActualArgs[18])
         assertEquals("git push --delete origin myReleaseBranch", scriptMock.allActualArgs[19])
+    }
 
+    @Test
+    void testThrowsErrorWhenTagAlreadyExists() {
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "thisIsATag"
+        Git git = new Git(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git)
+        String err = shouldFail(Exception.class) {
+            gitflow.finishGitRelease("myVersion")
+        }
+        assertEquals("You cannot build this version, because it already exists.", err)
+    }
+
+    @Test
+    void testThrowsErrorWhenDevelopHasChanged() {
+        def scriptMock = new ScriptMock()
+        scriptMock.env.BRANCH_NAME = "branch"
+        scriptMock.expectedShRetValueForScript.put("git log origin/branch..origin/develop --oneline", "error")
+        Git git = new Git(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git)
+        String err = shouldFail(Exception.class) {
+            gitflow.finishGitRelease("myVersion")
+        }
+        assertEquals("There are changes on develop branch that are not merged into release. Please merge and restart process.", err)
     }
 }
