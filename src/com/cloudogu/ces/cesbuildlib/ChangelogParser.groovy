@@ -27,34 +27,34 @@ class ChangelogParser implements Serializable {
         script.sh "echo 'got end index'"
         def changelog = this.changelog.get()
         script.sh "echo 'got changelog'"
+        println start
+        println end
         return formatForJson(changelog.substring(start, end).trim())
     }
 
     String formatForJson(String string) {
         return string
-        .replace("\"", "")
-        .replace("'", "")
-        .replace("\\", "")
-        .replace("\n", "\\n")
+                .replace("\"", "")
+                .replace("'", "")
+                .replace("\\", "")
+                .replace("\n", "\\n")
     }
 
     private int getChangelogStartIndex(String releaseVersion) {
         def changelog = this.changelog.get()
-        Pattern p = Pattern.compile("## \\[${releaseVersion}\\]")
-        Matcher m = p.matcher(changelog)
-        if (m.find()) {
-            return m.start()
+        def versions = changelog.findAll("## \\[${releaseVersion}\\]")
+        if (versions.size() == 0) {
+            return -1
         }
-        return -1
+        return changelog.indexOf(versions[0])
     }
 
     private int getChangelogEndIndex(int start) {
         def changelog = this.changelog.get().substring(start)
-        Pattern p = Pattern.compile("([^#]## \\[)|\$");
-        Matcher m = p.matcher(changelog);
-        if (m.find()) {
-            return m.start() + start
+        def versions = changelog.findAll("[^#]## \\[.*\\]")
+        if (versions.size() == 0) {
+            return this.changelog.get().length()
         }
-        return -1
+        return changelog.indexOf(versions[0]) + start
     }
 }

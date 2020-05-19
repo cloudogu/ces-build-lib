@@ -4,7 +4,7 @@ import org.junit.Test
 
 class ChangelogParserTest extends GroovyTestCase {
     def validChangelog =
-'''
+            '''
 ## [Unreleased]
 ### Changed
 - Some other things
@@ -20,6 +20,15 @@ class ChangelogParserTest extends GroovyTestCase {
 ## [v0.9.9]
 ### Added
 - Anything
+    
+'''
+    def newChangelog =
+            '''
+## [Unreleased]
+
+## [v0.0.1]
+### Added
+- Nothing yet
     
 '''
 
@@ -39,7 +48,15 @@ class ChangelogParserTest extends GroovyTestCase {
     }
 
     @Test
-    void testReplaceInvalidCharactersCorrect(){
+    void testWillWorkWithNewChangelog(){
+        ScriptMock scriptMock = new ScriptMock()
+        ChangelogParser changelog = new ChangelogParser(scriptMock, new ChangelogMock(newChangelog))
+        def changes = changelog.getChangesForVersion("v0.0.1")
+        assertEquals("## [v0.0.1]\\n### Added\\n- Nothing yet", changes)
+    }
+
+    @Test
+    void testReplaceInvalidCharactersCorrect() {
         ScriptMock scriptMock = new ScriptMock()
         ChangelogParser changelog = new ChangelogParser(scriptMock, new ChangelogMock(""))
 
