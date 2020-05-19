@@ -22,8 +22,11 @@ class ChangelogParser implements Serializable {
 
     String getChangesForVersion(String releaseVersion) {
         def start = getChangelogStartIndex(releaseVersion)
+        script.sh "echo 'got start index"
         def end = getChangelogEndIndex(start)
+        script.sh "echo 'got end index'"
         def changelog = this.changelog.get()
+        script.sh "echo 'got changelog'"
         return formatForJson(changelog.substring(start, end).trim())
     }
 
