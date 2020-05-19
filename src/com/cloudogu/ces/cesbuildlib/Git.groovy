@@ -22,7 +22,7 @@ class Git implements Serializable {
     /**
      * Credential-aware wrapper around the global "git" step.
      */
-    private def git(args) {
+    public def git(args) {
 
         if (credentials != null) {
 
