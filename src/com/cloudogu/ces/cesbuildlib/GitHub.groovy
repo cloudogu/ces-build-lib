@@ -30,8 +30,8 @@ class GitHub implements Serializable {
      * Creates a release on Github and fills it with the changes provided
      */
     void addGithubRelease(String releaseVersion, String changes) {
-        def repositoryName = this.git.getRepositoryName()
-        if (!this.git.credentials) {
+        def repositoryName = git.getRepositoryName()
+        if (!git.credentials) {
             throw new Exception("Unable to create Github release without credentials")
         }
         script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
