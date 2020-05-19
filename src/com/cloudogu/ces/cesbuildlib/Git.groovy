@@ -162,7 +162,7 @@ class Git implements Serializable {
      */
     boolean tagExists(String tag) {
         def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")
-        return tagFound.length() > 0
+        return tagFound != null && tagFound.length() > 0
     }
 
     def add(String pathspec) {

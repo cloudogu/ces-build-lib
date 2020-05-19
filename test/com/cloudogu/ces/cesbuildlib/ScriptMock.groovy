@@ -14,6 +14,7 @@ class ScriptMock {
     String actualSonarQubeEnv
     List<Map> actualUsernamePasswordArgs = []
     List<String> actualShStringArgs = new LinkedList<>()
+    List<String> allActualArgs = new LinkedList<>()
     List<String> actualEcho = new LinkedList<>()
 
     List<String> actualShMapArgs = new LinkedList<>()
@@ -28,6 +29,7 @@ class ScriptMock {
 
     String sh(String args) {
         actualShStringArgs.add(args.toString())
+        allActualArgs.add(args.toString())
         if (expectedDefaultShRetValue == null) {
             // toString() to make Map also match GStrings
             return expectedShRetValueForScript.get(args.toString())
@@ -39,6 +41,7 @@ class ScriptMock {
     String sh(Map<String, String> args) {
         // toString() to make Map also match GStrings
         actualShMapArgs.add(args.script.toString())
+        allActualArgs.add(args.script.toString())
         if (expectedDefaultShRetValue == null) {
             return expectedShRetValueForScript.get(args.get('script').toString())
         } else {
