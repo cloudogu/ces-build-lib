@@ -335,11 +335,8 @@ class Git implements Serializable {
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
                 return executeGit("-c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}")
             }
-        } else {
-            return executeGit(args)
         }
-
-        return ""
+        return executeGit(args)
     }
 
     /**
