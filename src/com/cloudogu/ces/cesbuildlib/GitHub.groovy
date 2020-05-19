@@ -15,7 +15,7 @@ class GitHub implements Serializable {
      * @param releaseVersion the version for the github release
      * @param changelog the changelog object to extract the release information from
      */
-    void createGithubReleaseByChangelog(String releaseVersion, ChangelogParser changelog) {
+    void createGithubReleaseByChangelog(String releaseVersion, Changelog changelog) {
         try {
             def changelogText = changelog.getChangesForVersion(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
