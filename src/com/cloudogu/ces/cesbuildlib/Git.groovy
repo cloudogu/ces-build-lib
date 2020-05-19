@@ -39,13 +39,6 @@ class Git implements Serializable {
         script.git args
     }
 
-    /**
-     * @return True if credentials are available.
-     */
-    public boolean hasCredentials(){
-        return credentials != null
-    }
-
     void clean(String excludes) {
         String excludesParam = ""
         if (excludes != null && "" != excludes) {

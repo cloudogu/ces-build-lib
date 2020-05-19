@@ -31,10 +31,10 @@ class GitHub implements Serializable {
      */
     void addGithubRelease(String releaseVersion, String changes) {
         def repositoryName = git.getRepositoryName()
-        if (!git.hasCredentials()) {
+        if (!git.credentials) {
             throw new Exception("Unable to create Github release without credentials")
         }
-        script.withCredentials([script.usernamePassword(credentialsId: credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+        script.withCredentials([script.usernamePassword(credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
             def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
             def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
             def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
