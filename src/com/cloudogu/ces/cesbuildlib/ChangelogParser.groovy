@@ -1,8 +1,5 @@
 package com.cloudogu.ces.cesbuildlib
 
-import java.util.regex.Matcher
-import java.util.regex.Pattern
-
 class ChangelogParser implements Serializable {
     private script
     private Changelog changelog
@@ -22,13 +19,8 @@ class ChangelogParser implements Serializable {
 
     String getChangesForVersion(String releaseVersion) {
         def start = getChangelogStartIndex(releaseVersion)
-        script.sh "echo 'got start index"
         def end = getChangelogEndIndex(start)
-        script.sh "echo 'got end index'"
         def changelog = this.changelog.get()
-        script.sh "echo 'got changelog'"
-        println start
-        println end
         return formatForJson(changelog.substring(start, end).trim())
     }
 
@@ -48,7 +40,7 @@ class ChangelogParser implements Serializable {
     private int getChangelogEndIndex(int start) {
         def changelog = this.changelog.get().substring(start)
         def index = changelog.indexOf("\n## [")
-        if (index == -1){
+        if (index == -1) {
             return this.changelog.get().length()
         }
         return index + start
