@@ -249,15 +249,15 @@ class GitTest {
         git = new Git(scriptMock, 'creds')
         git.push('master')
 
-        assert scriptMock.actualShStringArgs.size() == 1
-        assert scriptMock.actualShStringArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
+        assert scriptMock.actualShMapArgs.size() == 1
+        assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
     }
 
     @Test
     void pushNoCredentials() {
         git.push('master')
 
-        assert scriptMock.actualShStringArgs.size() == 1
-        assert scriptMock.actualShStringArgs.get(0) == 'git push origin master'
+        assert scriptMock.actualShMapArgs.size() == 1
+        assert scriptMock.actualShMapArgs.get(0) == 'git push origin master'
     }
 }
