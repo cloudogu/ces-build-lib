@@ -4,7 +4,7 @@ class ChangelogMock extends Changelog{
     private content;
 
     ChangelogMock(String content) {
-        super("")
+        super("", null)
         this.content = content
     }
 

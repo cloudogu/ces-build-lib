@@ -11,7 +11,7 @@ class ChangelogParser implements Serializable {
     ChangelogParser(script) {
         this.script = script
         this.sh = new Sh(script)
-        this.changelog = new Changelog("CHANGELOG.md")
+        this.changelog = new Changelog("CHANGELOG.md", script)
     }
 
     ChangelogParser(script, changelog) {

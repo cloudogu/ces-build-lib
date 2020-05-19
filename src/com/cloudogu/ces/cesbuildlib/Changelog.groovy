@@ -2,12 +2,14 @@ package com.cloudogu.ces.cesbuildlib
 
 class Changelog {
     private String name
+    private sh
 
-    Changelog(String name) {
+    Changelog(String name, script) {
         this.name = name
+        this.sh = new Sh(script)
     }
 
     String get() {
-        return new File(name).getText('UTF-8')
+        return this.sh.returnStdOut("cat ${name}")
     }
 }
