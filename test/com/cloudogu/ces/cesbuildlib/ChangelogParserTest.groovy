@@ -38,13 +38,13 @@ class ChangelogParserTest extends GroovyTestCase {
         ChangelogParser changelog = new ChangelogParser(scriptMock, new ChangelogMock(validChangelog))
 
         def changes1 = changelog.getChangesForVersion("v1.0.0")
-        assertEquals("## [v1.0.0]\\n### Changed\\n- Something", changes1)
+        assertEquals("### Changed\\n- Something", changes1)
 
         def changes2 = changelog.getChangesForVersion("v0.9.9")
-        assertEquals("## [v0.9.9]\\n### Added\\n- Anything", changes2)
+        assertEquals("### Added\\n- Anything", changes2)
 
         def changes3 = changelog.getChangesForVersion("v2.0.0")
-        assertEquals("## [v2.0.0]\\n### Changed\\n- Everything!", changes3)
+        assertEquals("### Changed\\n- Everything!", changes3)
     }
 
     @Test
@@ -52,7 +52,7 @@ class ChangelogParserTest extends GroovyTestCase {
         ScriptMock scriptMock = new ScriptMock()
         ChangelogParser changelog = new ChangelogParser(scriptMock, new ChangelogMock(newChangelog))
         def changes = changelog.getChangesForVersion("v0.0.1")
-        assertEquals("## [v0.0.1]\\n### Added\\n- Nothing yet", changes)
+        assertEquals("### Added\\n- Nothing yet", changes)
     }
 
     @Test

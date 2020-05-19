@@ -42,19 +42,15 @@ class ChangelogParser implements Serializable {
 
     private int getChangelogStartIndex(String releaseVersion) {
         def changelog = this.changelog.get()
-        def versions = changelog.findAll("## \\[${releaseVersion}\\]")
-        if (versions.size() == 0) {
-            return -1
-        }
-        return changelog.indexOf(versions[0])
+        return changelog.indexOf("## [${releaseVersion}]") + "## [${releaseVersion}]".length()
     }
 
     private int getChangelogEndIndex(int start) {
         def changelog = this.changelog.get().substring(start)
-        def versions = changelog.findAll("[^#]## \\[.*\\]")
-        if (versions.size() == 0) {
+        def index = changelog.indexOf("\n## [")
+        if (index == -1){
             return this.changelog.get().length()
         }
-        return changelog.indexOf(versions[0]) + start
+        return index + start
     }
 }
