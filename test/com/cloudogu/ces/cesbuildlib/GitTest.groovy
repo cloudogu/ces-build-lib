@@ -309,11 +309,24 @@ class GitTest {
         Git git = new Git(scriptMock, "credentials")
         def output = git.executeGitWithCredentials("myGitCommand")
 
-
         assertEquals(2, scriptMock.allActualArgs.size())
         assertEquals(expectedGitCall, scriptMock.allActualArgs[0])
         assertEquals("cat output", scriptMock.allActualArgs[1])
         assertEquals("myScriptOutput", output[0])
         assertEquals("0", output[1])
+    }
+
+    @Test
+    void testCreateTag(){
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat output", "myScriptOutput")
+        Git git = new Git(scriptMock, "credentials")
+
+        git.createTag("myTag", "myMessage", false)
+        git.createTag("myTag", "myMessage", true)
+
+        assertEquals(2, scriptMock.allActualArgs.size())
+        assertEquals("git tag -m 'myMessage' myTag", scriptMock.allActualArgs[0])
+        assertEquals("git tag -f -m 'myMessage' myTag", scriptMock.allActualArgs[1])
     }
 }
