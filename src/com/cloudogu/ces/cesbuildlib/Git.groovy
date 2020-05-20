@@ -211,7 +211,7 @@ class Git implements Serializable {
         // we need to configure remote,
         // because jenkins configures the remote only for the current branch
         script.sh "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
-        script.sh "git fetch --all"
+        executeGitWithCredentials "fetch --all"
     }
 
     /**
