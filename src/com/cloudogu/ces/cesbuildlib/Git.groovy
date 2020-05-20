@@ -179,7 +179,7 @@ class Git implements Serializable {
      * @return true if the specified tag exists
      */
     boolean tagExists(String tag) {
-        def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")
+        def (tagFound, exitCode) = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")
         return tagFound != null && tagFound.length() > 0
     }
 
@@ -361,11 +361,12 @@ class Git implements Serializable {
      *
      * @param args git arguments
      */
-    protected String executeGitWithCredentials(String args) {
+    protected executeGitWithCredentials(String args) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
                 def pushResultCode = 128
+                def commandOutput = ""
                 def retryCount = 0
                 while (pushResultCode == 128 && retryCount < maxRetries) {
                     if (retryCount > 0) {
@@ -373,13 +374,13 @@ class Git implements Serializable {
                         sleep(retryTimeout)
                     }
                     ++retryCount
-                    pushResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args} > output"
+                    (commandOutput, pushResultCode) = executeGit("-c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}")
                     pushResultCode = pushResultCode as int
                 }
                 if (pushResultCode != 0) {
                     script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${pushResultCode}"
                 }
-                return sh.returnStdOut("cat output")
+                return [commandOutput, pushResultCode]
             }
         }
         else return executeGit(args)
@@ -391,13 +392,12 @@ class Git implements Serializable {
      * @param args git arguments
      * @return Returns the console output.
      */
-    protected String executeGit(String args){
-        def commandOutput = script.sh(
-                script: "git ${args}",
-                returnStdout: true
+    protected executeGit(String args){
+        def status = script.sh(
+                script: "git ${args} > output",
+                returnStatus: true
         )
-        script.sh "echo ${commandOutput}"
-        return commandOutput
+        return [sh.returnStdOut("cat output"), status]
     }
 
 

@@ -78,7 +78,7 @@ class GitTest {
     void testGetSimpleBranchName() {
         String expectedSimpleBranchName = "simpleName"
         def scriptMock = new ScriptMock()
-        scriptMock.env= new Object() {
+        scriptMock.env = new Object() {
             String BRANCH_NAME = "feature/somethingelse/$expectedSimpleBranchName"
         }
         Git git = new Git(scriptMock)
@@ -250,7 +250,8 @@ class GitTest {
     @Test
     void push() {
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
+        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output', 0)
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
         git = new Git(scriptMock, 'creds')
         git.push('master')
     }
@@ -258,33 +259,61 @@ class GitTest {
     @Test
     void pushNonHttps() {
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
+        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output', 0)
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
         git = new Git(scriptMock, 'creds')
         git.push('master')
 
-        assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
+        assert scriptMock.actualShMapArgs.size() == 2
+        assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output'
+        assert scriptMock.actualShMapArgs.get(1) == 'cat output'
     }
 
     @Test
     void pushWithRetry() {
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', [128, 128, 0])
+        scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output', [128, 128, 0])
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
         git = new Git(scriptMock, 'creds')
         git.retryTimeout = 1
         git.push('master')
 
-        assert scriptMock.actualShMapArgs.size() == 3
-        assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
-        assert scriptMock.actualShMapArgs.get(1) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
-        assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
+        assert scriptMock.actualShMapArgs.size() == 6
+        assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output'
+        assert scriptMock.actualShMapArgs.get(1) == 'cat output'
+        assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output'
+        assert scriptMock.actualShMapArgs.get(3) == 'cat output'
+        assert scriptMock.actualShMapArgs.get(4) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master > output'
+        assert scriptMock.actualShMapArgs.get(5) == 'cat output'
     }
 
     @Test
     void pushNoCredentials() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        Git git = new Git(scriptMock)
         git.push('master')
 
-        assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0) == 'git push origin master'
+        assert scriptMock.actualShMapArgs.size() == 2
+        assert scriptMock.actualShMapArgs.get(0) == 'git push origin master > output'
+        assert scriptMock.actualShMapArgs.get(1) == 'cat output'
+    }
+
+    @Test
+    void gitCallWillReturnStdoutAndStatusCode() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat output", "myScriptOutput")
+        def expectedGitCall = "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" myGitCommand > output"
+        scriptMock.expectedShRetValueForScript.put(expectedGitCall, 0)
+
+        Git git = new Git(scriptMock, "credentials")
+        def output = git.executeGitWithCredentials("myGitCommand")
+
+
+        assertEquals(2, scriptMock.allActualArgs.size())
+        assertEquals(expectedGitCall, scriptMock.allActualArgs[0])
+        assertEquals("cat output", scriptMock.allActualArgs[1])
+        assertEquals("myScriptOutput", output[0])
+        assertEquals(0, output[1])
     }
 }

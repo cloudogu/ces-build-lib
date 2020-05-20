@@ -3,31 +3,36 @@ package com.cloudogu.ces.cesbuildlib
 import org.junit.Test
 
 class GitHubTest extends GroovyTestCase {
-    ScriptMock scriptMock = new ScriptMock()
-    Git git = new Git(scriptMock)
-    GitHub github = new GitHub(scriptMock, git)
 
     @Test
     void testPushGitHubPagesBranch() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
+        Git git = new Git(scriptMock)
+        GitHub github = new GitHub(scriptMock, git)
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
         scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         github.pushGitHubPagesBranch('website', 'Deploys new version of website')
 
-        assertGitHubPagesBranchToSubFolder('.')
+        assertGitHubPagesBranchToSubFolder('.', scriptMock)
     }
 
     @Test
     void testPushGitHubPagesBranchToSubFolder() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
+        Git git = new Git(scriptMock)
+        GitHub github = new GitHub(scriptMock, git)
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
         scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
         github.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
 
-        assertGitHubPagesBranchToSubFolder('some-folder')
+        assertGitHubPagesBranchToSubFolder('some-folder', scriptMock)
     }
 
-    private void assertGitHubPagesBranchToSubFolder(String subFolder) {
+    private void assertGitHubPagesBranchToSubFolder(String subFolder, ScriptMock scriptMock) {
         assert scriptMock.actualGitArgs.url == "https://repo.url"
         assert scriptMock.actualGitArgs.branch == "gh-pages"
 
@@ -40,7 +45,7 @@ class GitHubTest extends GroovyTestCase {
         assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_NAME=User Name'}")
         assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_EMAIL=user.name@doma.in'}")
         assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
-        assert scriptMock.allActualArgs.contains('git push origin gh-pages')
+        assert scriptMock.allActualArgs.contains('git push origin gh-pages > output')
         assert scriptMock.allActualArgs.last == 'rm -rf .gh-pages'
     }
 }
