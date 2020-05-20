@@ -30,20 +30,24 @@ class ScriptMock {
     String sh(String args) {
         actualShStringArgs.add(args.toString())
         allActualArgs.add(args.toString())
-        if (expectedDefaultShRetValue == null) {
-            // toString() to make Map also match GStrings
-            return expectedShRetValueForScript.get(args.toString())
-        } else {
-            return expectedDefaultShRetValue
-        }
+        return getReturnValueFor(args)
     }
 
-    String sh(Map<String, String> args) {
-        // toString() to make Map also match GStrings
+    String sh(Map<String, Object> args) {
         actualShMapArgs.add(args.script.toString())
         allActualArgs.add(args.script.toString())
+        return getReturnValueFor(args.get('script'))
+    }
+
+    private Object getReturnValueFor(Object arg) {
         if (expectedDefaultShRetValue == null) {
-            return expectedShRetValueForScript.get(args.get('script').toString())
+            // toString() to make Map also match GStrings
+            def value = expectedShRetValueForScript.get(arg.toString())
+            if (value instanceof List) {
+                return ((List) value).removeAt(0)
+            } else {
+                return value
+            }
         } else {
             return expectedDefaultShRetValue
         }
