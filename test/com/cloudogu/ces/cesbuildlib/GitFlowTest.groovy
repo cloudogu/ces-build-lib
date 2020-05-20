@@ -35,14 +35,15 @@ class GitFlowTest extends GroovyTestCase {
         GitFlow gitflow = new GitFlow(scriptMock, git)
         gitflow.finishGitRelease("myVersion")
         scriptMock.allActualArgs.removeAll("echo ")
-        assertEquals(29, scriptMock.allActualArgs.size())
+        assertEquals(30, scriptMock.allActualArgs.size())
         int i = 0
         assertEquals("git ls-remote origin refs/tags/myVersion > output", scriptMock.allActualArgs[i++])
         assertEquals("cat output", scriptMock.allActualArgs[i++])
         assertEquals("git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'", scriptMock.allActualArgs[i++])
         assertEquals("git fetch --all > output", scriptMock.allActualArgs[i++])
         assertEquals("cat output", scriptMock.allActualArgs[i++])
-        assertEquals("git log origin/myReleaseBranch..origin/develop --oneline", scriptMock.allActualArgs[i++])
+        assertEquals("git log origin/myReleaseBranch..origin/develop --oneline > output", scriptMock.allActualArgs[i++])
+        assertEquals("cat output", scriptMock.allActualArgs[i++])
         assertEquals("git checkout myReleaseBranch", scriptMock.allActualArgs[i++])
         assertEquals("git pull origin myReleaseBranch > output", scriptMock.allActualArgs[i++])
         assertEquals("cat output", scriptMock.allActualArgs[i++])
@@ -85,7 +86,7 @@ class GitFlowTest extends GroovyTestCase {
         def scriptMock = new ScriptMock()
         scriptMock.env.BRANCH_NAME = "branch"
         scriptMock.expectedShRetValueForScript.put("git log origin/branch..origin/develop --oneline", "error")
-        scriptMock.expectedShRetValueForScript.put("cat output", "")
+        scriptMock.expectedShRetValueForScript.put("cat output", ["", "", "some changes"])
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
         String err = shouldFail(Exception.class) {
