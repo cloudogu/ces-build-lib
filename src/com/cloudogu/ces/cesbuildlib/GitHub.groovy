@@ -38,9 +38,7 @@ class GitHub implements Serializable {
             def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
             def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
             def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
-            def username = '\$GIT_AUTH_USR'
-            def password = '\$GIT_AUTH_PSW'
-            script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
+            script.sh "curl -u ${GIT_AUTH_USR}:${GIT_AUTH_PSW} ${flags} ${apiUrl}"
         }
     }
 
