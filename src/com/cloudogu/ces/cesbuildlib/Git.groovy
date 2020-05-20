@@ -347,8 +347,10 @@ class Git implements Serializable {
      * configured max retries before failing.
      *
      * @param args git arguments
+     * @return Returns an array with a string array of two elements.
+     *         The first element contains the command out put. The second element contans the command status code
      */
-    protected executeGitWithCredentials(String args) {
+    protected String[] executeGitWithCredentials(String args) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
@@ -377,9 +379,10 @@ class Git implements Serializable {
      * Executes a git command.
      *
      * @param args git arguments
-     * @return Returns the console output.
+     * @return Returns an array with a string array of two elements.
+     *         The first element contains the command out put. The second element contans the command status code
      */
-    protected executeGit(String args){
+    protected String[] executeGit(String args){
         def status = script.sh(
                 script: "git ${args} > output",
                 returnStatus: true
@@ -394,6 +397,7 @@ class Git implements Serializable {
      * @param tagName The name of the tag.
      * @param tagMessage The message of the tag.
      * @param force Force tag creation when true.
+     *
      */
     void createTag(String tagName, String tagMessage, boolean force){
         script.sh "git tag ${(force) ? '-f': ''} -m '${tagMessage}' ${tagName}"
