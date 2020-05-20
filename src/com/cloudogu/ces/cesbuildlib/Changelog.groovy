@@ -8,19 +8,23 @@ class Changelog implements Serializable {
     Changelog(script) {
         this.script = script
         this.sh = new Sh(script)
-        this.changelog = this.sh.returnStdOut("cat CHANGELOG.md")
+        this.changelog = "CHANGELOG.md"
     }
 
     Changelog(script, changelog) {
         this.script = script
         this.sh = new Sh(script)
-        this.changelog = this.sh.returnStdOut("cat ${changelog}")
+        this.changelog = changelog
+    }
+
+    private String getChangelog(){
+        this.sh.returnStdOut("cat ${changelog}")
     }
 
     String getChangesForVersion(String releaseVersion) {
         def start = getChangelogStartIndex(releaseVersion)
         def end = getChangelogEndIndex(start)
-        return formatForJson(changelog.substring(start, end).trim())
+        return formatForJson(getChangelog().substring(start, end).trim())
     }
 
     String formatForJson(String string) {
@@ -32,14 +36,14 @@ class Changelog implements Serializable {
     }
 
     private int getChangelogStartIndex(String releaseVersion) {
-        return changelog.indexOf("## [${releaseVersion}]") + "## [${releaseVersion}]".length()
+        return getChangelog().indexOf("## [${releaseVersion}]") + "## [${releaseVersion}]".length()
     }
 
     private int getChangelogEndIndex(int start) {
-        def changelogAfterStartIndex = changelog.substring(start)
+        def changelogAfterStartIndex = getChangelog().substring(start)
         def index = changelogAfterStartIndex.indexOf("\n## [")
         if (index == -1) {
-            return changelog.length()
+            return getChangelog().length()
         }
         return index + start
     }

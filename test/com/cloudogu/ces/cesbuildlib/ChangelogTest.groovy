@@ -47,9 +47,17 @@ class ChangelogTest extends GroovyTestCase {
         def changes3 = changelog.getChangesForVersion("v2.0.0")
         assertEquals("### Changed\\n- Everything!", changes3)
 
-
-        assertEquals(1, scriptMock.allActualArgs.size())
+        assertEquals(10, scriptMock.allActualArgs.size())
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[0])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[1])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[2])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[3])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[4])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[5])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[6])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[7])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[8])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[9])
     }
 
     @Test
