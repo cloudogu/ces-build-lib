@@ -88,8 +88,8 @@ class Git implements Serializable {
     /**
      * @return true if this branch differs from the develop branch
      */
-    boolean developHasChanged(String branchName) {
-        String diff = executeGitWithCredentials("log origin/${branchName}..origin/develop --oneline")[0]
+    boolean branchesHaveDiverged(String targetBranch, String sourceBranch) {
+        String diff = executeGitWithCredentials("log origin/${targetBranch}..origin/${sourceBranch} --oneline")[0]
         return diff.length() > 0
     }
 

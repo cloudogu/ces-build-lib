@@ -37,7 +37,7 @@ class GitFlow implements Serializable {
         this.git.fetchWithCredentials()
 
         // Make sure there are no changes on develop
-        if (this.git.developHasChanged(branchName)) {
+        if (this.git.branchesHaveDiverged(branchName, "develop")) {
             throw new Exception("There are changes on develop branch that are not merged into release. Please merge and restart process.")
         }
 
