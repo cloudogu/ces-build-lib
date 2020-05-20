@@ -373,12 +373,13 @@ class Git implements Serializable {
                         sleep(retryTimeout)
                     }
                     ++retryCount
-                    pushResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
+                    pushResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args} > output"
                     pushResultCode = pushResultCode as int
                 }
                 if (pushResultCode != 0) {
                     script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${pushResultCode}"
                 }
+                return sh.returnStdOut("cat output")
             }
         }
         else return executeGit(args)
