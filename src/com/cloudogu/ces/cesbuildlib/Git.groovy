@@ -22,7 +22,7 @@ class Git implements Serializable {
      * @param retryTimeout The new timeout in milli seconds.
      */
     void setRetryTimeout(def retryTimeout) {
-        this.retryTimeout = retryTimeout;
+        this.retryTimeout = retryTimeout
     }
 
     /**
@@ -30,7 +30,7 @@ class Git implements Serializable {
      * @param maxRetries The new maximum number of retries.
      */
     void setMaxRetries(def maxRetries) {
-        this.maxRetries = maxRetries;
+        this.maxRetries = maxRetries
     }
 
     def call(args) {
@@ -226,14 +226,17 @@ class Git implements Serializable {
     }
 
     /**
-     * Switch branch of the local repository. Creates new Branch if it does not exist; otherwise, it is reset
+     * Switch branch to remote branch. Creates new local branch if it does not exist;
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
      * so you have to call {@link #fetch()} before checkout.
      *
      * @param branchName name of branch to switch to
      */
     void checkoutOrCreate(String branchName) {
-        script.sh "git checkout -B ${branchName}"
+        def returnCode = script.sh(returnStatus: true, script: "git checkout ${branchName}") as int
+        if(returnCode != 0) {
+            script.sh "git checkout -b ${branchName}"
+        }
     }
 
     /**
