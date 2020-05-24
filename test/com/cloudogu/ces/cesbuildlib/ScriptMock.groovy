@@ -12,6 +12,9 @@ class ScriptMock {
     def expectedShRetValueForScript = [:]
 
     String actualSonarQubeEnv
+
+    Map actualTimeoutParams = [:]
+
     List<Map> actualUsernamePasswordArgs = []
     List<String> actualShStringArgs = new LinkedList<>()
     List<String> actualEcho = new LinkedList<>()
@@ -55,6 +58,7 @@ class ScriptMock {
     }
 
     def timeout(Map params, closure) {
+        this.actualTimeoutParams = params
         return closure.call()
     }
 
