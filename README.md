@@ -50,7 +50,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Changelog](#changelog)
-  - [Changelog](#changelog parameter)
+  - [Changelog Parameter](#changelog parameter)
 - [GitFlow](#gitflow)
 - [GitHub](#github)
 - [Steps](#steps)
@@ -502,6 +502,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
       * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
       * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
    * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
+   * Note: This method is deprecated because it was moved to the GitHub class.
 
 
 # Docker
@@ -807,6 +808,8 @@ stage('Changelog') {
 You can optionally pass the path to the changelog file if it is located somewhere else than in the root path or 
 if the file name is not `CHANGELOG.md`.
 
+Example: 
+
 ```groovy
 Changelog changelog = new Changelog(this, 'myNewChangelog.md')
 
@@ -816,8 +819,38 @@ stage('Changelog') {
 }
 ```
 
-# GitFlow
 # GitHub
+Provides the functionality to do changes on a github repository such as creating a new release.
+
+Example: 
+
+```groovy
+Git git = new Git(this)
+GitHub github = new GitHub(this, git)
+
+stage('Github') {
+  github.createGithubRelease('v1.1.1', 'Changes for version v1.1.1')
+}
+```
+
+* `github.createGithubRelease(releaseVersion, changes)` - Creates a release on github.
+   * Use the `releaseVersion` (String) as name and tag.
+   * Use the `changes` (String) as body of the release.
+* `github.createGithubReleaseByChangelog(releaseVersion, changelog)` - Creates a release on github. 
+   * Use the `releaseVersion` (String) as name and tag.
+   * Use the `changelog` (Changelog) to extract the changes out of a changelog and add them to the body of the release.
+* `pushGitHubPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
+   the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
+   * Uses the name and email of the last committer as author and committer.
+   * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
+   * Don't forget to create a git object with credentials.
+   * Optional: You can deploy to a sub folder of your GitHub Pages branch using a third parameter
+   * Examples:
+      * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
+      * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
+   * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
+
+# GitFlow
 
 
 
