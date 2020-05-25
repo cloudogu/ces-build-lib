@@ -50,7 +50,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Changelog](#changelog)
-  - [Changelog Parameter](#changelog parameter)
+  - [Changelog](#changelog parameter)
 - [GitFlow](#gitflow)
 - [GitHub](#github)
 - [Steps](#steps)
