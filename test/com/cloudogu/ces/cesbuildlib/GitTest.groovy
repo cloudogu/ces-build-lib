@@ -218,10 +218,15 @@ class GitTest {
 
     @Test
     void fetch() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        Git git = new Git(scriptMock)
         git.fetch()
 
-        assert scriptMock.actualShStringArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
-        assert scriptMock.actualShStringArgs[1] == "git fetch --all"
+        assert scriptMock.allActualArgs.size() == 3
+        assert scriptMock.allActualArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
+        assert scriptMock.allActualArgs[1] == "git fetch --all > output"
+        assert scriptMock.allActualArgs[2] == "cat output"
     }
 
     @Test

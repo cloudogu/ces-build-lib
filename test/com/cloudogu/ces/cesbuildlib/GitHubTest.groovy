@@ -68,7 +68,7 @@ class GitHubTest extends GroovyTestCase {
         GitHub github = new GitHub(scriptMock, git)
         Changelog changelog = new Changelog(scriptMock)
 
-        String changes = github.createGithubReleaseByChangelog("v1.0.0", changelog)
+        github.createGithubReleaseByChangelog("v1.0.0", changelog)
 
         assertEquals(6, scriptMock.allActualArgs.size())
         int i = 0;

@@ -34,7 +34,7 @@ class GitFlow implements Serializable {
         }
 
         // Make sure all branches are fetched
-        this.git.fetchWithCredentials()
+        this.git.fetch()
 
         // Make sure there are no changes on develop
         if (this.git.branchesHaveDiverged(branchName, "develop")) {
