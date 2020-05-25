@@ -49,6 +49,10 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Branches](#branches)
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
+- [Changelog](#changelog)
+  - [Changelog](#changelog parameter)
+- [GitFlow](#gitflow)
+- [GitHub](#github)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -779,6 +783,42 @@ So a PR build is treated just like any other. That is,
 * with Branch Plugin: A new branch is analysed using the `BRANCH_NAME` from env.
 
 The Jenkins GitHub Plugin sets `BRANCH_NAME` to the PR Name, e.g. `PR-42`.
+
+
+# Changelog
+Provides the functionality to read changes of a specific version in a changelog that is 
+based on the changelog format on https://keepachangelog.com/.
+
+Note: The changelog will automatically be formatted. Characters like `"`, `'`, `\` will be removed. 
+      A `\n` will be replaced with `\\n`. This is done to make it possible to pass this string to a json 
+      struct as a value.
+
+Example: 
+
+```groovy
+Changelog changelog = new Changelog(this)
+
+stage('Changelog') {
+  String changes = changelog.getChangesForVersion('v1.0.0')
+  // ...
+}
+```
+## Changelog Parameter
+You can optionally pass the path to the changelog file if it is located somewhere else than in the root path or 
+if the file name is not `CHANGELOG.md`.
+
+```groovy
+Changelog changelog = new Changelog(this, 'myNewChangelog.md')
+
+stage('Changelog') {
+  String changes = changelog.getChangesForVersion('v1.0.0')
+  // ...
+}
+```
+
+# GitFlow
+# GitHub
+
 
 
 # Steps

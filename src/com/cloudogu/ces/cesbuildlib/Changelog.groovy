@@ -1,7 +1,8 @@
 package com.cloudogu.ces.cesbuildlib
 
 /**
- * Parse a changelog that is based on the changelog format on https://keepachangelog.com/
+ * Provides the functionality to read changes of a specific version in a changelog that is
+ * based on the changelog format on https://keepachangelog.com/.
  */
 class Changelog implements Serializable {
     private script
