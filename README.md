@@ -850,10 +850,28 @@ stage('Github') {
       * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
    * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
 
+
 # GitFlow
 
+A wrapper class around the Git class to simplify the use of the git flow branching model.
 
+Example: 
 
+```groovy
+Git git = new Git(this)
+GitFlow gitflow = new GitFlow(this, git)
+
+stage('Gitflow') {
+  if (gitflow.isReleaseBranch()){
+    gitflow.finishGitRelease('v1.0.0')
+  }
+}
+```
+
+* `gitflow.isReleaseBranch()` - Checks if the currently checked out branch is a gitflow release branch.
+* `gitflow.finishGitRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
+   * Use the `releaseVersion` (String) as the name of the new git release. 
+   
 # Steps
 
 ## mailIfStatusChanged
