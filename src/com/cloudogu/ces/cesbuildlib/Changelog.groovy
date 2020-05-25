@@ -65,8 +65,9 @@ class Changelog implements Serializable {
      * @return Returns the index in the changelog string where the changes start.
      */
     private int getChangelogStartIndex(String releaseVersion) {
-        int offset = Math.max("## [${releaseVersion}]".length(), 0)
-        return getChangelog().indexOf("## [${releaseVersion}]") + offset
+        def index = getChangelog().indexOf("## [${releaseVersion}]")
+        def offset = getChangelog().substring(index).indexOf("\n")
+        return index + offset
     }
 
     /**

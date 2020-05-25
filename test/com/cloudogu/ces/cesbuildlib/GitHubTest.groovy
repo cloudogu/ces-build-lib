@@ -70,8 +70,9 @@ class GitHubTest extends GroovyTestCase {
 
         github.createGithubReleaseByChangelog("v1.0.0", changelog)
 
-        assertEquals(6, scriptMock.allActualArgs.size())
+        assertEquals(7, scriptMock.allActualArgs.size())
         int i = 0;
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
         assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
         assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
         assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])

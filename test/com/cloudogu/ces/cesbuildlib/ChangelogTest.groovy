@@ -9,15 +9,15 @@ class ChangelogTest extends GroovyTestCase {
 ### Changed
 - Some other things
 
-## [v2.0.0]
+## [v2.0.0] - 2020-01-01
 ### Changed
 - Everything!
  
-## [v1.0.0]
+## [v1.0.0] - 2020-01-01
 ### Changed
 - Something
     
-## [v0.9.9]
+## [v0.9.9] - 2020-01-01
 ### Added
 - Anything
     
@@ -26,7 +26,7 @@ class ChangelogTest extends GroovyTestCase {
             '''
 ## [Unreleased]
 
-## [v0.0.1]
+## [v0.0.1] - 2020-01-01
 ### Added
 - Nothing yet
     
@@ -47,7 +47,7 @@ class ChangelogTest extends GroovyTestCase {
         def changes3 = changelog.getChangesForVersion("v2.0.0")
         assertEquals("### Changed\\n- Everything!", changes3)
 
-        assertEquals(10, scriptMock.allActualArgs.size())
+        assertEquals(13, scriptMock.allActualArgs.size())
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[0])
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[1])
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[2])
@@ -58,6 +58,9 @@ class ChangelogTest extends GroovyTestCase {
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[7])
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[8])
         assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[9])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[10])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[11])
+        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[12])
     }
 
     @Test
