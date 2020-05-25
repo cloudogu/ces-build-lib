@@ -85,4 +85,21 @@ class GitHubTest extends GroovyTestCase {
 
         assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
     }
+
+    @Test
+    void testReleaseFailsWithoutCredentials() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", testChangelog)
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
+        scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        Git git = new Git(scriptMock)
+        GitHub github = new GitHub(scriptMock, git)
+        Changelog changelog = new Changelog(scriptMock)
+
+        def exception = shouldFail {
+            github.createGithubReleaseByChangelog("v1.0.0", changelog)
+        }
+
+        assert exception.contains("Unable to create Github release without credentials")
+    }
 }
