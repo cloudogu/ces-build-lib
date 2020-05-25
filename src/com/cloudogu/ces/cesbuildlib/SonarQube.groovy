@@ -12,6 +12,7 @@ class SonarQube implements Serializable {
     // If enabled uses the branch plugin, available for developer edition and above
     boolean isUsingBranchPlugin = false
     boolean isIgnoringBranches = false
+    int timeoutInMinutes = 2
     protected Map config
 
     @Deprecated
@@ -64,7 +65,7 @@ class SonarQube implements Serializable {
     }
 
     protected boolean doWaitForQualityGateWebhookToBeCalled() {
-        script.timeout(time: 2, unit: 'MINUTES') { // Needed when there is no webhook for example
+        script.timeout(time: timeoutInMinutes, unit: 'MINUTES') { // Needed when there is no webhook for example
             def qGate = script.waitForQualityGate()
             script.echo "SonarQube Quality Gate status: ${qGate.status}"
             if (qGate.status != 'OK') {

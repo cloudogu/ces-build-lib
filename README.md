@@ -481,7 +481,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 ### Changes to local repository
 
 * `git.checkout('branchname')`
-* `git.checkoutOrCreate('branchname')` - Creates new Branch if it does not exist; otherwise, it is reset
+* `git.checkoutOrCreate('branchname')` - Creates new Branch if it does not exist
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
@@ -682,6 +682,7 @@ stage('Statical Code Analysis') {
   def sonarQube = new SonarQube(this, [sonarQubeEnv: 'sonarQubeServerSetupInJenkins'])
 
   sonarQube.analyzeWith(new MavenInDocker(this, "3.5.0-jdk-8"))
+  sonarQube.timeoutInMinutes = 4
 
   if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
     unstable("Pipeline unstable due to SonarQube quality gate failure")
@@ -694,6 +695,7 @@ Note that
 * Calling `waitForQualityGateWebhookToBeCalled()` requires a WebHook to be setup in your SonarQube server (globally or 
   per project), that notifies Jenkins (url: `https://yourJenkinsInstance/sonarqube-webhook/`).  
   See [SonarQube Scanner for Jenkins](https://docs.sonarqube.org/display/SCAN/Analyzing+with+SonarQube+Scanner+for+Jenkins#AnalyzingwithSonarQubeScannerforJenkins-AnalyzinginaJenkinspipeline). 
+* Jenkins will wait for the webhook with a default timeout of 2 minutes, for big projects this might be to short and can be configured with the `timeoutInMinutes` property.
 * Calling `waitForQualityGateWebhookToBeCalled()` will only work when an analysis has been performed in the current job,
   i.e. `analyzeWith()` has been called and in conjuction with `sonarQubeEnv`.
 * When used in conjunction with [SonarQubeCommunity/sonar-build-breaker](https://github.com/SonarQubeCommunity/sonar-build-breaker),

@@ -218,8 +218,6 @@ class GitTest {
 
     @Test
     void fetch() {
-        ScriptMock scriptMock = new ScriptMock()
-        Git git = new Git(scriptMock)
         git.fetch()
 
         assert scriptMock.actualShStringArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
@@ -228,20 +226,25 @@ class GitTest {
 
     @Test
     void checkout() {
-        ScriptMock scriptMock = new ScriptMock()
-        Git git = new Git(scriptMock)
         git.checkout("master")
 
         assert scriptMock.actualShStringArgs[0] == "git checkout master"
     }
 
     @Test
-    void checkoutOrCreate() {
-        ScriptMock scriptMock = new ScriptMock()
-        Git git = new Git(scriptMock)
+    void "checkoutOrCreate() with new branch"() {
+        scriptMock.expectedShRetValueForScript.put('git checkout master', 42)
         git.checkoutOrCreate("master")
 
-        assert scriptMock.actualShStringArgs[0] == "git checkout -B master"
+        assert scriptMock.actualShStringArgs[0] == "git checkout -b master"
+    }
+
+    @Test
+    void "checkoutOrCreate() with existing branch"() {
+        scriptMock.expectedShRetValueForScript.put('git checkout master', 0)
+        git.checkoutOrCreate("master")
+
+        assert scriptMock.actualShMapArgs[0] == "git checkout master"
     }
 
     @Test
