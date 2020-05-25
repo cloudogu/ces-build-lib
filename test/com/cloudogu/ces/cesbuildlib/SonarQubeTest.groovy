@@ -199,7 +199,7 @@ class SonarQubeTest {
         assert mavenMock.additionalArgs == '-X -Dsonar.branch.name=develop '
     }
 
-     @Test
+    @Test
     void analyzeWithBranchPluginWithConfiguredIntegrationBranch() throws Exception {
         scriptMock.env = [
                 BRANCH_NAME: 'feature'
@@ -271,6 +271,28 @@ class SonarQubeTest {
         def qualityGate = new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
 
         assert !qualityGate
+    }
+
+    @Test
+    void waitForQualityGateWithDefaultTimeout() {
+        scriptMock.expectedQGate = [status: 'OK']
+
+        new SonarQube(scriptMock, 'sqEnv').waitForQualityGateWebhookToBeCalled()
+
+        assert scriptMock.actualTimeoutParams.time == 2
+        assert scriptMock.actualTimeoutParams.unit == 'MINUTES'
+    }
+
+    @Test
+    void waitForQualityGateWithConfiguredTimeout() {
+        scriptMock.expectedQGate = [status: 'OK']
+        
+        def sonarQube = new SonarQube(scriptMock, 'sqEnv')
+        sonarQube.timeoutInMinutes = 10
+        sonarQube.waitForQualityGateWebhookToBeCalled()
+
+        assert scriptMock.actualTimeoutParams.time == 10
+        assert scriptMock.actualTimeoutParams.unit == 'MINUTES'
     }
 
     private void assertSonarHostUrlError(configMapg) {
