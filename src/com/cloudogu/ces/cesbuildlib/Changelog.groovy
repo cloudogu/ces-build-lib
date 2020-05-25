@@ -10,9 +10,7 @@ class Changelog implements Serializable {
     Sh sh
 
     Changelog(script) {
-        this.script = script
-        this.sh = new Sh(script)
-        this.changelog = "CHANGELOG.md"
+        this(script, "CHANGELOG.md")
     }
 
     Changelog(script, changelog) {
@@ -36,10 +34,6 @@ class Changelog implements Serializable {
      */
     String getChangesForVersion(String releaseVersion) {
         def start = getChangelogStartIndex(releaseVersion)
-        if (start == -1){
-            throw new Exception("The desired version '${releaseVersion}' could not be found in the changelog.")
-        }
-
         def end = getChangelogEndIndex(start)
         return formatForJson(getChangelog().substring(start, end).trim())
     }
@@ -66,6 +60,9 @@ class Changelog implements Serializable {
      */
     private int getChangelogStartIndex(String releaseVersion) {
         def index = getChangelog().indexOf("## [${releaseVersion}]")
+        if (index == -1){
+            throw new Exception("The desired version '${releaseVersion}' could not be found in the changelog.")
+        }
         def offset = getChangelog().substring(index).indexOf("\n")
         return index + offset
     }

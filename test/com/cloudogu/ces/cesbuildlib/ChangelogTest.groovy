@@ -48,19 +48,19 @@ class ChangelogTest extends GroovyTestCase {
         assertEquals("### Changed\\n- Everything!", changes3)
 
         assertEquals(13, scriptMock.allActualArgs.size())
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[0])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[1])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[2])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[3])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[4])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[5])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[6])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[7])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[8])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[9])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[10])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[11])
-        assertEquals("cat CHANGELOG.md",scriptMock.allActualArgs[12])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[0])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[1])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[2])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[3])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[4])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[5])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[6])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[7])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[8])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[9])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[10])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[11])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[12])
     }
 
     @Test
@@ -84,5 +84,16 @@ class ChangelogTest extends GroovyTestCase {
         assertEquals("", changelog.formatForJson("\\"))
         assertEquals("\\n", changelog.formatForJson("\n"))
         assertEquals("\\n", changelog.formatForJson("\n\"\"''\\\\"))
+    }
+
+    @Test
+    void testThrowsErrorOnVersionNotFound() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", newChangelog)
+        Changelog changelog = new Changelog(scriptMock)
+        def exception = shouldFail {
+            changelog.getChangesForVersion("not existing version")
+        }
+        assertEquals("The desired version 'not existing version' could not be found in the changelog.", exception)
     }
 }
