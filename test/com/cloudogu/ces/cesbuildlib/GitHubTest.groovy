@@ -3,6 +3,15 @@ package com.cloudogu.ces.cesbuildlib
 import org.junit.Test
 
 class GitHubTest extends GroovyTestCase {
+    def testChangelog =
+            '''
+## [Unreleased]
+
+## [v1.0.0]
+### Added
+- everything
+    
+'''
 
     @Test
     void testPushGitHubPagesBranch() {
@@ -47,5 +56,32 @@ class GitHubTest extends GroovyTestCase {
         assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
         assert scriptMock.allActualArgs.contains('git push origin gh-pages > output')
         assert scriptMock.allActualArgs.last == 'rm -rf .gh-pages'
+    }
+
+    @Test
+    void testCreateGithubReleaseByChangelog() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", testChangelog)
+        scriptMock.expectedShRetValueForScript.put("cat output", "")
+        scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        Git git = new Git(scriptMock, "credentials")
+        GitHub github = new GitHub(scriptMock, git)
+        Changelog changelog = new Changelog(scriptMock)
+
+        String changes = github.createGithubReleaseByChangelog("v1.0.0", changelog)
+
+        assertEquals(6, scriptMock.allActualArgs.size())
+        int i = 0;
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
+        assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
+        assertEquals("git remote get-url origin", scriptMock.allActualArgs[i++])
+
+        String expectedData = "--data '{\"tag_name\": \"v1.0.0\", \"target_commitish\": \"master\", " +
+                "\"name\": \"v1.0.0\", \"body\":\"## [v1.0.0]\\n### Added\\n- everything\"}'"
+        String expectedHeader = "--header \"Content-Type: application/json\" https://api.github.com/repos/myRepoName/releases"
+
+        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
     }
 }

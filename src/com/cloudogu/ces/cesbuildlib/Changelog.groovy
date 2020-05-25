@@ -23,6 +23,10 @@ class Changelog implements Serializable {
 
     String getChangesForVersion(String releaseVersion) {
         def start = getChangelogStartIndex(releaseVersion)
+        if (start == -1){
+            throw new Exception("The desired version '${releaseVersion}' could not be found in the changelog.")
+        }
+
         def end = getChangelogEndIndex(start)
         return formatForJson(getChangelog().substring(start, end).trim())
     }
@@ -36,7 +40,8 @@ class Changelog implements Serializable {
     }
 
     private int getChangelogStartIndex(String releaseVersion) {
-        return getChangelog().indexOf("## [${releaseVersion}]") + "## [${releaseVersion}]".length()
+        int offset = Math.min("## [${releaseVersion}]".length(), 0)
+        return getChangelog().indexOf("## [${releaseVersion}]") + offset
     }
 
     private int getChangelogEndIndex(int start) {
