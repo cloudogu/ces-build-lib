@@ -166,7 +166,7 @@ class Git implements Serializable {
      * @return true if the specified tag exists
      */
     boolean tagExists(String tag) {
-        def (tagFound, exitCode) = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")
+        def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")[0]
         return tagFound != null && tagFound.length() > 0
     }
 
@@ -246,7 +246,7 @@ class Git implements Serializable {
      *
      * @param branchName The name of the branch to checkout and pull from.
      */
-    void checkoutAndPull(branchName){
+    void checkoutAndPull(branchName) {
         checkout(branchName)
         executeGitWithCredentials("pull origin ${branchName}")
     }
@@ -260,7 +260,7 @@ class Git implements Serializable {
      */
     void checkoutOrCreate(String branchName) {
         def returnCode = script.sh(returnStatus: true, script: "git checkout ${branchName}") as int
-        if(returnCode != 0) {
+        if (returnCode != 0) {
             script.sh "git checkout -b ${branchName}"
         }
     }
@@ -389,8 +389,9 @@ class Git implements Serializable {
                 }
                 return [commandOutput, pushResultCode]
             }
+        } else {
+            return executeGit(args)
         }
-        else return executeGit(args)
     }
 
     /**
@@ -400,7 +401,7 @@ class Git implements Serializable {
      * @return Returns an array with a string array of two elements.
      *         The first element contains the command out put. The second element contans the command status code
      */
-    protected String[] executeGit(String args){
+    protected String[] executeGit(String args) {
         def status = script.sh(
                 script: "git ${args} > output",
                 returnStatus: true
@@ -417,7 +418,7 @@ class Git implements Serializable {
      * @param force Force tag creation when true.
      *
      */
-    void createTag(String tagName, String tagMessage, boolean force){
-        script.sh "git tag${(force) ? ' -f': ''} -m '${tagMessage}' ${tagName}"
+    void createTag(String tagName, String tagMessage, boolean force) {
+        script.sh "git tag${(force) ? ' -f' : ''} -m '${tagMessage}' ${tagName}"
     }
 }
