@@ -475,7 +475,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
 * Tags - Note that the git plugin might not fetch tags for all builds. Run `sh "git fetch --tags"` to make sure.
-    * `git.tag` -  e.g. `1.0.0` or `undefined` if not set
+    * `git.tag` -  e.g. `1.0.0` or empty if not set
     * `git.isTag()` - is there a tag on the current commit?
 
 ### Changes to local repository
@@ -485,6 +485,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
 * `git.commit('message')` - uses the name and email of the last committer as author and committer.
+* `git.setTag('tag', 'message', 'Author', 'Author@mail.server)`
+* `git.setTag('tag', 'message')` - uses the name and email of the last committer as author and committer.
 * `git.fetch()`
 * `git.merge('develop')`
 * `git.mergeFastForwardOnly('master')`

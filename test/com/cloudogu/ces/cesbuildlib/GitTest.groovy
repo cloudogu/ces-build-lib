@@ -202,6 +202,21 @@ class GitTest {
     }
 
     @Test
+    void setTag() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
+        Git git = new Git(scriptMock)
+        git.setTag("someTag", "someMessage")
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assert scriptMock.actualShStringArgs[0] == "git tag -m \"someMessage\" someTag"
+    }
+
+    @Test
     void fetch() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
@@ -221,7 +236,7 @@ class GitTest {
     }
 
     @Test
-    void switchBranch() {
+    void checkoutOrCreate() {
         ScriptMock scriptMock = new ScriptMock()
         Git git = new Git(scriptMock)
         git.checkoutOrCreate("master")
