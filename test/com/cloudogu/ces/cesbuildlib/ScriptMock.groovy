@@ -4,6 +4,8 @@ class ScriptMock {
     def env = [ WORKSPACE: "", HOME: "" ]
 
     boolean expectedIsPullRequest = false
+    boolean unstable = false
+    String unstableMsg = ""
     def expectedQGate
     def expectedPwd
 
@@ -69,6 +71,10 @@ class ScriptMock {
         return expectedQGate
     }
 
+    def unstable(String msg){
+        this.unstable = true
+    }
+
     void withSonarQubeEnv(String sonarQubeEnv, Closure closure) {
         this.actualSonarQubeEnv = sonarQubeEnv
         closure.call()
@@ -122,7 +128,6 @@ class ScriptMock {
         actualDir = dir
         closure.call()
     }
-
 
     Map<String, String> actualWithEnvAsMap() {
         actualWithEnv.collectEntries {[it.split('=')[0], it.split('=')[1]]}

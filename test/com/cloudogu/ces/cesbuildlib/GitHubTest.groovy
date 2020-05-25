@@ -97,9 +97,12 @@ class GitHubTest extends GroovyTestCase {
         Changelog changelog = new Changelog(scriptMock)
 
         def exception = shouldFail {
-            github.createGithubReleaseByChangelog("v1.0.0", changelog)
+            github.createGithubRelease("v1.0.0", "changes")
         }
-
         assert exception.contains("Unable to create Github release without credentials")
+
+        assertFalse(scriptMock.unstable)
+        github.createGithubReleaseByChangelog("v1.0.0", changelog)
+        assertTrue(scriptMock.unstable)
     }
 }
