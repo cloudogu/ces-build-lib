@@ -484,7 +484,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.setTag('tag', 'message', 'Author', 'Author@mail.server)`
 * `git.setTag('tag', 'message')` - uses the name and email of the last committer as author and committer.
 * `git.fetch()`
-* `git.merge('develop')`
+* `git.merge('develop', 'Author', 'Author@mail.server)`
+* `git.merge('develop')` - uses the name and email of the last committer as author and committer.
 * `git.mergeFastForwardOnly('master')`
 
 ### Changes to remote repository

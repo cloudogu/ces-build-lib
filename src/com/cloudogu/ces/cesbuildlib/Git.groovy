@@ -248,7 +248,24 @@ class Git implements Serializable {
      * @param branchName name of branch to merge with
      */
     void merge(String branchName) {
-        script.sh "git merge ${branchName}"
+        merge(branchName, commitAuthorName, commitAuthorEmail)
+    }
+
+    /**
+     * Merge branch into the current checked out branch using the specific name and emails as author and committer.
+     *
+     * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
+     * so you have to call {@link #fetch()} before merge.
+     *
+     * @param branchName name of branch to merge with
+     * @param authorName
+     * @param authorEmail
+     */
+    void merge(String branchName, String authorName, String authorEmail) {
+        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
+                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+            script.sh "git merge ${branchName}"
+        }
     }
 
     /**

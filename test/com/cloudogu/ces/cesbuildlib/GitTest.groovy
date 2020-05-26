@@ -250,9 +250,15 @@ class GitTest {
     @Test
     void merge() {
         ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         Git git = new Git(scriptMock)
         git.merge("master")
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
         assert scriptMock.actualShStringArgs[0] == "git merge master"
     }
 
