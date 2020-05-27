@@ -30,7 +30,7 @@ class GitFlow implements Serializable {
 
         // Check if tag already exists
         if (this.git.tagExists("${releaseVersion}")) {
-            throw new Exception("You cannot build this version, because it already exists.")
+            throw new IllegalStateException("You cannot build this version, because it already exists.")
         }
 
         // Make sure all branches are fetched
@@ -38,7 +38,7 @@ class GitFlow implements Serializable {
 
         // Make sure there are no changes on develop
         if (this.git.branchesHaveDiverged(branchName, "develop")) {
-            throw new Exception("There are changes on develop branch that are not merged into release. Please merge and restart process.")
+            throw new IllegalStateException("There are changes on develop branch that are not merged into release. Please merge and restart process.")
         }
 
         // Make sure any branch we need exists locally

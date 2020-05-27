@@ -61,7 +61,7 @@ class Changelog implements Serializable {
     private int changesStartIndex(String releaseVersion) {
         def index = getChangelog().indexOf("## [${releaseVersion}]")
         if (index == -1){
-            throw new Exception("The desired version '${releaseVersion}' could not be found in the changelog.")
+            throw new IllegalArgumentException("The desired version '${releaseVersion}' could not be found in the changelog.")
         }
         def offset = getChangelog().substring(index).indexOf("\n")
         return index + offset
