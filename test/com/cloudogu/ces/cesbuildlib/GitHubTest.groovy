@@ -79,9 +79,9 @@ class GitHubTest extends GroovyTestCase {
         assertEquals("cat CHANGELOG.md", scriptMock.allActualArgs[i++])
         assertEquals("git remote get-url origin", scriptMock.allActualArgs[i++])
 
-        String expectedData = "--data '{\"tag_name\": \"v1.0.0\", \"target_commitish\": \"master\", " +
-                "\"name\": \"v1.0.0\", \"body\":\"### Added\\n- everything\"}'"
-        String expectedHeader = "--header \"Content-Type: application/json\" https://api.github.com/repos/myRepoName/releases"
+        String expectedData = """--data '{"tag_name": "v1.0.0", "target_commitish": "master", """ +
+                """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
+        String expectedHeader = """--header "Content-Type: application/json"  https://api.github.com/repos/myRepoName/releases"""
 
         assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
     }

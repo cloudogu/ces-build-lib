@@ -35,9 +35,9 @@ class GitHub implements Serializable {
             throw new IllegalArgumentException("Unable to create Github release without credentials")
         }
         script.withCredentials([script.usernamePassword(credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
-            def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
+            def body = """{"tag_name": "${releaseVersion}", "target_commitish": "master", "name": "${releaseVersion}", "body":"${changes}"}"""
             def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
-            def flags = "--request POST --data ${body} --header \"Content-Type: application/json\""
+            def flags = """--request POST --data '${body.trim()}' --header "Content-Type: application/json" """
             def username = '\$GIT_AUTH_USR'
             def password = '\$GIT_AUTH_PSW'
             script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
