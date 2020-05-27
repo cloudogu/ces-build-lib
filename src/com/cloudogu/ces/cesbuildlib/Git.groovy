@@ -391,8 +391,7 @@ class Git implements Serializable {
                 return new CommandOutput(commandOutput, pushResultCode)
             }
         } else {
-            def out = executeGit(args)
-            return [out.stdout, out.exitCode]
+            return executeGit(args)
         }
     }
 
