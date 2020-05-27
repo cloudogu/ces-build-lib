@@ -22,7 +22,7 @@ class GitHubTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
         scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
-        github.pushGitHubPagesBranch('website', 'Deploys new version of website')
+        github.pushPagesBranch('website', 'Deploys new version of website')
 
         assertGitHubPagesBranchToSubFolder('.', scriptMock)
     }
@@ -36,7 +36,7 @@ class GitHubTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
         scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
 
-        github.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
+        github.pushPagesBranch('website', 'Deploys new version of website', 'some-folder')
 
         assertGitHubPagesBranchToSubFolder('some-folder', scriptMock)
     }
@@ -68,7 +68,7 @@ class GitHubTest extends GroovyTestCase {
         GitHub github = new GitHub(scriptMock, git)
         Changelog changelog = new Changelog(scriptMock)
 
-        github.createGithubReleaseByChangelog("v1.0.0", changelog)
+        github.createReleaseWithChangelog("v1.0.0", changelog)
 
         assertEquals(7, scriptMock.allActualArgs.size())
         int i = 0;
@@ -97,12 +97,12 @@ class GitHubTest extends GroovyTestCase {
         Changelog changelog = new Changelog(scriptMock)
 
         def exception = shouldFail {
-            github.createGithubRelease("v1.0.0", "changes")
+            github.createRelease("v1.0.0", "changes")
         }
         assert exception.contains("Unable to create Github release without credentials")
 
         assertFalse(scriptMock.unstable)
-        github.createGithubReleaseByChangelog("v1.0.0", changelog)
+        github.createReleaseWithChangelog("v1.0.0", changelog)
         assertTrue(scriptMock.unstable)
     }
 }

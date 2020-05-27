@@ -15,12 +15,12 @@ class GitHub implements Serializable {
      * @param releaseVersion the version for the github release
      * @param changelog the changelog object to extract the release information from
      */
-    void createGithubReleaseByChangelog(String releaseVersion, Changelog changelog) {
+    void createReleaseWithChangelog(String releaseVersion, Changelog changelog) {
         try {
-            def changelogText = changelog.getChangesForVersion(releaseVersion)
+            def changelogText = changelog.changesForVersion(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
-            createGithubRelease(releaseVersion, changelogText)
-        } catch (Exception e) {
+            createRelease(releaseVersion, changelogText)
+        } catch (IllegalArgumentException e) {
             script.unstable("Release failed due to error: ${e}")
             script.echo "Please manually update github release."
         }
@@ -29,10 +29,10 @@ class GitHub implements Serializable {
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void createGithubRelease(String releaseVersion, String changes) {
+    void createRelease(String releaseVersion, String changes) {
         def repositoryName = git.getRepositoryName()
         if (!git.credentials) {
-            throw new Exception("Unable to create Github release without credentials")
+            throw new IllegalArgumentException("Unable to create Github release without credentials")
         }
         script.withCredentials([script.usernamePassword(credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
             def body = "'{\"tag_name\": \"${releaseVersion}\", \"target_commitish\": \"master\", \"name\": \"${releaseVersion}\", \"body\":\"${changes}\"}'"
@@ -55,7 +55,7 @@ class GitHub implements Serializable {
      * @param workspaceFolder
      * @param commitMessage
      */
-    void pushGitHubPagesBranch(String workspaceFolder, String commitMessage, String subFolder = '.') {
+    void pushPagesBranch(String workspaceFolder, String commitMessage, String subFolder = '.') {
         def ghPagesTempDir = '.gh-pages'
         try {
             script.dir(ghPagesTempDir) {

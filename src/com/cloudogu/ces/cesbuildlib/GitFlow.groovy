@@ -25,7 +25,7 @@ class GitFlow implements Serializable {
      *
      * @param releaseVersion the version that is going to be released
      */
-    void finishGitRelease(String releaseVersion) {
+    void finishRelease(String releaseVersion) {
         String branchName = git.getBranchName()
 
         // Check if tag already exists

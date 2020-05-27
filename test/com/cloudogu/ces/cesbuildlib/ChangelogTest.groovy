@@ -38,13 +38,13 @@ class ChangelogTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", validChangelog)
         Changelog changelog = new Changelog(scriptMock)
 
-        def changes1 = changelog.getChangesForVersion("v1.0.0")
+        def changes1 = changelog.changesForVersion("v1.0.0")
         assertEquals("### Changed\\n- Something", changes1)
 
-        def changes2 = changelog.getChangesForVersion("v0.9.9")
+        def changes2 = changelog.changesForVersion("v0.9.9")
         assertEquals("### Added\\n- Anything", changes2)
 
-        def changes3 = changelog.getChangesForVersion("v2.0.0")
+        def changes3 = changelog.changesForVersion("v2.0.0")
         assertEquals("### Changed\\n- Everything!", changes3)
 
         assertEquals(13, scriptMock.allActualArgs.size())
@@ -68,7 +68,7 @@ class ChangelogTest extends GroovyTestCase {
         ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", newChangelog)
         Changelog changelog = new Changelog(scriptMock)
-        def changes = changelog.getChangesForVersion("v0.0.1")
+        def changes = changelog.changesForVersion("v0.0.1")
         assertEquals("### Added\\n- Nothing yet", changes)
     }
 
@@ -92,7 +92,7 @@ class ChangelogTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", newChangelog)
         Changelog changelog = new Changelog(scriptMock)
         def exception = shouldFail {
-            changelog.getChangesForVersion("not existing version")
+            changelog.changesForVersion("not existing version")
         }
         assertEquals("The desired version 'not existing version' could not be found in the changelog.", exception)
     }

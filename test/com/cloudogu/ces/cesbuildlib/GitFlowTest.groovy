@@ -33,7 +33,7 @@ class GitFlowTest extends GroovyTestCase {
         scriptMock.env.BRANCH_NAME = "myReleaseBranch"
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
-        gitflow.finishGitRelease("myVersion")
+        gitflow.finishRelease("myVersion")
         scriptMock.allActualArgs.removeAll("echo ")
         assertEquals(30, scriptMock.allActualArgs.size())
         int i = 0
@@ -76,7 +76,7 @@ class GitFlowTest extends GroovyTestCase {
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
         String err = shouldFail(Exception.class) {
-            gitflow.finishGitRelease("myVersion")
+            gitflow.finishRelease("myVersion")
         }
         assertEquals("You cannot build this version, because it already exists.", err)
     }
@@ -90,7 +90,7 @@ class GitFlowTest extends GroovyTestCase {
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
         String err = shouldFail(Exception.class) {
-            gitflow.finishGitRelease("myVersion")
+            gitflow.finishRelease("myVersion")
         }
         assertEquals("There are changes on develop branch that are not merged into release. Please merge and restart process.", err)
     }
