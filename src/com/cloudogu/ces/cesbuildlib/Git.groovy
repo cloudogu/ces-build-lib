@@ -173,8 +173,7 @@ class Git implements Serializable {
      * @param message
      */
     void commit(String message, String authorName, String authorEmail) {
-        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
-                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+        withAuthorAndEmail(authorName, authorEmail) {
             script.sh "git commit -m \"$message\""
         }
     }
@@ -198,9 +197,15 @@ class Git implements Serializable {
      * @param authorEmail
      */
     void setTag(String tag, String message, String authorName, String authorEmail) {
+        withAuthorAndEmail(authorName, authorEmail) {
+            script.sh "git tag -m \"${message}\" ${tag}"
+        }
+    }
+    
+    private void withAuthorAndEmail(String authorName, String authorEmail, Closure closure) {
         script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
                         "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
-            script.sh "git tag -m \"${message}\" ${tag}"
+            closure.call()
         }
     }
 
@@ -288,6 +293,17 @@ class Git implements Serializable {
      */
     void push(String refSpec) {
         executeGitWithCredentials "push origin ${refSpec}"
+    }
+
+    /**
+     * Pulls to local from remote repo.
+     *
+     * @param refSpec branch or tag name
+     */
+    void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        withAuthorAndEmail(authorName, authorEmail) {
+            executeGitWithCredentials "pull ${refSpec}"
+        }
     }
 
     /**

@@ -190,9 +190,7 @@ class GitTest {
 
     @Test
     void commit() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.commit 'msg'
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
         assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
@@ -203,9 +201,7 @@ class GitTest {
 
     @Test
     void setTag() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.setTag("someTag", "someMessage")
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
@@ -222,6 +218,44 @@ class GitTest {
 
         assert scriptMock.actualShStringArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
         assert scriptMock.actualShStringArgs[1] == "git fetch --all"
+    }
+
+    @Test
+    void pull() {
+        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull'
+        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
+        git = new Git(scriptMock, 'creds')
+
+        git.pull()
+
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        
+        assert scriptMock.actualShMapArgs.size() == 3
+        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
+    }
+
+    @Test
+    void 'pull with refspec'() {
+        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin master'
+        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
+        git = new Git(scriptMock, 'creds')
+
+        git.pull 'origin master'
+
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+
+        assert scriptMock.actualShMapArgs.size() == 3
+        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
     }
 
     @Test
@@ -264,8 +298,6 @@ class GitTest {
 
     @Test
     void mergeFastForwardOnly() {
-        ScriptMock scriptMock = new ScriptMock()
-        Git git = new Git(scriptMock)
         git.mergeFastForwardOnly("master")
 
         assert scriptMock.actualShStringArgs[0] == "git merge --ff-only master"
@@ -273,7 +305,6 @@ class GitTest {
 
     @Test
     void push() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
         git = new Git(scriptMock, 'creds')
         git.push('master')
@@ -281,7 +312,6 @@ class GitTest {
 
     @Test
     void pushNonHttps() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
         git = new Git(scriptMock, 'creds')
         git.push('master')
@@ -292,7 +322,6 @@ class GitTest {
 
     @Test
     void pushWithRetry() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', [128, 128, 0])
         git = new Git(scriptMock, 'creds')
         git.retryTimeout = 1
