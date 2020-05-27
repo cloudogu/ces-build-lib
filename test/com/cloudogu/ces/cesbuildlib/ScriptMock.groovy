@@ -42,7 +42,7 @@ class ScriptMock {
     private Object getReturnValueFor(Object arg) {
         if (expectedDefaultShRetValue == null) {
             // toString() to make Map also match GStrings
-            def value = expectedShRetValueForScript.get(arg.toString())
+            def value = expectedShRetValueForScript.get(arg.toString().trim())
             if (value instanceof List) {
                 return ((List) value).removeAt(0)
             } else {
