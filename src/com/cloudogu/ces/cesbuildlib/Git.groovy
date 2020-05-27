@@ -89,7 +89,7 @@ class Git implements Serializable {
      * @return true if this branch differs from the develop branch
      */
     boolean branchesHaveDiverged(String targetBranch, String sourceBranch) {
-        String diff = executeGitWithCredentials("log origin/${targetBranch}..origin/${sourceBranch} --oneline")[0]
+        String diff = executeGitWithCredentials("log origin/${targetBranch}..origin/${sourceBranch} --oneline").stdout
         return diff.length() > 0
     }
 
@@ -166,7 +166,7 @@ class Git implements Serializable {
      * @return true if the specified tag exists
      */
     boolean tagExists(String tag) {
-        def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}")[0]
+        def tagFound = this.executeGitWithCredentials("ls-remote origin refs/tags/${tag}").stdout
         return tagFound != null && tagFound.length() > 0
     }
 
@@ -368,7 +368,7 @@ class Git implements Serializable {
      * @return Returns an array with a string array of two elements.
      *         The first element contains the command out put. The second element contans the command status code
      */
-    protected String[] executeGitWithCredentials(String args) {
+    protected CommandOutput executeGitWithCredentials(String args) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
@@ -381,16 +381,18 @@ class Git implements Serializable {
                         sleep(retryTimeout)
                     }
                     ++retryCount
-                    (commandOutput, pushResultCode) = executeGit("-c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}")
-                    pushResultCode = pushResultCode as int
+                    def out = executeGit("-c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}")
+                    pushResultCode = out.exitCode as int
+                    commandOutput = out.stdout
                 }
                 if (pushResultCode != 0) {
                     script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${pushResultCode}"
                 }
-                return [commandOutput, pushResultCode]
+                return new CommandOutput(commandOutput, pushResultCode)
             }
         } else {
-            return executeGit(args)
+            def out = executeGit(args)
+            return [out.stdout, out.exitCode]
         }
     }
 
@@ -401,12 +403,12 @@ class Git implements Serializable {
      * @return Returns an array with a string array of two elements.
      *         The first element contains the command out put. The second element contans the command status code
      */
-    protected String[] executeGit(String args) {
+    protected CommandOutput executeGit(String args) {
         def status = script.sh(
                 script: "git ${args} > output",
                 returnStatus: true
         )
-        return [sh.returnStdOut("cat output"), status]
+        return new CommandOutput(sh.returnStdOut("cat output"), (status) ? status as int : 0)
     }
 
 

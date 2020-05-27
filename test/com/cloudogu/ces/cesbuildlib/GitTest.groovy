@@ -335,8 +335,8 @@ class GitTest {
         assertEquals(2, scriptMock.allActualArgs.size())
         assertEquals(expectedGitCall, scriptMock.allActualArgs[0])
         assertEquals("cat output", scriptMock.allActualArgs[1])
-        assertEquals("myScriptOutput", output[0])
-        assertEquals("0", output[1])
+        assertEquals("myScriptOutput", output.stdout)
+        assertEquals(0, output.exitCode)
     }
 
     @Test

@@ -72,7 +72,7 @@ class GitFlowTest extends GroovyTestCase {
     @Test
     void testThrowsErrorWhenTagAlreadyExists() {
         def scriptMock = new ScriptMock()
-        scriptMock.expectedDefaultShRetValue = "thisIsATag"
+        scriptMock.expectedShRetValueForScript.put("cat output", "thisIsATag")
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
         String err = shouldFail(Exception.class) {
