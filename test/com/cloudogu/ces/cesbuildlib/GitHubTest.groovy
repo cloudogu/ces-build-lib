@@ -54,7 +54,7 @@ class GitHubTest extends GroovyTestCase {
         assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_NAME=User Name'}")
         assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_EMAIL=user.name@doma.in'}")
         assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
-        assert scriptMock.allActualArgs.contains('git push origin gh-pages > output')
+        assert scriptMock.allActualArgs.contains('git push origin gh-pages')
         assert scriptMock.allActualArgs.last == 'rm -rf .gh-pages'
     }
 

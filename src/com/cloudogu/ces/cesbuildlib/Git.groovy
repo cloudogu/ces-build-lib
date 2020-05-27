@@ -403,11 +403,15 @@ class Git implements Serializable {
      *         The first element contains the command out put. The second element contans the command status code
      */
     protected CommandOutput executeGit(String args) {
-        def status = script.sh(
-                script: "git ${args} > output",
-                returnStatus: true
-        )
-        return new CommandOutput(sh.returnStdOut("cat output"), (status) ? status as int : 0)
+        try {
+            def status = script.sh(
+                    script: "git ${args} > output",
+                    returnStatus: true
+            )
+            return new CommandOutput(sh.returnStdOut("cat output"), (status) ? status as int : 0)
+        } finally {
+            script.sh "rm -f output"
+        }
     }
 
 

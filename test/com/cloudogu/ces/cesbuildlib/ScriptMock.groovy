@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 class ScriptMock {
-    def env = [ WORKSPACE: "", HOME: "" ]
+    def env = [WORKSPACE: "", HOME: ""]
 
     boolean expectedIsPullRequest = false
     boolean unstable = false
@@ -31,23 +31,61 @@ class ScriptMock {
     List<String> actualWithEnv
     String actualDir
     def actualGitArgs
+    private ignoreOutputFile
+
+    public ScriptMock() {
+        this(true)
+    }
+
+    public ScriptMock(boolean ignoreOutputFile) {
+        // This flag was added to make testing more convenient because we don't need to check for this in most tests.
+        // When set to true, the script command "cat output" and "rm -f output" will not be saved in output
+        // Also the " > output" at the end of each git command will be removed.
+        this.ignoreOutputFile = ignoreOutputFile
+    }
 
     String sh(String args) {
-        actualShStringArgs.add(args.toString())
-        allActualArgs.add(args.toString())
+        if (this.shouldAddToArgs(args)) {
+            actualShStringArgs.add(this.convert(args))
+            allActualArgs.add(this.convert(args))
+        }
         return getReturnValueFor(args)
     }
 
     String sh(Map<String, Object> args) {
-        actualShMapArgs.add(args.script.toString())
-        allActualArgs.add(args.script.toString())
-        return getReturnValueFor(args.get('script'))
+        def script = args.get('script')
+
+        if (this.shouldAddToArgs(script)) {
+            actualShMapArgs.add(this.convert(script))
+            allActualArgs.add(this.convert(script))
+        }
+
+        return getReturnValueFor(script)
+    }
+
+    private String convert(args) {
+        def converted = args.toString()
+
+        if (!this.ignoreOutputFile || converted.indexOf(" > output") == -1) {
+            return converted
+        }
+
+        return converted.substring(0, converted.indexOf(" > output"))
+    }
+
+    private boolean shouldAddToArgs(args) {
+        if (!this.ignoreOutputFile) {
+            return true
+        }
+
+        return !args.equals("rm -f output") && !args.equals("cat output")
     }
 
     private Object getReturnValueFor(Object arg) {
+
         if (expectedDefaultShRetValue == null) {
             // toString() to make Map also match GStrings
-            def value = expectedShRetValueForScript.get(arg.toString())
+            def value = expectedShRetValueForScript.get(this.convert(arg))
             if (value instanceof List) {
                 return ((List) value).removeAt(0)
             } else {
@@ -71,7 +109,7 @@ class ScriptMock {
         return expectedQGate
     }
 
-    def unstable(String msg){
+    def unstable(String msg) {
         this.unstable = true
     }
 
@@ -130,6 +168,6 @@ class ScriptMock {
     }
 
     Map<String, String> actualWithEnvAsMap() {
-        actualWithEnv.collectEntries {[it.split('=')[0], it.split('=')[1]]}
+        actualWithEnv.collectEntries { [it.split('=')[0], it.split('=')[1]] }
     }
 }
