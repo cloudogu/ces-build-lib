@@ -32,7 +32,7 @@ class GitHub implements Serializable {
     void createRelease(String releaseVersion, String changes) {
         def repositoryName = git.getRepositoryName()
         if (!git.credentials) {
-            throw new IllegalStateException("Unable to create Github release without credentials")
+            throw new IllegalArgumentException("Unable to create Github release without credentials")
         }
         script.withCredentials([script.usernamePassword(credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
             def body = """{"tag_name": "${releaseVersion}", "target_commitish": "master", "name": "${releaseVersion}", "body":"${changes}"}"""
