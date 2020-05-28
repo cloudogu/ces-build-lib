@@ -78,12 +78,12 @@ class ChangelogTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", validChangelog)
         Changelog changelog = new Changelog(scriptMock)
 
-        assertEquals("", changelog.formatForJson("\""))
-        assertEquals("", changelog.formatForJson("'"))
-        assertEquals("", changelog.formatForJson("''"))
-        assertEquals("", changelog.formatForJson("\\"))
-        assertEquals("\\n", changelog.formatForJson("\n"))
-        assertEquals("\\n", changelog.formatForJson("\n\"\"''\\\\"))
+        assertEquals("", changelog.escapeForJson("\""))
+        assertEquals("", changelog.escapeForJson("'"))
+        assertEquals("", changelog.escapeForJson("''"))
+        assertEquals("", changelog.escapeForJson("\\"))
+        assertEquals("\\n", changelog.escapeForJson("\n"))
+        assertEquals("\\n", changelog.escapeForJson("\n\"\"''\\\\"))
     }
 
     @Test

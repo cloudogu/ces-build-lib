@@ -35,7 +35,7 @@ class Changelog implements Serializable {
     String changesForVersion(String releaseVersion) {
         def start = changesStartIndex(releaseVersion)
         def end = changesEndIndex(start)
-        return formatForJson(getChangelog().substring(start, end).trim())
+        return escapeForJson(getChangelog().substring(start, end).trim())
     }
 
     /**
@@ -44,7 +44,7 @@ class Changelog implements Serializable {
      * @param string The string to format.
      * @return Returns the formatted string.
      */
-    String formatForJson(String string) {
+    String escapeForJson(String string) {
         return string
                 .replace("\"", "")
                 .replace("'", "")
