@@ -424,6 +424,10 @@ class Git implements Serializable {
      *
      */
     void createTag(String tagName, String tagMessage, boolean force) {
-        script.sh "git tag${(force) ? ' -f' : ''} -m '${tagMessage}' ${tagName}"
+        def args = ""
+        if (force) {
+            args += " -f"
+        }
+        script.sh "git tag${args} -m '${tagMessage}' ${tagName}"
     }
 }
