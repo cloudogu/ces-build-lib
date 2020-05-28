@@ -14,7 +14,7 @@ class GitHubTest extends GroovyTestCase {
 '''
 
     @Test
-    void testPushGitHubPagesBranch() {
+    void testPushPagesBranch() {
         ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("cat output", "")
         Git git = new Git(scriptMock)
@@ -24,11 +24,11 @@ class GitHubTest extends GroovyTestCase {
 
         github.pushPagesBranch('website', 'Deploys new version of website')
 
-        assertGitHubPagesBranchToSubFolder('.', scriptMock)
+        assertPagesBranchToSubFolder('.', scriptMock)
     }
 
     @Test
-    void testPushGitHubPagesBranchToSubFolder() {
+    void testPushPagesBranchToSubFolder() {
         ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("cat output", "")
         Git git = new Git(scriptMock)
@@ -38,10 +38,10 @@ class GitHubTest extends GroovyTestCase {
 
         github.pushPagesBranch('website', 'Deploys new version of website', 'some-folder')
 
-        assertGitHubPagesBranchToSubFolder('some-folder', scriptMock)
+        assertPagesBranchToSubFolder('some-folder', scriptMock)
     }
 
-    private void assertGitHubPagesBranchToSubFolder(String subFolder, ScriptMock scriptMock) {
+    private void assertPagesBranchToSubFolder(String subFolder, ScriptMock scriptMock) {
         assert scriptMock.actualGitArgs.url == "https://repo.url"
         assert scriptMock.actualGitArgs.branch == "gh-pages"
 
@@ -59,7 +59,7 @@ class GitHubTest extends GroovyTestCase {
     }
 
     @Test
-    void testCreateGithubReleaseByChangelog() {
+    void testCreateReleaseByChangelog() {
         ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("cat CHANGELOG.md", testChangelog)
         scriptMock.expectedShRetValueForScript.put("cat output", "")

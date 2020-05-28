@@ -331,7 +331,7 @@ class GitTest {
     }
 
     @Test
-    void testCreateTag(){
+    void testCreateTag() {
         ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("cat output", "myScriptOutput")
         Git git = new Git(scriptMock, "credentials")
@@ -342,5 +342,26 @@ class GitTest {
         assertEquals(2, scriptMock.allActualArgs.size())
         assertEquals("git tag -m 'myMessage' myTag", scriptMock.allActualArgs[0])
         assertEquals("git tag -f -m 'myMessage' myTag", scriptMock.allActualArgs[1])
+    }
+
+    @Test
+    void testGitWillCreateAndRemoveTemporaryFile() {
+        ScriptMock scriptMock = new ScriptMock(false)
+        scriptMock.expectedDefaultShRetValue = ""
+
+        assert scriptMock.allActualArgs.size() == 0
+        Git git = new Git(scriptMock)
+        git.executeGit("status")
+        assert scriptMock.allActualArgs.size() == 3
+        assert scriptMock.allActualArgs[0] == "git status > output"
+        assert scriptMock.allActualArgs[1] == "cat output"
+        assert scriptMock.allActualArgs[2] == "rm -f output"
+
+        Git git2 = new Git(scriptMock, "credentials")
+        git2.executeGitWithCredentials("status")
+        assert scriptMock.allActualArgs.size() == 6
+        assert scriptMock.allActualArgs[3] == """git -c credential.helper="!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f" status > output"""
+        assert scriptMock.allActualArgs[4] == "cat output"
+        assert scriptMock.allActualArgs[5] == "rm -f output"
     }
 }
