@@ -28,7 +28,8 @@ class ScriptMock {
     Map actualFileArgs
     Map actualStringArgs
     Map files = new HashMap<String, String>()
-    List<String> actualWithEnv
+    List<List<String>> actualWithEnv = []
+    
     String actualDir
     def actualGitArgs
     private ignoreOutputFile
@@ -56,6 +57,9 @@ class ScriptMock {
             return expectedDefaultShRetValue
         }
         if (value instanceof List) {
+            // If an exception is thrown here that means that less list items have been passed to  
+            // expectedShRetValueForScript.put('shell command', List) than actual calls to 'shell command'.
+            // That is, you have to add more items!
             return ((List) value).removeAt(0)
         } else {
             return value
@@ -85,7 +89,7 @@ class ScriptMock {
     }
 
     void withEnv(List<String> env, Closure closure) {
-        actualWithEnv = env
+        actualWithEnv.add(env)
         closure.call()
     }
 
@@ -133,7 +137,14 @@ class ScriptMock {
         closure.call()
     }
 
-    Map<String, String> actualWithEnvAsMap() {
-        actualWithEnv.collectEntries { [it.split('=')[0], it.split('=')[1]] }
+    def getActualWithEnv() {
+        actualWithEnv.isEmpty() ? null : actualWithEnv[actualWithEnv.size() - 1]
+    }
+
+    Map<String, String> actualWithEnvAsMap(int index = actualWithEnv.size() - 1) {
+        if (index < 0) {
+            null
+        }
+        actualWithEnv[index].collectEntries { [it.split('=')[0], it.split('=')[1]] }
     }
 }

@@ -1,8 +1,8 @@
 package com.cloudogu.ces.cesbuildlib
 
 class GitFlow implements Serializable {
-    private script
-    private git
+    private def script
+    private Git git
     Sh sh
 
     GitFlow(script, Git git) {
@@ -52,11 +52,15 @@ class GitFlow implements Serializable {
         git.mergeNoFastForward(branchName)
 
         // Create tag. Use -f because the created tag will persist when build has failed.
-        git.setTag(releaseVersion, "release version ${releaseVersion}", true);
+        git.setTag(releaseVersion, "release version ${releaseVersion}", true)
+        String releaseBranchAuthor = git.commitAuthorName
+        String releaseBranchEmail = git.commitAuthorEmail
 
         // Merge release branch into develop
         git.checkout('develop')
-        git.mergeNoFastForward(branchName)
+        // Set author of release Branch as author of merge commit
+        // Otherwise the author of the last commit on develop would author the commit, which is unexpected
+        git.mergeNoFastForward(branchName, releaseBranchAuthor, releaseBranchEmail)
 
         // Delete release branch
         git.deleteLocalBranch(branchName)

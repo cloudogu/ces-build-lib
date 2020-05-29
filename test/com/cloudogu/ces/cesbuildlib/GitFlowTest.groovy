@@ -30,12 +30,26 @@ class GitFlowTest extends GroovyTestCase {
 
     @Test
     void testFinishRelease() {
+        String releaseBranchAuthorName = 'release'
+        String releaseBranchEmail = 'rele@s.e'
+        String releaseBranchAuthor = createGitAuthorString(releaseBranchAuthorName, releaseBranchEmail)
+        String developBranchAuthorName = 'develop'
+        String developBranchEmail = 'develop@a.a'
+        String developBranchAuthor = createGitAuthorString(developBranchAuthorName, developBranchEmail)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 
+                [releaseBranchAuthor, releaseBranchAuthor, releaseBranchAuthor, releaseBranchAuthor,
+                 // these two are the ones where the release branch author is stored:
+                 releaseBranchAuthor, releaseBranchAuthor,
+                 developBranchAuthor, developBranchAuthor
+                ])
         scriptMock.expectedShRetValueForScript.put('git push origin master develop myVersion', 0)
+
         scriptMock.expectedDefaultShRetValue = ""
         scriptMock.env.BRANCH_NAME = "myReleaseBranch"
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
         gitflow.finishRelease("myVersion")
+        
         scriptMock.allActualArgs.removeAll("echo ")
         scriptMock.allActualArgs.removeAll("git --no-pager show -s --format='%an <%ae>' HEAD")
         int i = 0
@@ -49,10 +63,20 @@ class GitFlowTest extends GroovyTestCase {
         assertEquals("git reset --hard origin/develop", scriptMock.allActualArgs[i++])
         assertEquals("git checkout master", scriptMock.allActualArgs[i++])
         assertEquals("git reset --hard origin/master", scriptMock.allActualArgs[i++])
+        
+        // Author & Email 1 (calls 'git --no-pager...' twice)
         assertEquals("git merge --no-ff myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertAuthor(0, releaseBranchAuthorName, releaseBranchEmail)
+
+        // Author & Email 2 (calls 'git --no-pager...' twice)
         assertEquals("git tag -f -m \"release version myVersion\" myVersion", scriptMock.allActualArgs[i++])
+        assertAuthor(1, releaseBranchAuthorName, releaseBranchEmail)
+        
         assertEquals("git checkout develop", scriptMock.allActualArgs[i++])
+        // Author & Email 3 (calls 'git --no-pager...' twice)
         assertEquals("git merge --no-ff myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertAuthor(2, releaseBranchAuthorName, releaseBranchEmail)
+        
         assertEquals("git branch -d myReleaseBranch", scriptMock.allActualArgs[i++])
         assertEquals("git checkout myVersion", scriptMock.allActualArgs[i++])
         assertEquals("git push origin master develop myVersion", scriptMock.allActualArgs[i++])
@@ -81,4 +105,17 @@ class GitFlowTest extends GroovyTestCase {
         }
         assertEquals("There are changes on develop branch that are not merged into release. Please merge and restart process.", err)
     }
+
+    void assertAuthor(int withEnvInvocationIndex, String author, String email) {
+        def withEnvMap = scriptMock.actualWithEnvAsMap(withEnvInvocationIndex)
+        assert withEnvMap['GIT_AUTHOR_NAME'] == author
+        assert withEnvMap['GIT_COMMITTER_NAME'] == author
+        assert withEnvMap['GIT_AUTHOR_EMAIL'] == email
+        assert withEnvMap['GIT_COMMITTER_EMAIL'] == email
+    }
+
+    String createGitAuthorString(String author, String email) {
+        "${author} <${email}>"
+    }
+
 }

@@ -299,8 +299,7 @@ class Git implements Serializable {
      * @param authorEmail
      */
     void merge(String args, String authorName, String authorEmail) {
-        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
-                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+        withAuthorAndEmail(authorName, authorEmail) {
             script.sh "git merge ${args}"
         }
     }
@@ -314,8 +313,8 @@ class Git implements Serializable {
      *
      * @param branchName name of branch to merge with
      */
-    void mergeFastForwardOnly(String branchName) {
-        merge("--ff-only ${branchName}", commitAuthorName, commitAuthorEmail)
+    void mergeFastForwardOnly(String branchName, String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        merge("--ff-only ${branchName}", authorName, authorEmail)
     }
 
     /**
@@ -326,8 +325,8 @@ class Git implements Serializable {
      *
      * @param branchName name of branch to merge with
      */
-    void mergeNoFastForward(String branchName) {
-        merge("--no-ff ${branchName}", commitAuthorName, commitAuthorEmail)
+    void mergeNoFastForward(String branchName, String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        merge("--no-ff ${branchName}", authorName, authorEmail)
     }
 
     /**
