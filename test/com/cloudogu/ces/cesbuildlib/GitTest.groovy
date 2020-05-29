@@ -78,7 +78,7 @@ class GitTest {
     void testGetSimpleBranchName() {
         String expectedSimpleBranchName = "simpleName"
         def scriptMock = new ScriptMock()
-        scriptMock.env= new Object() {
+        scriptMock.env = new Object() {
             String BRANCH_NAME = "feature/somethingelse/$expectedSimpleBranchName"
         }
         Git git = new Git(scriptMock)
@@ -190,9 +190,7 @@ class GitTest {
 
     @Test
     void commit() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.commit 'msg'
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
         assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
@@ -203,10 +201,9 @@ class GitTest {
 
     @Test
     void setTag() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.setTag("someTag", "someMessage")
+        git.setTag("myTag", "myMessage", true)
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
         assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
@@ -214,14 +211,57 @@ class GitTest {
         assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
         assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
         assert scriptMock.actualShStringArgs[0] == "git tag -m \"someMessage\" someTag"
+        assert scriptMock.actualShStringArgs[1] == "git tag -f -m \"myMessage\" myTag"
     }
 
     @Test
     void fetch() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        Git git = new Git(scriptMock)
         git.fetch()
 
-        assert scriptMock.actualShStringArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
-        assert scriptMock.actualShStringArgs[1] == "git fetch --all"
+        println scriptMock.allActualArgs
+        assert scriptMock.allActualArgs[0] == "git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'"
+        assert scriptMock.allActualArgs[1] == "git fetch --all"
+    }
+
+    @Test
+    void pull() {
+        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull'
+        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
+        git = new Git(scriptMock, 'creds')
+
+        git.pull()
+
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        
+        assert scriptMock.actualShMapArgs.size() == 3
+        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
+    }
+
+    @Test
+    void 'pull with refspec'() {
+        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin master'
+        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
+        git = new Git(scriptMock, 'creds')
+
+        git.pull 'origin master'
+
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+
+        assert scriptMock.actualShMapArgs.size() == 3
+        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
     }
 
     @Test
@@ -250,24 +290,51 @@ class GitTest {
     @Test
     void merge() {
         ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         Git git = new Git(scriptMock)
         git.merge("master")
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        println scriptMock.actualShStringArgs
         assert scriptMock.actualShStringArgs[0] == "git merge master"
     }
 
     @Test
     void mergeFastForwardOnly() {
         ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         Git git = new Git(scriptMock)
         git.mergeFastForwardOnly("master")
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
         assert scriptMock.actualShStringArgs[0] == "git merge --ff-only master"
     }
 
     @Test
-    void push() {
+    void mergeNoFastForward() {
         ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
+        Git git = new Git(scriptMock)
+        git.mergeNoFastForward("master")
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assert scriptMock.actualShStringArgs[0] == "git merge --no-ff master"
+    }
+
+    @Test
+    void push() {
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
         git = new Git(scriptMock, 'creds')
         git.push('master')
@@ -275,24 +342,21 @@ class GitTest {
 
     @Test
     void pushNonHttps() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', 0)
+
         git = new Git(scriptMock, 'creds')
         git.push('master')
 
-        assert scriptMock.actualShMapArgs.size() == 1
         assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
     }
 
     @Test
     void pushWithRetry() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master', [128, 128, 0])
         git = new Git(scriptMock, 'creds')
         git.retryTimeout = 1
         git.push('master')
 
-        assert scriptMock.actualShMapArgs.size() == 3
         assert scriptMock.actualShMapArgs.get(0) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
         assert scriptMock.actualShMapArgs.get(1) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
         assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
@@ -300,46 +364,10 @@ class GitTest {
 
     @Test
     void pushNoCredentials() {
+        scriptMock.expectedDefaultShRetValue = 0
+        git.retryTimeout = 1
         git.push('master')
 
-        assert scriptMock.actualShStringArgs.size() == 1
-        assert scriptMock.actualShStringArgs.get(0) == 'git push origin master'
-    }
-
-    @Test
-    void pushGitHubPagesBranch() {
-        scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
-
-        git.pushGitHubPagesBranch('website', 'Deploys new version of website')
-
-        assertGitHubPagesBranchToSubFolder('.')
-    }
-
-    @Test
-    void pushGitHubPagesBranchToSubFolder() {
-        scriptMock.expectedShRetValueForScript.put("git --no-pager show -s --format='%an <%ae>' HEAD", "User Name <user.name@doma.in>")
-        scriptMock.expectedShRetValueForScript.put('git remote get-url origin', "https://repo.url")
-
-        git.pushGitHubPagesBranch('website', 'Deploys new version of website', 'some-folder')
-
-        assertGitHubPagesBranchToSubFolder('some-folder')
-    }
-
-    private void assertGitHubPagesBranchToSubFolder(String subFolder) {
-        assert scriptMock.actualGitArgs.url == "https://repo.url"
-        assert scriptMock.actualGitArgs.branch == "gh-pages"
-
-        assert scriptMock.actualDir == '.gh-pages'
-        assert scriptMock.actualShStringArgs.contains("cp -rf ../website/* ${subFolder}".toString())
-        assert scriptMock.actualShStringArgs.contains("mkdir -p ${subFolder}".toString())
-        assert scriptMock.actualShStringArgs.contains('git add .')
-        assert scriptMock.actualShStringArgs.contains('git commit -m "Deploys new version of website"')
-        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_NAME=User Name'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_NAME=User Name'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_AUTHOR_EMAIL=user.name@doma.in'}")
-        assert scriptMock.actualWithEnv.contains("${'GIT_COMMITTER_EMAIL=user.name@doma.in'}")
-        assert scriptMock.actualShStringArgs.contains('git push origin gh-pages')
-        assert scriptMock.actualShStringArgs.last == 'rm -rf .gh-pages'
+        assert scriptMock.actualShMapArgs.get(0) == 'git push origin master'
     }
 }

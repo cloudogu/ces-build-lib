@@ -1,9 +1,11 @@
 package com.cloudogu.ces.cesbuildlib
 
 class ScriptMock {
-    def env = [ WORKSPACE: "", HOME: "" ]
+    def env = [WORKSPACE: "", HOME: ""]
 
     boolean expectedIsPullRequest = false
+    boolean unstable = false
+    String unstableMsg = ""
     def expectedQGate
     def expectedPwd
 
@@ -17,6 +19,7 @@ class ScriptMock {
 
     List<Map> actualUsernamePasswordArgs = []
     List<String> actualShStringArgs = new LinkedList<>()
+    List<String> allActualArgs = new LinkedList<>()
     List<String> actualEcho = new LinkedList<>()
 
     List<String> actualShMapArgs = new LinkedList<>()
@@ -28,28 +31,34 @@ class ScriptMock {
     List<String> actualWithEnv
     String actualDir
     def actualGitArgs
+    private ignoreOutputFile
 
     String sh(String args) {
         actualShStringArgs.add(args.toString())
+        allActualArgs.add(args.toString())
         return getReturnValueFor(args)
     }
 
     String sh(Map<String, Object> args) {
+        def script = args.get('script')
+
         actualShMapArgs.add(args.script.toString())
+        allActualArgs.add(args.script.toString())
+
         return getReturnValueFor(args.get('script'))
     }
 
     private Object getReturnValueFor(Object arg) {
-        if (expectedDefaultShRetValue == null) {
-            // toString() to make Map also match GStrings
-            def value = expectedShRetValueForScript.get(arg.toString())
-            if (value instanceof List) {
-                return ((List) value).removeAt(0)
-            } else {
-                return value
-            }
-        } else {
+
+        // toString() to make Map also match GStrings
+        def value = expectedShRetValueForScript.get(arg.toString().trim())
+        if (value == null) {
             return expectedDefaultShRetValue
+        }
+        if (value instanceof List) {
+            return ((List) value).removeAt(0)
+        } else {
+            return value
         }
     }
 
@@ -58,7 +67,7 @@ class ScriptMock {
     }
 
     def timeout(Map params, closure) {
-        this.actualTimeoutParams = params
+        actualTimeoutParams = params
         return closure.call()
     }
 
@@ -66,13 +75,17 @@ class ScriptMock {
         return expectedQGate
     }
 
+    def unstable(String msg) {
+        unstable = true
+    }
+
     void withSonarQubeEnv(String sonarQubeEnv, Closure closure) {
-        this.actualSonarQubeEnv = sonarQubeEnv
+        actualSonarQubeEnv = sonarQubeEnv
         closure.call()
     }
 
     void withEnv(List<String> env, Closure closure) {
-        this.actualWithEnv = env
+        actualWithEnv = env
         closure.call()
     }
 
@@ -120,8 +133,7 @@ class ScriptMock {
         closure.call()
     }
 
-
     Map<String, String> actualWithEnvAsMap() {
-        actualWithEnv.collectEntries {[it.split('=')[0], it.split('=')[1]]}
+        actualWithEnv.collectEntries { [it.split('=')[0], it.split('=')[1]] }
     }
 }

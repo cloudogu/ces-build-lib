@@ -49,6 +49,10 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Branches](#branches)
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
+- [Changelog](#changelog)
+  - [changelogFileName](#changelogFileName)
+- [GitHub](#github)
+- [GitFlow](#gitflow)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -484,23 +488,17 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.setTag('tag', 'message', 'Author', 'Author@mail.server)`
 * `git.setTag('tag', 'message')` - uses the name and email of the last committer as author and committer.
 * `git.fetch()`
-* `git.merge('develop')`
+* `git.pull()` - pulls, and in case of merge, uses the name and email of the last committer as author and committer.
+* `git.pull('refspec')` - pulls specific refspec (e.g. `origin master`), and in case of merge, uses the name and email 
+   of the last committer as author and committer.
+* `git.pull('refspec', 'Author', 'Author@mail.server)`
+* `git.merge('develop', 'Author', 'Author@mail.server)`
+* `git.merge('develop')` - uses the name and email of the last committer as author and committer.
 * `git.mergeFastForwardOnly('master')`
 
 ### Changes to remote repository
 
 * `git.push('master')` - pushes origin
-* `pushGitHubPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
-   the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
-   * Uses the name and email of the last committer as author and committer.
-   * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
-   * Don't forget to create a git object with credentials.
-   * Optional: You can deploy to a sub folder of your GitHub Pages branch using a third parameter
-   * Examples:
-      * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
-      * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
-   * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
-
 
 # Docker
 
@@ -785,6 +783,92 @@ So a PR build is treated just like any other. That is,
 The Jenkins GitHub Plugin sets `BRANCH_NAME` to the PR Name, e.g. `PR-42`.
 
 
+# Changelog
+Provides the functionality to read changes of a specific version in a changelog that is 
+based on the changelog format on https://keepachangelog.com/.
+
+Note: The changelog will automatically be formatted. Characters like `"`, `'`, `\` will be removed. 
+      A `\n` will be replaced with `\\n`. This is done to make it possible to pass this string to a json 
+      struct as a value.
+
+Example: 
+
+```groovy
+Changelog changelog = new Changelog(this)
+
+stage('Changelog') {
+  String changes = changelog.getChangesForVersion('v1.0.0')
+  // ...
+}
+```
+## changelogFileName
+You can optionally pass the path to the changelog file if it is located somewhere else than in the root path or 
+if the file name is not `CHANGELOG.md`.
+
+Example: 
+
+```groovy
+Changelog changelog = new Changelog(this, 'myNewChangelog.md')
+
+stage('Changelog') {
+  String changes = changelog.getChangesForVersion('v1.0.0')
+  // ...
+}
+```
+
+# GitHub
+Provides the functionality to do changes on a github repository such as creating a new release.
+
+Example: 
+
+```groovy
+Git git = new Git(this)
+GitHub github = new GitHub(this, git)
+
+stage('Github') {
+  github.createRelease('v1.1.1', 'Changes for version v1.1.1')
+}
+```
+
+* `github.createRelease(releaseVersion, changes)` - Creates a release on github.
+   * Use the `releaseVersion` (String) as name and tag.
+   * Use the `changes` (String) as body of the release.
+* `github.createReleaseWithChangelog(releaseVersion, changelog)` - Creates a release on github. 
+   * Use the `releaseVersion` (String) as name and tag.
+   * Use the `changelog` (Changelog) to extract the changes out of a changelog and add them to the body of the release.
+* `pushPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
+   the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
+   * Uses the name and email of the last committer as author and committer.
+   * the `gh-pages` branch is temporarily checked out to the `.gh-pages` folder.
+   * Don't forget to create a git object with credentials.
+   * Optional: You can deploy to a sub folder of your GitHub Pages branch using a third parameter
+   * Examples:
+      * [cloudogu/continuous-delivery-slides](https://github.com/cloudogu/continuous-delivery-slides/)
+      * [cloudogu/k8s-security-3-things](https://github.com/cloudogu/k8s-security-3-things)
+   * See also [Cloudogu Blog: Continuous Delivery with reveal.js](https://cloudogu.com/en/blog/continuous-delivery-with-revealjs) 
+
+
+# GitFlow
+
+A wrapper class around the Git class to simplify the use of the git flow branching model.
+
+Example: 
+
+```groovy
+Git git = new Git(this)
+GitFlow gitflow = new GitFlow(this, git)
+
+stage('Gitflow') {
+  if (gitflow.isReleaseBranch()){
+    gitflow.finishRelease('v1.0.0')
+  }
+}
+```
+
+* `gitflow.isReleaseBranch()` - Checks if the currently checked out branch is a gitflow release branch.
+* `gitflow.finishRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
+   * Use the `releaseVersion` (String) as the name of the new git release. 
+   
 # Steps
 
 ## mailIfStatusChanged
