@@ -495,6 +495,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 ### Changes to remote repository
 
 * `git.push('master')` - pushes origin
+* `git.pushAndPullOnFailure('refspec')` - pushes and pulls if push failed e.g. because local and remote have diverged, 
+   then tries pushing again
 * `pushGitHubPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
    the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
    * Uses the name and email of the last committer as author and committer.

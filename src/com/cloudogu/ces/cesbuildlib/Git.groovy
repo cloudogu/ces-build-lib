@@ -327,11 +327,11 @@ class Git implements Serializable {
 
     private static String addOriginWhenMissing(String refSpec) {
         // if refspec contains more than 1 argument e.g. `upstream master`
-        if(refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
+        if(!refSpec || refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
             return refSpec
         }
 
-        return refSpec ? 'origin ' + refSpec : ''
+        return 'origin ' + refSpec
     }
 
     /**
