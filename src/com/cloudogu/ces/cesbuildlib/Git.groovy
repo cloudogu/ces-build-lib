@@ -292,8 +292,22 @@ class Git implements Serializable {
      * @param refSpec branch or tag name
      */
     void push(String refSpec = '') {
-        refSpec = refSpec ? 'origin ' + refSpec : ''
+        refSpec = addOriginWhenMissing(refSpec)
         executeGitWithCredentials "push ${refSpec}"
+    }
+
+    /**
+     * Pulls to local from remote repo.
+     *
+     * @param refSpec branch or tag name
+     * @param authorName
+     * @param authorEmail
+     */
+    void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        refSpec = addOriginWhenMissing(refSpec)
+        withAuthorAndEmail(authorName, authorEmail) {
+            executeGitWithCredentials "pull ${refSpec}"
+        }
     }
 
     /**
@@ -303,26 +317,21 @@ class Git implements Serializable {
      * @param authorName
      * @param authorEmail
      */
-    void pushAndPullOnFailure(String refSpec, String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
-        executeGitWithCredentials("push origin ${refSpec}") {
+    void pushAndPullOnFailure(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        refSpec = addOriginWhenMissing(refSpec)
+        executeGitWithCredentials("push ${refSpec}") {
             script.echo "Got error, trying to pull first"
             pull(refSpec, authorName, authorEmail)
         }
     }
 
-    // TODO: check if refspec contains origin, to keep downward compatibility
-    /**
-     * Pulls to local from remote repo.
-     *
-     * @param refSpec branch or tag name
-     * @param authorName
-     * @param authorEmail
-     */
-    void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
-        refSpec = refSpec ? 'origin ' + refSpec : ''
-        withAuthorAndEmail(authorName, authorEmail) {
-            executeGitWithCredentials "pull ${refSpec}"
+    private static String addOriginWhenMissing(String refSpec) {
+        // if refspec contains more than 1 argument e.g. `upstream master`
+        if(refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
+            return refSpec
         }
+
+        return refSpec ? 'origin ' + refSpec : ''
     }
 
     /**
