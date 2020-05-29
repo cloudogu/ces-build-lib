@@ -291,16 +291,35 @@ class Git implements Serializable {
      *
      * @param refSpec branch or tag name
      */
-    void push(String refSpec) {
-        executeGitWithCredentials "push origin ${refSpec}"
+    void push(String refSpec = '') {
+        refSpec = refSpec ? 'origin ' + refSpec : ''
+        executeGitWithCredentials "push ${refSpec}"
     }
 
+    /**
+     * Pushes local to remote repo. Additionally pulls, if push has failed.
+     *
+     * @param refSpec branch or tag name
+     * @param authorName
+     * @param authorEmail
+     */
+    void pushAndPullOnFailure(String refSpec, String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        executeGitWithCredentials("push origin ${refSpec}") {
+            script.echo "Got error, trying to pull first"
+            pull(refSpec, authorName, authorEmail)
+        }
+    }
+
+    // TODO: check if refspec contains origin, to keep downward compatibility
     /**
      * Pulls to local from remote repo.
      *
      * @param refSpec branch or tag name
+     * @param authorName
+     * @param authorEmail
      */
     void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        refSpec = refSpec ? 'origin ' + refSpec : ''
         withAuthorAndEmail(authorName, authorEmail) {
             executeGitWithCredentials "pull ${refSpec}"
         }
@@ -338,28 +357,30 @@ class Git implements Serializable {
      * This method executes the git command with a bash function as credential helper,
      * which return username and password from jenkins credentials.
      *
-     * If the script failes with exit code 128, this will retry the call up to the
+     * If the script failes with exit code > 0, this will retry the call up to the
      * configured max retries before failing.
      *
      * @param args git arguments
+     * @param closure closure to execute after first retry
      */
-    protected void executeGitWithCredentials(String args) {
+    protected void executeGitWithCredentials(String args, Closure executeBeforeRetry = {}) {
         if (credentials) {
             script.withCredentials([script.usernamePassword(credentialsId: credentials,
                     passwordVariable: 'GIT_AUTH_PSW', usernameVariable: 'GIT_AUTH_USR')]) {
-                def pushResultCode = 128
+                def gitResultCode = 1
                 def retryCount = 0
-                while (pushResultCode == 128 && retryCount < maxRetries) {
+                while (gitResultCode > 0 && retryCount < maxRetries) {
                     if (retryCount > 0) {
-                        script.echo "Got error code ${pushResultCode} - retrying in ${retryTimeout} ms ..."
+                        script.echo "Got error code ${gitResultCode} - retrying in ${retryTimeout} ms ..."
                         sleep(retryTimeout)
+                        executeBeforeRetry.call()
                     }
                     ++retryCount
-                    pushResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
-                    pushResultCode = pushResultCode as int
+                    gitResultCode = script.sh returnStatus: true, script: "git -c credential.helper=\"!f() { echo username='\$GIT_AUTH_USR'; echo password='\$GIT_AUTH_PSW'; }; f\" ${args}"
+                    gitResultCode = gitResultCode as int
                 }
-                if (pushResultCode != 0) {
-                    script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${pushResultCode}"
+                if (gitResultCode != 0) {
+                    script.error "Unable to execute git call. Retried ${retryCount} times. Last error code: ${gitResultCode}"
                 }
             }
         } else {

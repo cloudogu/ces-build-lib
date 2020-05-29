@@ -246,7 +246,7 @@ class GitTest {
         scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
         git = new Git(scriptMock, 'creds')
 
-        git.pull 'origin master'
+        git.pull 'master'
 
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
         assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
