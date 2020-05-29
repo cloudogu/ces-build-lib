@@ -325,6 +325,11 @@ class Git implements Serializable {
         }
     }
 
+    /**
+     * Method exists purely because of downward compatibility. Adding remote to pushes and pulls is preferred,
+     * but historically git push always added `origin` implicitly.
+     *
+     */
     private static String addOriginWhenMissing(String refSpec) {
         // if refspec contains more than 1 argument e.g. `upstream master`
         if(!refSpec || refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
