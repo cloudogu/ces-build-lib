@@ -227,7 +227,7 @@ class GitTest {
     }
 
     @Test
-    void "pull with empty refspec"() {
+    void pull() {
         def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull'
         scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
         scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
@@ -244,83 +244,7 @@ class GitTest {
         assert scriptMock.actualShMapArgs.size() == 3
         assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
     }
-
-    @Test
-    void "pull origin"() {
-        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin'
-        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
-        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
-        git = new Git(scriptMock, 'creds')
-
-        git.pull('origin')
-
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-
-        assert scriptMock.actualShMapArgs.size() == 3
-        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
-    }
-
-    @Test
-    void 'pull master'() {
-        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin master'
-        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
-        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
-        git = new Git(scriptMock, 'creds')
-
-        git.pull 'master'
-
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-
-        assert scriptMock.actualShMapArgs.size() == 3
-        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
-    }
-
-    @Test
-    void 'pull origin master'() {
-        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin master'
-        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
-        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
-        git = new Git(scriptMock, 'creds')
-
-        git.pull 'origin master'
-
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-
-        assert scriptMock.actualShMapArgs.size() == 3
-        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
-    }
-
-    @Test
-    void 'pull upstream master'() {
-        def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull upstream master'
-        scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)
-        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
-        git = new Git(scriptMock, 'creds')
-
-        git.pull 'upstream master'
-
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-
-        assert scriptMock.actualShMapArgs.size() == 3
-        assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
-    }
-
+    
     @Test
     void checkout() {
         git.checkout("master")
@@ -403,7 +327,8 @@ class GitTest {
         git.push()
 
         assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0).trim() == 'git push'
+        // This is somewhat unexpected and to be resolved with #44
+        assert scriptMock.actualShMapArgs.get(0).trim() == 'git push origin'
     }
 
     @Test
@@ -422,15 +347,6 @@ class GitTest {
 
         assert scriptMock.actualShMapArgs.size() == 1
         assert scriptMock.actualShMapArgs.get(0) == 'git push origin master'
-    }
-
-    @Test
-    void "push upstream master"() {
-        scriptMock.expectedDefaultShRetValue = 0
-        git.push('upstream master')
-
-        assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0) == 'git push upstream master'
     }
 
     @Test
@@ -487,7 +403,7 @@ class GitTest {
         git = new Git(scriptMock, 'creds')
 
         git.retryTimeout = 1
-        git.pushAndPullOnFailure('master')
+        git.pushAndPullOnFailure('origin master')
 
         def actualWithEnv = scriptMock.actualWithEnvAsMap()
         assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'

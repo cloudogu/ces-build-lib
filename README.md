@@ -498,7 +498,14 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 
 ### Changes to remote repository
 
-* `git.push('master')` - pushes origin
+* `git.push('origin master')` - pushes origin
+   **Note**: This always prepends `origin` if not present for historical reasonse (see #44). 
+   That is, right now it is impossible to push other remotes.  
+   This will change in the next major version of ces-build-lib.  
+   This limitation does not apply to other remote-related operations such as `pull()`, `fetch()` and `pushAndPullOnFailure()`
+   So it's recommended to explicitly mention the origin and not just the refsepc:
+     * Do: `git.push('origin master')`
+     * Don't: `git.push('master')` because this will no longer work in the next major version.
 * `git.pushAndPullOnFailure('refspec')` - pushes and pulls if push failed e.g. because local and remote have diverged, 
    then tries pushing again
 

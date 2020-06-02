@@ -69,7 +69,7 @@ class GitFlow implements Serializable {
         git.checkout(releaseVersion)
 
         // Push changes and tags
-        git.push("master develop ${releaseVersion}")
+        git.push("origin master develop ${releaseVersion}")
         git.deleteOriginBranch(branchName)
     }
 }

@@ -335,7 +335,10 @@ class Git implements Serializable {
      * @param refSpec branch or tag name
      */
     void push(String refSpec = '') {
-        refSpec = addOriginWhenMissing(refSpec)
+        // It turned out that it was not a good idea to always add origin at this place as it does not allow for using 
+        // other remotes.
+        // However, removing "origin" here now breaks backwards compatibility. See #44
+        refSpec = refSpec.trim().startsWith('origin') ? refSpec : "origin ${refSpec}"
         executeGitWithCredentialsAndRetry "push ${refSpec}"
     }
 
@@ -347,7 +350,6 @@ class Git implements Serializable {
      * @param authorEmail
      */
     void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
-        refSpec = addOriginWhenMissing(refSpec)
         withAuthorAndEmail(authorName, authorEmail) {
             executeGitWithCredentials "pull ${refSpec}"
         }
@@ -361,27 +363,12 @@ class Git implements Serializable {
      * @param authorEmail
      */
     void pushAndPullOnFailure(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
-        refSpec = addOriginWhenMissing(refSpec)
         executeGitWithCredentialsAndRetry("push ${refSpec}") {
             script.echo "Got error, trying to pull first"
             pull(refSpec, authorName, authorEmail)
         }
     }
 
-    /**
-     * Method exists purely because of downward compatibility. Adding remote to pushes and pulls is preferred,
-     * but historically git push always added `origin` implicitly.
-     *
-     */
-    private static String addOriginWhenMissing(String refSpec) {
-        // if refspec contains more than 1 argument e.g. `upstream master`
-        if(!refSpec || refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
-            return refSpec
-        }
-
-        return 'origin ' + refSpec
-    }
-    
     /**
      * Removes a branch at origin.
      *
