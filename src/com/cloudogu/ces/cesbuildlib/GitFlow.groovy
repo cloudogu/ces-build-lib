@@ -45,17 +45,18 @@ class GitFlow implements Serializable {
 
         // Make sure any branch we need exists locally
         git.checkoutLatest(branchName)
+        // Remember latest committer on develop to use as author of release commits
+        String releaseBranchAuthor = git.commitAuthorName
+        String releaseBranchEmail = git.commitAuthorEmail
+
         git.checkoutLatest('develop')
         git.checkoutLatest('master')
 
         // Merge release branch into master
-        git.mergeNoFastForward(branchName)
+        git.mergeNoFastForward(branchName, releaseBranchAuthor, releaseBranchEmail)
 
         // Create tag. Use -f because the created tag will persist when build has failed.
         git.setTag(releaseVersion, "release version ${releaseVersion}", true)
-        String releaseBranchAuthor = git.commitAuthorName
-        String releaseBranchEmail = git.commitAuthorEmail
-
         // Merge release branch into develop
         git.checkout('develop')
         // Set author of release Branch as author of merge commit

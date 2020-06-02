@@ -484,8 +484,8 @@ Note that most changing operations offer parameters to specify an author.
 Theses parameters are optional. If not set the author of the last commit will be used as author and committer.
 You can specify a different committer by setting the following fields:
 
-* `git.committerName` 
-* `git.committerEmail` 
+* `git.committerName = 'the name'` 
+* `git.committerEmail = 'an.em@i.l` 
 
 It is recommended to set a different committer, so it's obvious those commits were done by Jenkins in the name of
 the author. This behaviour is implemented by GitHub for example when committing via the Web UI.
@@ -875,11 +875,13 @@ Example:
 
 ```groovy
 Git git = new Git(this)
+git.committerName = 'jenkins'
+git.committerEmail = 'jenkins@your.org'
 GitFlow gitflow = new GitFlow(this, git)
 
 stage('Gitflow') {
   if (gitflow.isReleaseBranch()){
-    gitflow.finishRelease('v1.0.0')
+    gitflow.finishRelease(git.getSimpleBranchName())
   }
 }
 ```
