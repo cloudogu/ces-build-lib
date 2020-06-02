@@ -334,21 +334,54 @@ class Git implements Serializable {
      *
      * @param refSpec branch or tag name
      */
-    void push(String refSpec) {
-        executeGitWithCredentialsAndRetry "push origin ${refSpec}"
+    void push(String refSpec = '') {
+        refSpec = addOriginWhenMissing(refSpec)
+        executeGitWithCredentialsAndRetry "push ${refSpec}"
     }
 
     /**
      * Pulls to local from remote repo.
      *
      * @param refSpec branch or tag name
+     * @param authorName
+     * @param authorEmail
      */
     void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        refSpec = addOriginWhenMissing(refSpec)
         withAuthorAndEmail(authorName, authorEmail) {
             executeGitWithCredentials "pull ${refSpec}"
         }
     }
+    
+    /**
+     * Pushes local to remote repo. Additionally pulls, if push has failed.
+     *
+     * @param refSpec branch or tag name
+     * @param authorName
+     * @param authorEmail
+     */
+    void pushAndPullOnFailure(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
+        refSpec = addOriginWhenMissing(refSpec)
+        executeGitWithCredentialsAndRetry("push ${refSpec}") {
+            script.echo "Got error, trying to pull first"
+            pull(refSpec, authorName, authorEmail)
+        }
+    }
 
+    /**
+     * Method exists purely because of downward compatibility. Adding remote to pushes and pulls is preferred,
+     * but historically git push always added `origin` implicitly.
+     *
+     */
+    private static String addOriginWhenMissing(String refSpec) {
+        // if refspec contains more than 1 argument e.g. `upstream master`
+        if(!refSpec || refSpec.trim().split(' ').length > 1 || refSpec.trim() == 'origin') {
+            return refSpec
+        }
+
+        return 'origin ' + refSpec
+    }
+    
     /**
      * Removes a branch at origin.
      *
@@ -397,7 +430,7 @@ class Git implements Serializable {
     /**
      * This method executes the git command with a bash function as credential helper,
      * which return username and password from jenkins credentials (if git.credentials are set)
-     * 
+     *
      * @param args git arguments
      * @return Returns an array with a string array of two elements.
      *         The first element contains the command out put. The second element contans the command status code
@@ -419,17 +452,21 @@ class Git implements Serializable {
     }
 
     /**
-     * Similar to executeGitWithCredentials() except that it reties git.retryCount times when git returns code 128.
-     * @param args
+     * Similar to executeGitWithCredentials() except that it does not return stdout but retries git.retryCount times 
+     * when git returns code > 0.
+     *
+     * @param args git arguments
+     * @param closure closure to execute after first retry
      */
-    protected void executeGitWithCredentialsAndRetry(String args) {
+    protected void executeGitWithCredentialsAndRetry(String args, Closure executeBeforeRetry = {}) {
         executeWithCredentials { boolean hasCredentials ->
-            def returnCode = 128
+            def returnCode = 1
             def retryCount = 0
-            while (returnCode == 128 && retryCount < maxRetries) {
+            while (returnCode > 0 && retryCount < maxRetries) {
                 if (retryCount > 0) {
                     script.echo "Got error code ${returnCode} - retrying in ${retryTimeout} ms ..."
                     sleep(retryTimeout)
+                    executeBeforeRetry.call()
                 }
                 ++retryCount
                 returnCode = script.sh(returnStatus: true, script: createGitCommand(args, hasCredentials)) as int

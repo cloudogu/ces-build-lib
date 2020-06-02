@@ -499,6 +499,8 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 ### Changes to remote repository
 
 * `git.push('master')` - pushes origin
+* `git.pushAndPullOnFailure('refspec')` - pushes and pulls if push failed e.g. because local and remote have diverged, 
+   then tries pushing again
 
 # Docker
 
