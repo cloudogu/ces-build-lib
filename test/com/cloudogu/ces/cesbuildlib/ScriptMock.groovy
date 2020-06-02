@@ -143,7 +143,7 @@ class ScriptMock {
 
     Map<String, String> actualWithEnvAsMap(int index = actualWithEnv.size() - 1) {
         if (index < 0) {
-            null
+            return null
         }
         actualWithEnv[index].collectEntries { [it.split('=')[0], it.split('=')[1]] }
     }

@@ -192,11 +192,7 @@ class GitTest {
     void commit() {
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         git.commit 'msg'
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
     }
 
     @Test
@@ -204,12 +200,9 @@ class GitTest {
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
         git.setTag("someTag", "someMessage")
         git.setTag("myTag", "myMessage", true)
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        
+        assertAuthor('User Name', 'user.name@doma.in')
+        
         assert scriptMock.actualShStringArgs[0] == "git tag -m \"someMessage\" someTag"
         assert scriptMock.actualShStringArgs[1] == "git tag -f -m \"myMessage\" myTag"
     }
@@ -235,16 +228,12 @@ class GitTest {
 
         git.pull()
 
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
         
         assert scriptMock.actualShMapArgs.size() == 3
         assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
     }
-    
+
     @Test
     void checkout() {
         git.checkout("master")
@@ -270,47 +259,28 @@ class GitTest {
 
     @Test
     void merge() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.merge("master")
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-        println scriptMock.actualShStringArgs
+        assertAuthor('User Name', 'user.name@doma.in')
         assert scriptMock.actualShStringArgs[0] == "git merge master"
     }
 
     @Test
     void mergeFastForwardOnly() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.mergeFastForwardOnly("master")
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
         assert scriptMock.actualShStringArgs[0] == "git merge --ff-only master"
     }
 
     @Test
     void mergeNoFastForward() {
-        ScriptMock scriptMock = new ScriptMock()
         scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
-        Git git = new Git(scriptMock)
         git.mergeNoFastForward("master")
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
 
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
         assert scriptMock.actualShStringArgs[0] == "git merge --no-ff master"
     }
 
@@ -382,11 +352,7 @@ class GitTest {
         git.retryTimeout = 1
         git.pushAndPullOnFailure()
 
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
 
         assert scriptMock.actualShMapArgs.size() == 5
         assert scriptMock.actualShMapArgs.get(2).trim() == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push'
@@ -405,12 +371,8 @@ class GitTest {
         git.retryTimeout = 1
         git.pushAndPullOnFailure('origin master')
 
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
-
+        assertAuthor('User Name', 'user.name@doma.in')
+        
         assert scriptMock.actualShMapArgs.size() == 5
         assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
         assert scriptMock.actualShMapArgs.get(3) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull origin master'
@@ -428,11 +390,7 @@ class GitTest {
         git.retryTimeout = 1
         git.pushAndPullOnFailure('origin master')
 
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
 
         assert scriptMock.actualShMapArgs.size() == 5
         assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push origin master'
@@ -451,11 +409,7 @@ class GitTest {
         git.retryTimeout = 1
         git.pushAndPullOnFailure('upstream master')
 
-        def actualWithEnv = scriptMock.actualWithEnvAsMap()
-        assert actualWithEnv['GIT_AUTHOR_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_COMMITTER_NAME'] == 'User Name'
-        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == 'user.name@doma.in'
-        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == 'user.name@doma.in'
+        assertAuthor('User Name', 'user.name@doma.in')
 
         assert scriptMock.actualShMapArgs.size() == 5
         assert scriptMock.actualShMapArgs.get(2) == 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" push upstream master'
@@ -470,5 +424,14 @@ class GitTest {
         git.push('master')
 
         assert scriptMock.actualShMapArgs.get(0) == 'git push origin master'
+    }
+
+    private void assertAuthor(String authorName, String authorEmail,
+                              String committerName = authorName, String committerEmail = authorEmail) {
+        def actualWithEnv = scriptMock.actualWithEnvAsMap()
+        assert actualWithEnv['GIT_AUTHOR_NAME'] == authorName
+        assert actualWithEnv['GIT_COMMITTER_NAME'] == committerName
+        assert actualWithEnv['GIT_AUTHOR_EMAIL'] == authorEmail
+        assert actualWithEnv['GIT_COMMITTER_EMAIL'] == committerEmail
     }
 }
