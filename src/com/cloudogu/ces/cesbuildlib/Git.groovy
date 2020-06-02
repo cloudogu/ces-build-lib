@@ -6,6 +6,9 @@ class Git implements Serializable {
     def credentials = null
     def retryTimeout = 500
     def maxRetries = 5
+    String committerName 
+    String committerEmail 
+    
 
     Git(script, credentials) {
         this(script)
@@ -224,8 +227,10 @@ class Git implements Serializable {
     }
 
     private void withAuthorAndEmail(String authorName, String authorEmail, Closure closure) {
-        script.withEnv(["GIT_AUTHOR_NAME=$authorName", "GIT_AUTHOR_EMAIL=$authorEmail",
-                        "GIT_COMMITTER_NAME=$authorName", "GIT_COMMITTER_EMAIL=$authorEmail"]) {
+        script.withEnv(["GIT_AUTHOR_NAME=${authorName}", 
+                        "GIT_AUTHOR_EMAIL=${authorEmail}",
+                        "GIT_COMMITTER_NAME=${committerName ? committerName : authorName}", 
+                        "GIT_COMMITTER_EMAIL=${committerEmail ? committerEmail : authorEmail}"]) {
             closure.call()
         }
     }

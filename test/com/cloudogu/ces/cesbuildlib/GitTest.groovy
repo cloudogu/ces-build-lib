@@ -12,8 +12,8 @@ class GitTest {
     ScriptMock scriptMock = new ScriptMock()
     Git git = new Git(scriptMock)
 
-    def expectedRemoteWithoutCredentials = 'git remote set-url origin https://repo.url'
-    def expectedRemoteWithCredentials = 'git remote set-url origin https://username:thePassword@repo.url'
+    static final EXPECTED_COMMITTER_NAME = 'U 2'
+    static final EXPECTED_COMMITTER_EMAIL = 'user-numb@t.wo'
 
     @After
     void tearDown() throws Exception {
@@ -194,6 +194,16 @@ class GitTest {
         git.commit 'msg'
         assertAuthor('User Name', 'user.name@doma.in')
     }
+    
+    @Test
+    void 'commit with different committer'() {
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
+        git.committerName = EXPECTED_COMMITTER_NAME
+        git.committerEmail = EXPECTED_COMMITTER_EMAIL
+        git.commit 'msg'
+        assertAuthor('User Name', 'user.name@doma.in',
+                EXPECTED_COMMITTER_NAME, EXPECTED_COMMITTER_EMAIL)
+    }
 
     @Test
     void setTag() {
@@ -205,6 +215,18 @@ class GitTest {
         
         assert scriptMock.actualShStringArgs[0] == "git tag -m \"someMessage\" someTag"
         assert scriptMock.actualShStringArgs[1] == "git tag -f -m \"myMessage\" myTag"
+    }
+    
+    @Test
+    void 'setTag with different committer'() {
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
+        git.committerName = EXPECTED_COMMITTER_NAME
+        git.committerEmail = EXPECTED_COMMITTER_EMAIL
+        
+        git.setTag("someTag", "someMessage")
+
+        assertAuthor('User Name', 'user.name@doma.in',
+                EXPECTED_COMMITTER_NAME, EXPECTED_COMMITTER_EMAIL)
     }
 
     @Test
@@ -232,6 +254,19 @@ class GitTest {
         
         assert scriptMock.actualShMapArgs.size() == 3
         assert scriptMock.actualShMapArgs.get(2).trim() == expectedGitCommandWithCredentials
+    }
+    
+    @Test
+    void 'pull with different committer'() {
+        git.committerName = EXPECTED_COMMITTER_NAME
+        git.committerEmail = EXPECTED_COMMITTER_EMAIL
+
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD', 'User Name <user.name@doma.in>')
+
+        git.pull()
+
+        assertAuthor('User Name', 'user.name@doma.in',
+                EXPECTED_COMMITTER_NAME, EXPECTED_COMMITTER_EMAIL)
     }
 
     @Test
@@ -263,6 +298,19 @@ class GitTest {
         git.merge("master")
 
         assertAuthor('User Name', 'user.name@doma.in')
+        assert scriptMock.actualShStringArgs[0] == "git merge master"
+    }
+    
+    @Test
+    void 'merge with different committer'() {
+        git.committerName = EXPECTED_COMMITTER_NAME
+        git.committerEmail = EXPECTED_COMMITTER_EMAIL
+
+        scriptMock.expectedDefaultShRetValue = "User Name <user.name@doma.in>"
+        git.merge("master")
+
+        assertAuthor('User Name', 'user.name@doma.in',
+                EXPECTED_COMMITTER_NAME, EXPECTED_COMMITTER_EMAIL)
         assert scriptMock.actualShStringArgs[0] == "git merge master"
     }
 

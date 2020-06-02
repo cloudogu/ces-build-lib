@@ -480,20 +480,30 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 
 ### Changes to local repository
 
+Note that most changing operations offer parameters to specify an author.
+Theses parameters are optional. If not set the author of the last commit will be used as author and committer.
+You can specify a different committer by setting the following fields:
+
+* `git.committerName` 
+* `git.committerEmail` 
+
+It is recommended to set a different committer, so it's obvious those commits were done by Jenkins in the name of
+the author. This behaviour is implemented by GitHub for example when committing via the Web UI.
+
 * `git.checkout('branchname')`
 * `git.checkoutOrCreate('branchname')` - Creates new Branch if it does not exist
 * `git.add('.')`
 * `git.commit('message', 'Author', 'Author@mail.server)`
-* `git.commit('message')` - uses the name and email of the last committer as author and committer.
+* `git.commit('message')` - uses default author/committer (see above).
 * `git.setTag('tag', 'message', 'Author', 'Author@mail.server)`
-* `git.setTag('tag', 'message')` - uses the name and email of the last committer as author and committer.
+* `git.setTag('tag', 'message')` - uses default author/committer (see above).
 * `git.fetch()`
-* `git.pull()` - pulls, and in case of merge, uses the name and email of the last committer as author and committer.
+* `git.pull()` - pulls, and in case of merge, uses default author/committer (see above).
 * `git.pull('refspec')` - pulls specific refspec (e.g. `origin master`), and in case of merge, uses the name and email 
    of the last committer as author and committer.
 * `git.pull('refspec', 'Author', 'Author@mail.server)`
 * `git.merge('develop', 'Author', 'Author@mail.server)`
-* `git.merge('develop')` - uses the name and email of the last committer as author and committer.
+* `git.merge('develop')` - uses default author/committer (see above).
 * `git.mergeFastForwardOnly('master')`
 
 ### Changes to remote repository
