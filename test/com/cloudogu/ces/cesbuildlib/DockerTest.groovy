@@ -344,6 +344,46 @@ class DockerTest {
                 'Unable to parse group docker from /etc/group. Docker host will not be accessible for container.')
     }
 
+    @Test
+    void "install older docker clients"() {
+        Docker docker = createWithImage(mockedImageMethodInside())
+
+        def oldUrlVersions = [ '17.03.0', '17.03.1', '17.03.2', '17.06.0', '17.06.1', '17.06.2', '17.09.0', '17.09.1', 
+                '17.12.0', '17.12.1', '18.03.0', '18.03.1', '18.06.0', '18.06.1', '18.06.2', '18.06.3']
+        
+        oldUrlVersions.forEach({
+            actualShArgs = []
+            docker.image(expectedImage)
+                    .installDockerClient(it)
+                    .inside { return 'expectedClosure' }
+            assert actualShArgs[0].contains("${it}-ce.tgz")
+        })
+        
+        // Also accept URLs ending in -ce
+        oldUrlVersions.forEach({
+            actualShArgs = []
+            docker.image(expectedImage)
+                    .installDockerClient("${it}-ce")
+                    .inside { return 'expectedClosure' }
+            assert actualShArgs[0].contains("${it}-ce.tgz")
+        })
+    }
+
+    @Test
+    void "install newer docker clients"() {
+        Docker docker = createWithImage(mockedImageMethodInside())
+
+        def oldUrlVersions = [ '18.09.0', '19.03.9']
+
+        oldUrlVersions.forEach({
+            actualShArgs = []
+            docker.image(expectedImage)
+                    .installDockerClient(it)
+                    .inside { return 'expectedClosure' }
+            assert actualShArgs[0].contains("${it}.tgz")
+        })
+    }
+    
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [
                 docker: mockedMethod
@@ -363,7 +403,7 @@ class DockerTest {
                     return mockedMethod
                     }
                 ],
-                sh: { Object args ->
+                sh: { args ->
 
                     if (!(args instanceof Map)) {
                         actualShArgs.add(args)

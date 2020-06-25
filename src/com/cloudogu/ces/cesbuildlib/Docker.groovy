@@ -382,7 +382,17 @@ class Docker implements Serializable {
 
         private void doInstallDockerClient() {
             // Installs statically linked docker binary
-            script.sh "cd ${script.pwd()}/.jenkins && wget -qc https://download.docker.com/linux/static/stable/x86_64/docker-$dockerClientVersionToInstall-ce.tgz -O - | tar -xz"
+            String url = "https://download.docker.com/linux/static/stable/x86_64/docker-${dockerClientVersionToInstall}.tgz"
+            
+            // Keep compatibility with old URLs
+            if ((dockerClientVersionToInstall.startsWith('17') ||
+                 dockerClientVersionToInstall.startsWith('18.03') ||
+                 dockerClientVersionToInstall.startsWith('18.06')) &&
+                !dockerClientVersionToInstall.endsWith('-ce')) {
+                url = url.replace('.tgz', '-ce.tgz')
+            }
+
+            script.sh "cd ${script.pwd()}/.jenkins && wget -qc ${url} -O - | tar -xz"
         }
     }
 }
