@@ -183,10 +183,7 @@ class DockerTest {
 
     @Test
     void imageInside() {
-        Docker docker = createWithImage(
-                [inside: { String param1, Closure param2 ->
-                    return [param1, param2]
-                }])
+        Docker docker = createWithImage(mockedImageMethodInside())
 
         def args = docker.image(expectedImage).inside { return 'expectedClosure' }
 
@@ -196,10 +193,7 @@ class DockerTest {
 
     @Test
     void imageInsideWithArgs() {
-        Docker docker = createWithImage(
-                [inside: { String param1, Closure param2 ->
-                    return [param1, param2]
-                }])
+        Docker docker = createWithImage(mockedImageMethodInside())
 
         def args = docker.image(expectedImage).inside('-v a:b') { return 'expectedClosure' }
 
@@ -209,10 +203,7 @@ class DockerTest {
 
     @Test
     void imageInsideWithEntrypoint() {
-        Docker docker = createWithImage(
-                [inside: { String param1, Closure param2 ->
-                    return [param1, param2]
-                }])
+        Docker docker = createWithImage(mockedImageMethodInside())
 
         def args = docker.image(expectedImage).inside('--entrypoint="entry"') { return 'expectedClosure' }
 
@@ -240,10 +231,7 @@ class DockerTest {
 
     @Test
     void imageRun() {
-        Docker docker = createWithImage(
-                [run: { String param1, String param2 ->
-                    return [param1, param2]
-                }])
+        Docker docker = createWithImage(mockedImageMethodRun())
 
         def args = docker.image(expectedImage).run('arg', 'cmd')
 
@@ -253,10 +241,7 @@ class DockerTest {
 
     @Test
     void imageWithRun() {
-        Docker docker = createWithImage(
-                [withRun: { String param1, String param2, Closure param3 ->
-                    return [param1, param2, param3]
-                }])
+        Docker docker = createWithImage(mockedImageMethodWithRun())
 
         def args = docker.image(expectedImage).withRun('arg', 'cmd') { return 'expectedClosure' }
 
@@ -277,19 +262,12 @@ class DockerTest {
     }
 
     private testExtendedArgs(Closure<Docker.Image> testImage) {
-        Docker docker = createWithImage(
-                [inside: { String param1, Closure param2 ->
-                    return [param1, param2]
-                },
-                 run: { String param1, String param2 ->
-                     return [param1, param2]
-                 }
-                ])
+        Docker docker = createWithImage(mockedImageMethodInside() + mockedImageMethodRun())
 
         def image = docker.image(expectedImage)
                 .mountJenkinsUser()
                 .mountDockerSocket()
-                .installDockerClient('1.2.3')
+                .installDockerClient('18.03.1')
 
         def args = testImage.call(image)
 
@@ -300,7 +278,7 @@ class DockerTest {
 
         // Docker installed
         assert actualShArgs.size() > 0
-        assert actualShArgs.get(0).contains('https://download.docker.com/linux/static/stable/x86_64/docker-1.2.3-ce.tgz')
+        assert actualShArgs.get(0).contains('https://download.docker.com/linux/static/stable/x86_64/docker-18.03.1-ce.tgz')
 
         // Written files
         assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
@@ -322,10 +300,7 @@ class DockerTest {
 
     @Test
     void imageWithRunExtendedArgs() {
-        Docker docker = createWithImage(
-                [withRun: { String param1, String param2, Closure param3 ->
-                    return [param1, param2, param3]
-                }])
+        Docker docker = createWithImage(mockedImageMethodWithRun())
 
         def args = docker.image(expectedImage)
                 .mountJenkinsUser()
@@ -348,7 +323,7 @@ class DockerTest {
     @Test
     void imageMountJenkinsUserUnexpectedPasswd() {
         actualPasswd = 'jenkins:x:1000:1000'
-        testForInvaildPasswd(
+        testForInvalidPassword(
                 { image -> image.mountJenkinsUser() },
                 '/etc/passwd entry for current user does not match user:x:uid:gid:')
     }
@@ -356,7 +331,7 @@ class DockerTest {
     @Test
     void imageMountJenkinsUserPasswdEmpty() {
         actualPasswd = ''
-        testForInvaildPasswd(
+        testForInvalidPassword(
                 { image -> image.mountJenkinsUser() },
                 'Unable to parse user jenkins from /etc/passwd.')
     }
@@ -364,7 +339,7 @@ class DockerTest {
     @Test
     void imageMountDockerSocketPasswdEmpty() {
         actualDockerGroup = ''
-        testForInvaildPasswd(
+        testForInvalidPassword(
                 { image -> image.mountDockerSocket() },
                 'Unable to parse group docker from /etc/group. Docker host will not be accessible for container.')
     }
@@ -376,46 +351,68 @@ class DockerTest {
         return new Docker(mockedScript)
     }
 
+    /**
+     * @return Mock Docker instance with mock image, that contains mocked methods.
+     */
     @SuppressWarnings("GroovyAssignabilityCheck")
     private Docker createWithImage(Map<String, Closure> mockedMethod) {
-
         def mockedScript = [
                 docker: [image: { String id ->
                     assert id == expectedImage
                     mockedMethod.put('id', id)
                     return mockedMethod
-                }
-                ]
+                    }
+                ],
+                sh: { Object args ->
+
+                    if (!(args instanceof Map)) {
+                        actualShArgs.add(args)
+                        return
+                    }
+
+                    String script = args['script']
+                    if (script.contains('cat /etc/passwd ')) {
+                        assert script.contains(actualUser)
+                    }
+                    if (script == 'whoami') return actualUser
+                    if (script == 'cat /etc/group | grep docker') return actualDockerGroup
+                    if (script.contains(actualDockerGroup)) return actualDockerGroupId
+                    if (script.contains('cat /etc/passwd | grep')) return actualPasswd
+                    else fail("Unexpected sh call. Script: " + script)
+                },
+                pwd: { return expectedHome },
+                writeFile: { Map<String, String> args -> actualWriteFileArgs.put(args['file'], args['text']) },
+                error: { String arg -> throw new RuntimeException(arg) }
         ]
-        mockedScript.put('sh', { Object args ->
-
-            if (!(args instanceof Map)) {
-                actualShArgs.add(args)
-                return
-            }
-
-            String script = args['script']
-            if (script.contains('cat /etc/passwd ')) {
-                assert script.contains(actualUser)
-            }
-            if (script == 'whoami') return actualUser
-            if (script == 'cat /etc/group | grep docker') return actualDockerGroup
-            if (script.contains(actualDockerGroup)) return actualDockerGroupId
-            if (script.contains('cat /etc/passwd | grep')) return actualPasswd
-            else fail("Unexpected sh call. Script: " + script)
-        })
-        mockedScript.put('pwd', { return expectedHome })
-        mockedScript.put('writeFile', { Map<String, String> args -> actualWriteFileArgs.put(args['file'], args['text']) })
-        mockedScript.put('error', { String arg -> throw new RuntimeException(arg) })
 
         return new Docker(mockedScript)
     }
 
-    private void testForInvaildPasswd(Closure imageHook, String expectedError) {
-        Docker docker = createWithImage(
-                [run: { String param1, String param2 ->
-                    return [param1, param2]
-                }])
+    /**
+     * @return a map that defines a run() method returning its params, to be used as param in createWithImage()}.
+     */
+    private def mockedImageMethodRun() {
+        [run: { String param1, String param2 -> return [param1, param2] }]
+    }
+    
+    /**
+     * @return a map that defines an inside() method returning its params, to be used as param in createWithImage()}.
+     */
+    private def mockedImageMethodInside() {
+        [inside: { String param1, Closure param2 -> return [param1, param2] }]
+    }
+    
+    /**
+     * @return a map that defines a withRun() method returning its params, to be used as param in createWithImage()}.
+     */
+    private def mockedImageMethodWithRun() {
+        [withRun: { String param1, String param2, Closure param3 ->
+            return [param1, param2, param3]
+        }]
+    }
+
+    private void testForInvalidPassword(Closure imageHook, String expectedError) {
+        Docker docker = createWithImage(mockedImageMethodRun())
 
         def exception = shouldFail {
             def image = docker.image(expectedImage)
