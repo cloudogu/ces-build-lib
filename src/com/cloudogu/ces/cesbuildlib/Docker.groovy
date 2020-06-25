@@ -282,7 +282,10 @@ class Docker implements Serializable {
          *
          *  For available versions see here: https://download.docker.com/linux/static/stable/x86_64/
          */
-        Image installDockerClient(String version) {
+        Image installDockerClient(String version = '') {
+            if (!version) {
+                version = sh.returnStdOut "docker version --format '{{.Server.Version}}'"
+            }
             this.dockerClientVersionToInstall = version
             return this
         }

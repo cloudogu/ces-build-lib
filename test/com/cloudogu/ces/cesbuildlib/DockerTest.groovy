@@ -10,6 +10,7 @@ class DockerTest {
     def expectedImage = 'google/cloud-sdk:164.0.0'
     def expectedHome = '/home/jenkins'
     def actualUser = 'jenkins'
+    def actualDockerServerVersion = '19.03.8'
     def actualPasswd = "$actualUser:x:1000:1000:Jenkins,,,:/home/jenkins:/bin/bash"
     def actualDockerGroupId = "999"
     def actualDockerGroup = "docker:x:$actualDockerGroupId:jenkins"
@@ -383,6 +384,15 @@ class DockerTest {
             assert actualShArgs[0].contains("${it}.tgz")
         })
     }
+
+    @Test
+    void "install docker clients for current server version"() {
+        Docker docker = createWithImage(mockedImageMethodInside())
+        docker.image(expectedImage)
+                .installDockerClient()
+                .inside { return 'expectedClosure' }
+        assert actualShArgs[0].contains("${actualDockerServerVersion}.tgz")
+    }
     
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [
@@ -418,6 +428,7 @@ class DockerTest {
                     if (script == 'cat /etc/group | grep docker') return actualDockerGroup
                     if (script.contains(actualDockerGroup)) return actualDockerGroupId
                     if (script.contains('cat /etc/passwd | grep')) return actualPasswd
+                    if (script.contains('docker version --format \'{{.Server.Version}}\'')) return "  ${actualDockerServerVersion}  "    
                     else fail("Unexpected sh call. Script: " + script)
                 },
                 pwd: { return expectedHome },

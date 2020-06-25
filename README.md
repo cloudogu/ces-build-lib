@@ -624,11 +624,11 @@ Example from Jenkinsfile:
    
    This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
    
-* `installDockerClient(String version)`: Installs the docker client with the specified version inside the container.  
+* `installDockerClient(String version)`: Installs the docker client with the specified version inside the container.
+   If no version parameter is passed, the lib tries to query the server version by calling `docker version`.  
    This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.  
    
    For available versions see [here](https://download.docker.com/linux/static/stable/x86_64/).
-   For an exampl see [here](https://github.com/cloudogu/continuous-delivery-docs-example) 
 
 Examples:
 
