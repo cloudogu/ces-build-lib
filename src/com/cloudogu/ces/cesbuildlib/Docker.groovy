@@ -388,10 +388,8 @@ class Docker implements Serializable {
             String url = "https://download.docker.com/linux/static/stable/x86_64/docker-${dockerClientVersionToInstall}.tgz"
             
             // Keep compatibility with old URLs
-            if ((dockerClientVersionToInstall.startsWith('17') ||
-                 dockerClientVersionToInstall.startsWith('18.03') ||
-                 dockerClientVersionToInstall.startsWith('18.06')) &&
-                !dockerClientVersionToInstall.endsWith('-ce')) {
+            if (dockerClientVersionToInstall.matches('^(17|18.03|18.06).*') &&
+                    !dockerClientVersionToInstall.endsWith('-ce')) {
                 url = url.replace('.tgz', '-ce.tgz')
             }
 
