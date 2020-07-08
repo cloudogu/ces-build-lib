@@ -418,7 +418,7 @@ Available from both local Maven and Maven in Docker.
 * `mvn.getVersion()`
 * `mvn.getArtifactId()`
 * `mvn.getGroupId()`
-* `mvn.getProperty('project.build.sourceEncoding')`
+* `mvn.getMavenProperty('project.build.sourceEncoding')`
 
 See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
