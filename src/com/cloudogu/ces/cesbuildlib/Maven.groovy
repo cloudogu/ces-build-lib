@@ -22,12 +22,12 @@ abstract class Maven implements Serializable {
         this.script = script
     }
 
-    def call(String args) {
+    def call(String args, boolean printStdOut = true) {
         if (repositories.isEmpty()) {
-            mvn(args)
+            mvn(args, printStdOut)
         } else {
             script.withCredentials(createRepositoryCredentials(repositories)) {
-                mvn(args)
+                mvn(args, printStdOut)
             }
         }
     }
@@ -93,7 +93,7 @@ abstract class Maven implements Serializable {
 
     String evaluateExpression(String expression) {
         // See also: https://blog.soebes.de/blog/2018/06/09/help-plugin/
-        def evaluatedString = mvn("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
+        def evaluatedString = call("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=${expression} -q -DforceStdout", false)
         // we take only the last line of the evaluated expression,
         // because in the case of maven wrapper the home and sometimes the download is printed before
         return evaluatedString.trim().readLines().last()
@@ -173,14 +173,14 @@ abstract class Maven implements Serializable {
      * @param newVersion new project version
      */
     void setVersion(String newVersion) {
-        mvn "versions:set -DgenerateBackupPoms=false -DnewVersion=${newVersion}"
+        call "versions:set -DgenerateBackupPoms=false -DnewVersion=${newVersion}"
     }
 
     /**
      * Set version to next minor snapshot e.g.: 2.0.1 becomes 2.1.0-SNAPSHOT
      */
     void setVersionToNextMinorSnapshot() {
-        mvn "build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion='\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'"
+        call "build-helper:parse-version versions:set -DgenerateBackupPoms=false -DnewVersion='\${parsedVersion.majorVersion}.\${parsedVersion.nextMinorVersion}.0-SNAPSHOT'"
     }
 
     /**

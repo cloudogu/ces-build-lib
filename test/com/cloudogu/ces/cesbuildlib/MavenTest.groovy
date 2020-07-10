@@ -74,6 +74,17 @@ class MavenTest {
         assertEquals("Unexpected version returned",
                 "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
     }
+    
+    @Test
+    void testGetVersionWithCredentials() {
+        mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'])
+        assertEquals("Unexpected version returned",
+                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
+        
+        assert 'creds0' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
+        assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
+        assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
+    }
 
     @Test
     void testGetArtifactId() {
