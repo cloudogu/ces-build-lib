@@ -300,7 +300,7 @@ class Docker implements Serializable {
                 String groupPath = writeGroup()
                 extendedArgs +=
                         // Mount the docker socket
-                        " -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" " +
+                        " -v /var/run/docker.sock:/var/run/docker.sock " +
                                 // Mount the docker group
                                 "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
             }

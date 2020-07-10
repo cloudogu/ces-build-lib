@@ -274,7 +274,7 @@ class DockerTest {
 
         // extended arg mounts
         assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
-        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
         assert args[0].contains("-v $expectedHome/.jenkins/docker/docker:/usr/bin/docker")
 
         // Docker installed
@@ -314,7 +314,7 @@ class DockerTest {
 
         // extended arg mounts
         assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
-        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST=\"unix:///var/run/docker.sock\" -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
+        assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
 
         // Written files
         assert 'jenkins:x:1000:1000::/home/jenkins:/bin/sh' == actualWriteFileArgs['.jenkins/etc/passwd']
