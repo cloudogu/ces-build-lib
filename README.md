@@ -125,7 +125,7 @@ See [MavenLocal](src/com/cloudogu/ces/cesbuildlib/MavenLocal.groovy)
 
 ```
 def mvnHome = tool 'M3'
-def javaHome = tool 'JDK8'
+def javaHome = tool 'OpenJDK-8'
 Maven mvn = new MavenLocal(this, mvnHome, javaHome)
 
 stage('Build') {
@@ -142,7 +142,7 @@ Run maven using a [Maven Wrapper](https://github.com/takari/maven-wrapper) from 
 Similar to `MavenLocal` you can use the Maven Wrapper with a JDK from a local tool installation on Jenkins:
 
 ```
-def javaHome = tool 'JDK8'
+def javaHome = tool 'OpenJDK-8'
 Maven mvn = new MavenWrapper(this, javaHome)
 
 stage('Build') {
