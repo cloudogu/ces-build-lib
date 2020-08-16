@@ -470,6 +470,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.commitAuthorComplete` -  e.g. `User Name <user.name@doma.in>`
 * `git.commitAuthorEmail` -  e.g. `user.name@doma.in`
 * `git.commitAuthorName` -  e.g. `User Name`
+* `git.commitMessage` -  Last commit message e.g. `Implements new functionality...` 
 * `git.commitHash` -  e.g. `fb1c8820df462272011bca5fddbe6933e91d69ed`
 * `git.commitHashShort` -  e.g. `fb1c882`
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
