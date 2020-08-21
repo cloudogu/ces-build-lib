@@ -473,6 +473,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.commitMessage` -  Last commit message e.g. `Implements new functionality...` 
 * `git.commitHash` -  e.g. `fb1c8820df462272011bca5fddbe6933e91d69ed`
 * `git.commitHashShort` -  e.g. `fb1c882`
+* `git.areChangesStagedForCommit()` - `true` if changes are staged for commit. If `false`, `git.commit()` will fail. 
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
 * Tags - Note that the git plugin might not fetch tags for all builds. Run `sh "git fetch --tags"` to make sure.

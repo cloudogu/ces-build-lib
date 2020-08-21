@@ -126,6 +126,18 @@ class GitTest {
     }
 
     @Test
+    void changesStagedForCommit() {
+        scriptMock.expectedDefaultShRetValue = 1
+        assertTrue git.areChangesStagedForCommit()
+    }
+
+    @Test
+    void noChangesStagedForCommit() {
+        scriptMock.expectedDefaultShRetValue = 0
+        assertFalse git.areChangesStagedForCommit()
+    }
+
+    @Test
     void getRepositoryUrl() {
         String expectedReturnValue = "https://github.com/orga/repo.git"
         scriptMock.expectedDefaultShRetValue = expectedReturnValue + " \n"

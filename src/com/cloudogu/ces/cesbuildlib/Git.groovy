@@ -198,6 +198,23 @@ class Git implements Serializable {
     }
 
     /**
+     * @return true when changes are staged for commit, i.e. "git add" detected changes.
+     * Note that this will not work on a branch which has no commits, e.g. newly initialized repositories.
+     */
+    boolean areChangesStagedForCommit() {
+        // See https://stackoverflow.com/a/3879077/
+        
+        // '--' at the end avoids matching a file called "HEAD" 
+        String returnCode = script.sh(returnStatus: true, script: 'git update-index --refresh && git diff-index --exit-code HEAD --')
+        // --exit-code: exits with 1 if there were differences and 0 means no differences.
+        if (returnCode.equals("0")) {
+            return false
+        } else {
+            true
+        }
+    }
+
+    /**
      * Sets Tag with message using the name and email of the last committer as author and committer.
      *
      * @param tag
