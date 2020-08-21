@@ -37,16 +37,17 @@ class SonarQubeTest {
     void analyzeWithToken() throws Exception {
         def sonarQube = new SonarQube(scriptMock, [token: 'secretTextCred', sonarHostUrl: 'http://ces/sonar'])
 
+        def branchName = 'develop.Or:somehing-completely_.different'
         scriptMock.env = [
                 SONAR_AUTH_TOKEN: 'auth',
-                BRANCH_NAME     : 'develop'
+                BRANCH_NAME     : branchName
         ]
 
         sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=auth '
-        assertBranchName()
+        assertBranchName(branchName, branchName)
         assert scriptMock.actualStringArgs['credentialsId'] == 'secretTextCred'
     }
 
@@ -74,7 +75,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
-        assertBranchName()
+        assertBranchName('develop', 'develop')
         assert scriptMock.actualUsernamePasswordArgs[0]['credentialsId'] == 'usrPwCred'
     }
 
@@ -127,7 +128,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
-        assertBranchName()
+        assertBranchName('develop', 'develop')
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
 
@@ -151,6 +152,23 @@ class SonarQubeTest {
         sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.additionalArgs == ''
+    }
+    
+    @Test
+    void analyzeWithBranchContainCharsNotValidForProjectKey() throws Exception {
+        String branchName = 'feature/abc'
+        String projectKey = 'feature_abc'
+        String projectName = branchName
+        
+        def sonarQube = new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
+        scriptMock.env = [
+                SONAR_AUTH_TOKEN: 'auth',
+                BRANCH_NAME     : branchName
+        ]
+
+        sonarQube.analyzeWith(mavenMock)
+        
+        assertBranchName(projectKey, projectName)
     }
 
     @Test
@@ -303,7 +321,7 @@ class SonarQubeTest {
         assert exception.message == "Missing required 'sonarHostUrl' parameter."
     }
 
-    void assertBranchName() {
-        assert mavenMock.additionalArgs.contains("-Dsonar.projectKey=com.cloudogu.ces:ces-build-lib:develop -Dsonar.projectName=ces-build-lib:develop ")
+    void assertBranchName(String projectKey, String projectName) {
+        assert mavenMock.additionalArgs.contains("-Dsonar.projectKey=com.cloudogu.ces:ces-build-lib:${projectKey} -Dsonar.projectName=ces-build-lib:${projectName}")
     }
 }
