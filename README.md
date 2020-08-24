@@ -599,6 +599,11 @@ Example from Jenkinsfile:
 
 ## Additional features provided by the `Docker.Image` class
 
+* `repoDigests()`: Returns the repo digests, a content addressable unique digest of an image that was pushed 
+   to or pulled  from repositories.  
+   If the image was built locally and not pushed, returns an empty list.  
+   If the image was pulled from or pushed to a repo, returns a list containing one item.  
+   If the image was pulled from or pushed to multiple repos, might also contain more than one digest.  
 * `mountJenkinsUser()`: Setting this to `true` provides the user that executes the build within docker container's `/etc/passwd`.
   This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors withouta user 
   present.

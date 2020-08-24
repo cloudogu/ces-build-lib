@@ -16,6 +16,7 @@ class DockerTest {
     def actualDockerGroup = "docker:x:$actualDockerGroupId:jenkins"
     Map<String, String> actualWriteFileArgs = [:]
     def actualShArgs = new LinkedList<Object>()
+    def actualRepoDigests = ''
 
     @Test
     void findIpOfContainer() {
@@ -394,6 +395,35 @@ class DockerTest {
         assert actualShArgs[0].contains("${actualDockerServerVersion}.tgz")
     }
     
+    @Test
+    void "repo digest"() {
+        def expectedDigest = "hello-world@sha256:7f0a9f93b4aa3022c3a4c147a449bf11e0941a1fd0bf4a8e6c9408b2600777c5"
+        actualRepoDigests = expectedDigest + "\n\n"
+        def digests = createWithImage(mockedImageMethodInside()).image(expectedImage).repoDigests()
+
+        assert digests.size() == 1
+        assert digests[0] == expectedDigest
+    }
+    
+    @Test
+    void "repo digest empty"() {
+        actualRepoDigests = '\n'
+        def digests = createWithImage(mockedImageMethodInside()).image(expectedImage).repoDigests()
+
+        assert digests.size() == 0
+    }
+    
+    @Test
+    void "repo digest multiple"() {
+        actualRepoDigests = "a\nb\nc\n\n"
+        def digests = createWithImage(mockedImageMethodInside()).image(expectedImage).repoDigests()
+
+        assert digests.size() == 3
+        assert digests[0] == 'a'
+        assert digests[1] == 'b'
+        assert digests[2] == 'c'
+    }
+    
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [
                 docker: mockedMethod
@@ -429,6 +459,7 @@ class DockerTest {
                     if (script.contains(actualDockerGroup)) return actualDockerGroupId
                     if (script.contains('cat /etc/passwd | grep')) return actualPasswd
                     if (script.contains('docker version --format \'{{.Server.Version}}\'')) return "  ${actualDockerServerVersion}  "    
+                    if (script.contains('RepoDigests')) return "  ${actualRepoDigests}  "    
                     else fail("Unexpected sh call. Script: " + script)
                 },
                 pwd: { return expectedHome },

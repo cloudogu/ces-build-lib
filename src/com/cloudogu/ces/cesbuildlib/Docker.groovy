@@ -21,7 +21,7 @@ class Docker implements Serializable {
     String findIp(container) {
         sh.returnStdOut "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
     }
-
+    
     /**
      * @return the IP address in the current context: the docker host ip (when outside of a container) or the ip of the
      * container this is running in
@@ -288,6 +288,22 @@ class Docker implements Serializable {
             }
             this.dockerClientVersionToInstall = version
             return this
+        }
+
+        /**
+         * Returns the repo digests, a content addressable unique digest of an image that was pushed  to or pulled from
+         * a repository.  
+         *    
+         * @return If the image was built locally and not pushed, returns an empty list.
+         *  If the image was pulled from or pushed to a repo, returns a list containing one item.
+         *  If the image was pulled from or pushed to multiple repos, might also contain more than one digest.
+         */
+        List repoDigests() {
+            def split = sh.returnStdOut(
+                    "docker image inspect ${imageIdString} -f '{{range .RepoDigests}}{{printf \"%s\\n\" .}}{{end}}'")
+                    .split('\n')
+            // Remove empty lines, e.g. the superflous last linebreak
+            return  split - ''
         }
 
         private extendArgs(String args) {
