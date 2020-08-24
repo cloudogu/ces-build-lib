@@ -235,16 +235,32 @@ class Docker implements Serializable {
          * Runs docker tag to record a tag of this image (defaulting to the tag it already has). Will rewrite an
          * existing tag if one exists.
          */
-        void tag(String tagName = image().parsedId.tag, boolean force = true) {
+        void tag(String tagName, boolean force) {
             image().tag(tagName, force)
+        }
+        
+        void tag(String tagName) {
+            image().tag(tagName)
+        }
+        
+        void tag() {
+            image().tag()
         }
 
         /**
          * Pushes an image to the registry after tagging it as with the tag method. For example, you can use image().push
          * 'latest' to publish it as the latest version in its repository.
          */
-        void push(String tagName = image().parsedId.tag, boolean force = true) {
+        void push(String tagName, boolean force) {
             image().push(tagName, force)
+        }
+        
+        void push(String tagName) {
+            image().push(tagName)
+        }
+        
+        void push() {
+            image().push()
         }
 
         /**
