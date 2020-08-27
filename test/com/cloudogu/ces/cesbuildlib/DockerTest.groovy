@@ -16,6 +16,9 @@ class DockerTest {
     def actualDockerGroup = "docker:x:$actualDockerGroupId:jenkins"
     Map<String, String> actualWriteFileArgs = [:]
     def actualShArgs = new LinkedList<Object>()
+    def actualRepoDigests = ''
+    def actualPushParams
+    def actualTagParams
 
     @Test
     void findIpOfContainer() {
@@ -394,6 +397,71 @@ class DockerTest {
         assert actualShArgs[0].contains("${actualDockerServerVersion}.tgz")
     }
     
+    @Test
+    void "repo digest"() {
+        def expectedDigest = "hello-world@sha256:7f0a9f93b4aa3022c3a4c147a449bf11e0941a1fd0bf4a8e6c9408b2600777c5"
+        actualRepoDigests = expectedDigest + "\n\n"
+        def digests = createWithImage().image(expectedImage).repoDigests()
+
+        assert digests.size() == 1
+        assert digests[0] == expectedDigest
+    }
+    
+    @Test
+    void "repo digest empty"() {
+        actualRepoDigests = '\n'
+        def digests = createWithImage().image(expectedImage).repoDigests()
+
+        assert digests.size() == 0
+    }
+    
+    @Test
+    void "repo digest multiple"() {
+        actualRepoDigests = "a\nb\nc\n\n"
+        def digests = createWithImage().image(expectedImage).repoDigests()
+
+        assert digests.size() == 3
+        assert digests[0] == 'a'
+        assert digests[1] == 'b'
+        assert digests[2] == 'c'
+    }
+    
+    @Test
+    void "push image"() {
+        createWithImage().image(expectedImage).push()
+        assert actualPushParams == ['', null]
+    }
+    
+    @Test
+    void "push image with name"() {
+        createWithImage().image(expectedImage).push('name')
+        assert actualPushParams == ['name', null]
+    }
+    
+    @Test
+    void "push image with name and force"() {
+        createWithImage().image(expectedImage).push('name', true)
+        assert actualPushParams == ['name', true]
+    }
+    
+    @Test
+    void "tag image"() {
+        createWithImage().image(expectedImage).tag()
+        assert actualTagParams == ['', null]
+    }
+    
+    @Test
+    void "tag image with name"() {
+        createWithImage().image(expectedImage).tag('name')
+        assert actualTagParams == ['name', null]
+    }
+    
+    @Test
+    void "tag image with name and force"() {
+        createWithImage().image(expectedImage).tag('name', true)
+        assert actualTagParams == ['name', true]
+    }
+
     private Docker create(Map<String, Closure> mockedMethod) {
         Map<String, Map<String, Closure>> mockedScript = [
                 docker: mockedMethod
@@ -405,11 +473,13 @@ class DockerTest {
      * @return Mock Docker instance with mock image, that contains mocked methods.
      */
     @SuppressWarnings("GroovyAssignabilityCheck")
-    private Docker createWithImage(Map<String, Closure> mockedMethod) {
+    private Docker createWithImage(Map<String, Closure> mockedMethod = [:]) {
         def mockedScript = [
                 docker: [image: { String id ->
                     assert id == expectedImage
                     mockedMethod.put('id', id)
+                    mockedMethod.put('push', { String param1 = '', Boolean param2 = null -> actualPushParams = [param1, param2] })
+                    mockedMethod.put('tag', { String param1 = '', Boolean param2 = null -> actualTagParams = [param1, param2] })
                     return mockedMethod
                     }
                 ],
@@ -429,6 +499,7 @@ class DockerTest {
                     if (script.contains(actualDockerGroup)) return actualDockerGroupId
                     if (script.contains('cat /etc/passwd | grep')) return actualPasswd
                     if (script.contains('docker version --format \'{{.Server.Version}}\'')) return "  ${actualDockerServerVersion}  "    
+                    if (script.contains('RepoDigests')) return "  ${actualRepoDigests}  "    
                     else fail("Unexpected sh call. Script: " + script)
                 },
                 pwd: { return expectedHome },
@@ -452,7 +523,7 @@ class DockerTest {
     private def mockedImageMethodInside() {
         [inside: { String param1, Closure param2 -> return [param1, param2] }]
     }
-    
+
     /**
      * @return a map that defines a withRun() method returning its params, to be used as param in createWithImage()}.
      */

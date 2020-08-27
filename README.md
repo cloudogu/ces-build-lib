@@ -473,6 +473,7 @@ gitWithCreds 'https://your.repo' // Implicitly passed credentials
 * `git.commitMessage` -  Last commit message e.g. `Implements new functionality...` 
 * `git.commitHash` -  e.g. `fb1c8820df462272011bca5fddbe6933e91d69ed`
 * `git.commitHashShort` -  e.g. `fb1c882`
+* `git.areChangesStagedForCommit()` - `true` if changes are staged for commit. If `false`, `git.commit()` will fail. 
 * `git.repositoryUrl` -  e.g. `https://github.com/orga/repo.git`
 * `git.gitHubRepositoryName` -  e.g. `orga/repo`
 * Tags - Note that the git plugin might not fetch tags for all builds. Run `sh "git fetch --tags"` to make sure.
@@ -598,6 +599,11 @@ Example from Jenkinsfile:
 
 ## Additional features provided by the `Docker.Image` class
 
+* `repoDigests()`: Returns the repo digests, a content addressable unique digest of an image that was pushed 
+   to or pulled  from repositories.  
+   If the image was built locally and not pushed, returns an empty list.  
+   If the image was pulled from or pushed to a repo, returns a list containing one item.  
+   If the image was pulled from or pushed to multiple repos, might also contain more than one digest.  
 * `mountJenkinsUser()`: Setting this to `true` provides the user that executes the build within docker container's `/etc/passwd`.
   This is necessary for some commands such as npm, ansible, git, id, etc. Those might exit with errors withouta user 
   present.
