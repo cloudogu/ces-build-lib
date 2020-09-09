@@ -327,6 +327,11 @@ class Docker implements Serializable {
             if (mountJenkinsUser) {
                 String passwdPath = writePasswd()
                 extendedArgs += " -v ${script.pwd()}/${passwdPath}:/etc/passwd:ro "
+                // Define HOME folder at a position that allows for writing.
+                // Otherwise HOME env var is empty, resulting in "/home" as the home folder. 
+                // Unprivileged users don't have write access to /home which in turn might result in confusing errors.
+                // Example: "docker.inside { sh 'touch $HOME/test' }" resulting in  "Permission denied".
+                extendedArgs += " -e HOME=${script.pwd()} "
             }
             if (mountDockerSocket) {
                 String groupPath = writeGroup()

@@ -277,6 +277,7 @@ class DockerTest {
 
         // extended arg mounts
         assert args[0].contains('-v /home/jenkins/.jenkins/etc/passwd:/etc/passwd:ro ')
+        assert args[0].contains("-e HOME=${expectedHome} ")
         assert args[0].contains('-v /var/run/docker.sock:/var/run/docker.sock -v /home/jenkins/.jenkins/etc/group:/etc/group:ro --group-add 999 ')
         assert args[0].contains("-v $expectedHome/.jenkins/docker/docker:/usr/bin/docker")
 
