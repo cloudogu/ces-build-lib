@@ -53,7 +53,7 @@ class SCMManager implements Serializable{
       unstable 'Could not create pull request'
     }
 
-    def prsAsJson = readJSON text: pullRequests
+    def prsAsJson = this.script.readJSON text: pullRequests
     return prsAsJson["_embedded"]["pullRequests"]
   }
 
