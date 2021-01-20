@@ -17,7 +17,7 @@ class SCMManager implements Serializable{
     if (credentials) {
       script.withCredentials([script.usernamePassword(credentialsId: credentials,
           passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USER')]) {
-        def auth = "${GIT_USER}:${GIT_PASSWORD}"
+        def auth = "${script.env.GIT_USER}:${script.env.GIT_PASSWORD}"
         closure.call(auth)
       }
     } else {
@@ -40,7 +40,7 @@ class SCMManager implements Serializable{
     String pullRequests_with_http_code = ""
     executeWithCredentials { auth ->
       String script = """curl -w "%{http_code}" -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequestCollection+json;v=2' https://${this.repositoryUrl}"""
-      pullRequests_with_http_code = this.sh returnStdout: true, script: script
+      pullRequests_with_http_code = this.script.sh returnStdout: true, script: script
     }
     //get only the http code (3 characters) of the response.
     String http_code = pullRequests_with_http_code.reverse().take(3).reverse()
@@ -63,7 +63,7 @@ class SCMManager implements Serializable{
     String header = ""
     executeWithCredentials { auth ->
       def script = """curl -i -X POST -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}"""
-      header = this.sh returnStdout: true, script: script
+      header = this.script.sh returnStdout: true, script: script
     }
     String[] splitHeader = header.split("\n")
 
@@ -99,7 +99,7 @@ class SCMManager implements Serializable{
     String http_code = ""
     executeWithCredentials { auth ->
       def script = """curl -X PUT -w "%{http_code}" -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}"""
-      http_code = this.sh returnStdout: true, script: script
+      http_code = this.script.sh returnStdout: true, script: script
     }
 
     http_code = http_code.trim()
@@ -115,7 +115,7 @@ class SCMManager implements Serializable{
     String http_code = ""
     executeWithCredentials { auth ->
       def script = """curl -X POST -w "%{http_code}" -u ${auth} -H 'Content-Type: application/json' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}/comments"""
-      http_code = this.sh returnStdout: true, script: script
+      http_code = this.script.sh returnStdout: true, script: script
     }
 
     http_code = http_code.trim()
