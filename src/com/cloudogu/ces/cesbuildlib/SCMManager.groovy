@@ -48,7 +48,7 @@ class SCMManager implements Serializable{
     String pullRequests = pullRequests_with_http_code.reverse().drop(3).reverse()
 
     http_code = http_code.trim()
-    echo "Getting all pull requests yields http_code: ${http_code}"
+    this.script.echo "Getting all pull requests yields http_code: ${http_code}"
     if (http_code != "200") {
       unstable 'Could not create pull request'
     }
@@ -76,7 +76,7 @@ class SCMManager implements Serializable{
     }
 
     http_code = http_code.trim()
-    echo "Creating pull request yields http_code: ${http_code}"
+    this.script.echo "Creating pull request yields http_code: ${http_code}"
     if (http_code != "201") {
       unstable 'Could not create pull request'
     }
@@ -103,7 +103,7 @@ class SCMManager implements Serializable{
     }
 
     http_code = http_code.trim()
-    echo "Description update yields http_code: ${http_code}"
+    this.script.echo "Description update yields http_code: ${http_code}"
     if (http_code != "204") {
       unstable 'Could not update description'
     }
@@ -119,7 +119,7 @@ class SCMManager implements Serializable{
     }
 
     http_code = http_code.trim()
-    echo "Adding comment yields http_code: ${http_code}"
+    this.script.echo "Adding comment yields http_code: ${http_code}"
     if (http_code != "201") {
       unstable 'Could not add comment'
     }
