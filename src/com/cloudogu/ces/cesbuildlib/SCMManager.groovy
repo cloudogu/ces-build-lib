@@ -17,12 +17,18 @@ class SCMManager implements Serializable{
     if (credentials) {
       script.withCredentials([script.usernamePassword(credentialsId: credentials,
           passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USER')]) {
-        def auth = "${script.env.GIT_USER}:${script.env.GIT_PASSWORD}"
-        closure.call(auth)
+        closure.call(true)
       }
     } else {
       closure.call(false)
     }
+  }
+
+  protected String getCurlAuthParam() {
+    if(script.env.GIT_USER && script.env.GIT_PASSWORD) {
+      return "-u ${script.env.GIT_USER}:${script.env.GIT_PASSWORD}"
+    }
+    return ""
   }
 
   Object searchPullRequestByTitle(String title) {
@@ -37,15 +43,15 @@ class SCMManager implements Serializable{
   }
 
   Object getPullRequests() {
-    String pullRequests_with_http_code = ""
-    executeWithCredentials { auth ->
-      String script = """curl -w "%{http_code}" -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequestCollection+json;v=2' https://${this.repositoryUrl}"""
-      pullRequests_with_http_code = this.script.sh returnStdout: true, script: script
+    String httpResonse = ""
+    executeWithCredentials {
+      String script = """curl -w "%{http_code}" ${getCurlAuthParam()} -H 'Content-Type: application/vnd.scmm-pullRequestCollection+json;v=2' https://${this.repositoryUrl}"""
+      httpResonse = this.script.sh returnStdout: true, script: script
     }
     //get only the http code (3 characters) of the response.
-    String http_code = pullRequests_with_http_code.reverse().take(3).reverse()
+    String http_code = httpResonse.reverse().take(3).reverse()
     //drop the http code (last 3 characters) of this string
-    String pullRequests = pullRequests_with_http_code.reverse().drop(3).reverse()
+    String pullRequests = httpResonse.reverse().drop(3).reverse()
 
     http_code = http_code.trim()
     this.script.echo "Getting all pull requests yields http_code: ${http_code}"
@@ -62,7 +68,7 @@ class SCMManager implements Serializable{
 
     String header = ""
     executeWithCredentials { auth ->
-      def script = """curl -i -X POST -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}"""
+      def script = """curl -i -X POST ${getCurlAuthParam()} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}"""
       header = this.script.sh returnStdout: true, script: script
     }
     String[] splitHeader = header.split("\n")
@@ -98,7 +104,7 @@ class SCMManager implements Serializable{
     def data = """{"title": "${title}","description": "${description}"}"""
     String http_code = ""
     executeWithCredentials { auth ->
-      def script = """curl -X PUT -w "%{http_code}" -u ${auth} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}"""
+      def script = """curl -X PUT -w "%{http_code}" ${getCurlAuthParam()} -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}"""
       http_code = this.script.sh returnStdout: true, script: script
     }
 
@@ -114,7 +120,7 @@ class SCMManager implements Serializable{
 
     String http_code = ""
     executeWithCredentials { auth ->
-      def script = """curl -X POST -w "%{http_code}" -u ${auth} -H 'Content-Type: application/json' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}/comments"""
+      def script = """curl -X POST -w "%{http_code}" ${getCurlAuthParam()} -H 'Content-Type: application/json' -d '${data}' https://${this.repositoryUrl}/${pullRequestId}/comments"""
       http_code = this.script.sh returnStdout: true, script: script
     }
 
