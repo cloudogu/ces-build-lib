@@ -1,15 +1,13 @@
 package com.cloudogu.ces.cesbuildlib
 
-import com.lesfurets.jenkins.unit.BasePipelineTest
-import org.junit.Before
-
 import static org.assertj.core.api.Assertions.assertThat
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 
 
-class SCMManagerTest extends BasePipelineTest{
+class SCMManagerTest {
 
   ScriptMock scriptMock = new ScriptMock()
   SCMManager scmm = new SCMManager(scriptMock, "credentialsID")
