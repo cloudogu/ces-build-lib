@@ -159,7 +159,6 @@ location: https://eine/lange/url/mit/id/12
 
   @Test
   void "successful description update yields to a successful build"() {
-    def data = """{"title": "title","description": "description"}"""
     def shScript = """curl -X PUT -w "%{http_code}" -u user:pw -H 'Content-Type: application/vnd.scmm-pullRequest+json;v=2' -d '{"title": "title","description": "description"}' https://scm/repo/123"""
     def response = "204"
     scriptMock.expectedDefaultShRetValue = 0
@@ -181,7 +180,6 @@ location: https://eine/lange/url/mit/id/12
 
   @Test
   void "successful comment update yields to a successful build"() {
-    def data = """{"comment": "comment"}"""
     def shScript = """curl -X POST -w "%{http_code}" -u user:pw -H 'Content-Type: application/json' -d '{"comment": "comment"}' https://scm/repo/123/comments"""
     def response = "201"
     scriptMock.expectedDefaultShRetValue = 0
@@ -192,7 +190,6 @@ location: https://eine/lange/url/mit/id/12
 
   @Test
   void "error on comment update yields to an unstable build"() {
-    def data = """{"comment": "comment"}"""
     def shScript = """curl -X POST -w "%{http_code}" -u user:pw -H 'Content-Type: application/json' -d '{"comment": "comment"}' https://scm/repo/123/comments"""
     def response = "500"
     scriptMock.expectedDefaultShRetValue = 0
