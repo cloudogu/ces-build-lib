@@ -1,5 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
+import groovy.json.JsonSlurper
+
 class ScriptMock {
     def env = [WORKSPACE: "", HOME: ""]
 
@@ -50,7 +52,6 @@ class ScriptMock {
     }
 
     private Object getReturnValueFor(Object arg) {
-
         // toString() to make Map also match GStrings
         def value = expectedShRetValueForScript.get(arg.toString().trim())
         if (value == null) {
@@ -130,6 +131,12 @@ class ScriptMock {
 
     String readFile(String file) {
         return files.get(file)
+    }
+
+    Object readJSON(Map<String, Object> args) {
+        String text = args.get('text')
+        def slurper = new JsonSlurper()
+        return slurper.parseText(text)
     }
 
     void dir(String dir, Closure closure) {
