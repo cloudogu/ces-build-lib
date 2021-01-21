@@ -53,6 +53,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [changelogFileName](#changelogFileName)
 - [GitHub](#github)
 - [GitFlow](#gitflow)
+- [SCMManager](#scmmanager)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -897,6 +898,45 @@ stage('Gitflow') {
 * `gitflow.finishRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
    * Use the `releaseVersion` (String) as the name of the new git release. 
    
+# SCMManager
+
+Provides the functionality to handle pull requests on a SCMManager repository.
+
+You need to pass `usernamePassword` (i.e. a String containing the ID that refers to the
+[Jenkins credentials](https://jenkins.io/doc/book/using/using-credentials/)) to `SCMManager` during construction.
+These are then used for handling the pull requests.
+
+```groovy
+SCMManager scmm = new SCMManager(this, 'ourCredentials')
+
+```
+
+Set the repository url through the `repositoryUrl` property like so:
+
+```groovy
+SCMManager scmm = new SCMManager(this, 'ourCredentials')
+scmm.repositoryUrl = "hostname/scm/api/v2/pull-requests/backend/myrepo"
+
+```
+
+* `scmmanager.getPullRequests()` - Returns all pull requests as JSON objects.
+* `scmmanager.searchPullRequestByTitle(title)` - Returns a pull request by title as JSON objects.
+    * Use the `title` (String) as the title of the pull request in question.
+* `scmmanager.createPullRequest(source, target, title, description)` - Creates a pull request.
+    * Use the `source` (String) as the source branch of the pull request.
+    * Use the `target` (String) as the target branch of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
+* `scmmanager.updateDescription(pullRequestId, title, description)` - Updates the description of a pull request.
+    * Use the `pullRequestId` (String) as the ID of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
+* `scmmanager.addComment(pullRequestId, comment)` - Adds a comment to a pull request.
+    * Use the `pullRequestId` (String) as the ID of the pull request.
+    * Use the `comment` (String) as the comment to add to the pull request.
+
+
+
 # Steps
 
 ## mailIfStatusChanged
