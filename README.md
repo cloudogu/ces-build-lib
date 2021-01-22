@@ -50,7 +50,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Changelog](#changelog)
-  - [changelogFileName](#changelogFileName)
+  - [changelogFileName](#changelogfilename)
 - [GitHub](#github)
 - [GitFlow](#gitflow)
 - [SCMManager](#scmmanager)
@@ -908,7 +908,6 @@ These are then used for handling the pull requests.
 
 ```groovy
 SCMManager scmm = new SCMManager(this, 'ourCredentials')
-
 ```
 
 Set the repository url through the `repositoryUrl` property like so:
@@ -916,11 +915,9 @@ Set the repository url through the `repositoryUrl` property like so:
 ```groovy
 SCMManager scmm = new SCMManager(this, 'ourCredentials')
 scmm.repositoryUrl = "hostname/scm/api/v2/pull-requests/backend/myrepo"
-
 ```
 
-* `scmmanager.getPullRequests()` - Returns all pull requests as JSON objects.
-* `scmmanager.searchPullRequestByTitle(title)` - Returns a pull request by title as JSON objects.
+* `scmmanager.searchPullRequestIdByTitle(title)` - Returns a pull request ID by title, or empty, if not present.
     * Use the `title` (String) as the title of the pull request in question.
 * `scmmanager.createPullRequest(source, target, title, description)` - Creates a pull request.
     * Use the `source` (String) as the source branch of the pull request.

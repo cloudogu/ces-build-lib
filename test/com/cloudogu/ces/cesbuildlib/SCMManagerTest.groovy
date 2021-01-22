@@ -78,19 +78,20 @@ class SCMManagerTest {
   "_embedded": {
     "pullRequests": [
       {
-        "title": "1"
+        "title": "one",
+        "id" : "1"
       },
       {
-        "title": "2"
+        "title": "Two",
+        "id" : "2"
       }
     ]
   }
 }200"""
     scriptMock.expectedDefaultShRetValue = 0
     scriptMock.expectedShRetValueForScript.put(shScript, response)
-    def prs = scmm.searchPullRequestByTitle("1")
-    def title = prs["title"]
-    assertThat(title.toString()).isEqualTo('1')
+    def prs = scmm.searchPullRequestIdByTitle("one")
+    assertThat(prs).isEqualTo('1')
   }
 
   @Test
@@ -111,12 +112,12 @@ class SCMManagerTest {
 }200"""
     scriptMock.expectedDefaultShRetValue = 0
     scriptMock.expectedShRetValueForScript.put(shScript, response)
-    def prs = scmm.searchPullRequestByTitle("3")
-    assertThat(prs).isEqualTo(null)
+    def prs = scmm.searchPullRequestIdByTitle("3")
+    assertThat(prs).isEqualTo("")
   }
 
   @Test
-  void "returns null when no pr is found"() {
+  void "returns empty string when no pr is found"() {
     def shScript = """curl -w "%{http_code}" -u user:pw -H 'Content-Type: application/vnd.scmm-pullRequestCollection+json;v=2' https://scm/repo"""
     def response = """
 {
@@ -126,8 +127,8 @@ class SCMManagerTest {
 }200"""
     scriptMock.expectedDefaultShRetValue = 0
     scriptMock.expectedShRetValueForScript.put(shScript, response)
-    def prs = scmm.searchPullRequestByTitle("3")
-    assertThat(prs).isEqualTo(null)
+    def prs = scmm.searchPullRequestIdByTitle("just something")
+    assertThat(prs).isEqualTo("")
   }
 
   @Test

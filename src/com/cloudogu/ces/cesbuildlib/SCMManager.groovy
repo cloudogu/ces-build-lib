@@ -34,18 +34,22 @@ class SCMManager implements Serializable{
     return curlAuthParam
   }
 
-  Object searchPullRequestByTitle(String title) {
+  def searchPullRequestIdByTitle(String title) {
     def pullRequest
     for (Map pr : getPullRequests()) {
       if (pr["title"] == title) {
         pullRequest = pr
       }
     }
-
-    return pullRequest
+    
+    if (pullRequest) {
+      pullRequest["id"].toString()
+    } else {
+      return ""
+    }
   }
 
-  Object getPullRequests() {
+  protected getPullRequests() {
     String curlCommand = """curl -w "%{http_code}" ${getCurlAuthParam()} -H 'Content-Type: application/vnd.scmm-pullRequestCollection+json;v=2' https://${this.repositoryUrl}"""
     String httpResponse = script.sh returnStdout: true, script: curlCommand
 
