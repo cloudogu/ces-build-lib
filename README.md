@@ -919,7 +919,7 @@ scmm.repositoryUrl = "hostname/scm/api/v2/pull-requests/backend/myrepo"
 
 * `scmmanager.searchPullRequestIdByTitle(title)` - Returns a pull request ID by title, or empty, if not present.
     * Use the `title` (String) as the title of the pull request in question.
-* `scmmanager.createPullRequest(source, target, title, description)` - Creates a pull request.
+* `scmmanager.createPullRequest(source, target, title, description)` - Creates a pull request, or empty, if not present.
     * Use the `source` (String) as the source branch of the pull request.
     * Use the `target` (String) as the target branch of the pull request.
     * Use the `title` (String) as the title of the pull request.
@@ -932,7 +932,44 @@ scmm.repositoryUrl = "hostname/scm/api/v2/pull-requests/backend/myrepo"
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `comment` (String) as the comment to add to the pull request.
 
+# HttpClient
 
+`HttpClient` provides a simple `curl` frontend for groovy. 
+
+* Not surprisingly, it requires `curl` on the jenkins agents.
+* If you need to authenticate, you can create a `HttpClient` with optional credentials ID (`usernamePassword` credentials)
+* `HttpClient` provides `get()`, `put()` and `post()` methods 
+* All methods have the same signature, e.g.  
+  `http.get(url, contentType = '', data = '')`
+   * `url` (String) 
+   * optional `contentType` (String) - set as acceptHeader in the request 
+   * optional `data` (Object) - sent in the body of the request
+* If successful, all methods return the same data structure a map of
+  * `httpCode` - as string containing the http status code
+  * `headers` - a map containing the response headers, e.g. `[ location: 'http://url' ]`
+  * `body` - an optional string containing the body of the response  
+* In case of an error (Connection refused, Could not resolve host, etc.) an exception is thrown which fails the build
+  right away. If you don't want the build to fail, wrap the call in a `try`/`catch` block.
+
+Example:
+
+```groovy
+HttpClient http = new HttpClient(scriptMock, 'myCredentialID')
+
+// Simplest example
+echo http.get('http://url')
+
+// POSTing data
+def dataJson = JsonOutput.toJson([
+    comment: comment
+])
+def response = http.post('http://url/comments"', 'application/json', dataJson)
+
+if (response.status == '201' && response.content-type == 'application/json') {
+    def json = readJSON text: response.body
+    echo json.count
+}
+```
 
 # Steps
 

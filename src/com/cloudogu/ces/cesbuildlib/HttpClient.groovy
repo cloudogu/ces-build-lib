@@ -19,16 +19,16 @@ class HttpClient implements Serializable {
         this.sh = new Sh(script)
     }
 
-    Map get(String url, String contentType = '', def dataJson = '') {
-        return httpRequest('GET', url, contentType, dataJson)
+    Map get(String url, String contentType = '', def data = '') {
+        return httpRequest('GET', url, contentType, data)
     }
     
-    Map put(String url, String contentType = '', def dataJson = '') {
-        return httpRequest('PUT', url, contentType, dataJson)
+    Map put(String url, String contentType = '', def data = '') {
+        return httpRequest('PUT', url, contentType, data)
     }
     
-    Map post(String url, String contentType = '', def dataJson = '') {
-        return httpRequest('POST', url, contentType, dataJson)
+    Map post(String url, String contentType = '', def data = '') {
+        return httpRequest('POST', url, contentType, data)
     }
 
     protected String executeWithCredentials(Closure closure) {
@@ -46,7 +46,7 @@ class HttpClient implements Serializable {
         "-u ${script.env.CURL_USER}:${script.env.CURL_PASSWORD}"
     }
     
-    protected Map httpRequest(String httpMethod, String url, String contentType, def dataJson) {
+    protected Map httpRequest(String httpMethod, String url, String contentType, def data) {
         String httpResponse
         def rawHeaders
         def body
@@ -57,7 +57,7 @@ class HttpClient implements Serializable {
                 "curl -i -X ${httpMethod} " +
                     (credentials ? "${getCurlAuthParam()} " : '') +
                     (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
-                    (dataJson ? "-d '${dataJson.toString()}' " : '') +
+                    (data ? "-d '${data.toString()}' " : '') +
                     "${url}"
             
             // Command must be run inside this closure, otherwise the credentials will not be masked (using '*') in the console
