@@ -127,7 +127,7 @@ some: header
   void "sucessfully creating a pull request yields the created prs id"() {
     def response = """
 HTTP/2 201
-location: https://eine/lange/url/mit/id/12
+location: https://a/long/url/with/id/id/12
 """
     scriptMock.expectedDefaultShRetValue = response
     def id = scmm.createPullRequest("source", "target", "title", "description")
@@ -138,11 +138,11 @@ location: https://eine/lange/url/mit/id/12
   void "error on pull request creation makes build unstable"() {
     def response = """
 HTTP/2 500
-location: https://eine/lange/url/mit/id/12
+no-location: https://a/long/url/with/id/12
 """
     scriptMock.expectedDefaultShRetValue = response
     def id = scmm.createPullRequest("source","target","title","description")
-    assertThat(id.toString()).isEqualTo("12")
+    assertThat(id.toString()).isEqualTo("")
     assertThat(scriptMock.unstable)
   }
 

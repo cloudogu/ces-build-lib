@@ -13,31 +13,19 @@ class SCMManager implements Serializable{
     this.http = new HttpClient(script, credentials)  
   }
 
-  def searchPullRequestIdByTitle(String title) {
+  String searchPullRequestIdByTitle(String title) {
     def pullRequest
     for (Map pr : getPullRequests()) {
-      if (pr["title"] == title) {
+      if (pr.title == title) {
         pullRequest = pr
       }
     }
     
     if (pullRequest) {
-      pullRequest["id"].toString()
+      return pullRequest.id.toString()
     } else {
       return ""
     }
-  }
-
-  protected getPullRequests() {
-    def httpResponse = http.get("https://${this.repositoryUrl}", 'application/vnd.scmm-pullRequestCollection+json;v=2')
-    
-    script.echo "Getting all pull requests yields httpCode: ${httpResponse.httpCode}"
-    if (httpResponse.httpCode != "200") {
-      script.unstable 'Could not create pull request'
-    }
-
-    def prsAsJson = script.readJSON text: httpResponse.body
-    return prsAsJson["_embedded"]["pullRequests"]
   }
 
   String createPullRequest(String source, String target, String title, String description) {
@@ -51,10 +39,13 @@ class SCMManager implements Serializable{
 
     script.echo "Creating pull request yields httpCode: ${httpResponse.httpCode}"
     if (httpResponse.httpCode != "201") {
+      script.echo 'WARNING: Http status code indicates, that pull request was not created'
       script.unstable 'Could not create pull request'
+      return ''
     }
 
-    return httpResponse.headers['location'].split("/")[-1]
+    // example: "location: https://some/pr/42" - extract ide
+    return httpResponse.headers.location.split("/")[-1]
   }
 
   void updateDescription(String pullRequestId, String title, String description) {
@@ -82,6 +73,44 @@ class SCMManager implements Serializable{
     if (httpResponse.httpCode != "201") {
       script.unstable 'Could not add comment'
     }
+  }
+
+  /**
+    * @return SCM-Manager's representation of PRs. Basically a list of PR objects.
+    *  properties (as of SCM-Manager 2.12.0)
+    *  * id
+    *  * author
+    *    * id
+    *    * displayName
+    *    * mail
+    *  * source - the source branch
+    *  * target - the target branch
+    *  * title 
+    *  * description (branch)
+    *  * creationDate: (e.g. "2020-10-09T15:08:11.459Z")
+    *  * lastModified"
+    *  * status, e.g. "OPEN"
+    *  * reviewer (list)
+    *  * tasks
+    *    * todo (number)
+    *    * done (number
+    *  * tasks sourceRevision
+    *  * targetRevision
+    *  * targetRevision 
+    *  * markedAsReviewed (list)
+    *  * emergencyMerged
+    *  * ignoredMergeObstacles
+    */  
+  protected getPullRequests() {
+    def httpResponse = http.get("https://${this.repositoryUrl}", 'application/vnd.scmm-pullRequestCollection+json;v=2')
+    
+    script.echo "Getting all pull requests yields httpCode: ${httpResponse.httpCode}"
+    if (httpResponse.httpCode != "200") {
+      script.unstable 'Could not create pull request'
+    }
+
+    def prsAsJson = script.readJSON text: httpResponse.body
+    return prsAsJson._embedded.pullRequests
   }
 
 }
