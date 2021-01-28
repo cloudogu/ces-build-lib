@@ -6,16 +6,17 @@ class SCMManager implements Serializable {
 
     private script
     protected HttpClient http
-    String repositoryUrl
+    protected String baseUrl
 
-    SCMManager(script, credentials) {
+    SCMManager(script, String baseUrl, String credentials) {
         this.script = script
+        this.baseUrl = baseUrl
         this.http = new HttpClient(script, credentials)
     }
 
-    String searchPullRequestIdByTitle(String title) {
+    String searchPullRequestIdByTitle(String repository, String title) {
         def pullRequest
-        for (Map pr : getPullRequests()) {
+        for (Map pr : getPullRequests(repository)) {
             if (pr.title == title) {
                 pullRequest = pr
             }
@@ -28,14 +29,14 @@ class SCMManager implements Serializable {
         }
     }
 
-    String createPullRequest(String source, String target, String title, String description) {
+    String createPullRequest(String repository, String source, String target, String title, String description) {
         def dataJson = JsonOutput.toJson([
             title      : title,
             description: description,
             source     : source,
             target     : target
         ])
-        def httpResponse = http.post("https://${this.repositoryUrl}", 'application/vnd.scmm-pullRequest+json;v=2', dataJson)
+        def httpResponse = http.post(pullRequestEndpoint(repository), 'application/vnd.scmm-pullRequest+json;v=2', dataJson)
 
         script.echo "Creating pull request yields httpCode: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "201") {
@@ -44,18 +45,18 @@ class SCMManager implements Serializable {
             return ''
         }
 
-        // example: "location: https://some/pr/42" - extract ide
+        // example: "location: https://some/pr/42" - extract id
         return httpResponse.headers.location.split("/")[-1]
     }
 
-    void updateDescription(String pullRequestId, String title, String description) {
+    void updatePullRequest(String repository, String pullRequestId, String title, String description) {
         // In order to update the description put in also the title. Otherwise the title is overwritten with an empty string.
         def dataJson = JsonOutput.toJson([
             title      : title,
             description: description
         ])
 
-        def httpResponse = http.put("https://${this.repositoryUrl}/${pullRequestId}", 'application/vnd.scmm-pullRequest+json;v=2', dataJson)
+        def httpResponse = http.put("${pullRequestEndpoint(repository)}/${pullRequestId}", 'application/vnd.scmm-pullRequest+json;v=2', dataJson)
 
         script.echo "Description update yields http_code: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "204") {
@@ -63,11 +64,11 @@ class SCMManager implements Serializable {
         }
     }
 
-    void addComment(String pullRequestId, String comment) {
+    void addComment(String repository, String pullRequestId, String comment) {
         def dataJson = JsonOutput.toJson([
             comment: comment
         ])
-        def httpResponse = http.post("https://${this.repositoryUrl}/${pullRequestId}/comments", 'application/json', dataJson)
+        def httpResponse = http.post("${pullRequestEndpoint(repository)}/${pullRequestId}/comments", 'application/json', dataJson)
 
         script.echo "Adding comment yields http_code: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "201") {
@@ -75,6 +76,10 @@ class SCMManager implements Serializable {
         }
     }
 
+    protected String pullRequestEndpoint(String repository) {
+        "${this.baseUrl}/api/v2/pull-requests/${repository}"
+    }
+    
     /**
      * @return SCM-Manager's representation of PRs. Basically a list of PR objects.
      *  properties (as of SCM-Manager 2.12.0)
@@ -101,8 +106,8 @@ class SCMManager implements Serializable {
      *  * emergencyMerged
      *  * ignoredMergeObstacles
      */
-    protected getPullRequests() {
-        def httpResponse = http.get("https://${this.repositoryUrl}", 'application/vnd.scmm-pullRequestCollection+json;v=2')
+    protected getPullRequests(String repository) {
+        def httpResponse = http.get(pullRequestEndpoint(repository), 'application/vnd.scmm-pullRequestCollection+json;v=2')
 
         script.echo "Getting all pull requests yields httpCode: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "200") {

@@ -53,7 +53,9 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [changelogFileName](#changelogfilename)
 - [GitHub](#github)
 - [GitFlow](#gitflow)
-- [SCMManager](#scmmanager)
+- [SCM-Manager](#scm-manager)
+  - [Pull Requests](#pull-requests)
+- [HttpClient](#httpclient)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -898,7 +900,7 @@ stage('Gitflow') {
 * `gitflow.finishRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
    * Use the `releaseVersion` (String) as the name of the new git release. 
    
-# SCMManager
+# SCM-Manager
 
 Provides the functionality to handle pull requests on a SCMManager repository.
 
@@ -913,24 +915,38 @@ SCMManager scmm = new SCMManager(this, 'ourCredentials')
 Set the repository url through the `repositoryUrl` property like so:
 
 ```groovy
-SCMManager scmm = new SCMManager(this, 'ourCredentials')
-scmm.repositoryUrl = "hostname/scm/api/v2/pull-requests/backend/myrepo"
+SCMManager scmm = new SCMManager(this, 'https://hostname/scm', 'ourCredentials')
 ```
 
-* `scmmanager.searchPullRequestIdByTitle(title)` - Returns a pull request ID by title, or empty, if not present.
+## Pull Requests
+
+Each method requires a `repository` parameter, a String containing namespace and name, e.g. `cloudogu/ces-build-lib`.
+
+* `scmm.searchPullRequestIdByTitle(repository, title)` - Returns a pull request ID by title, or empty, if not present.
     * Use the `title` (String) as the title of the pull request in question.
-* `scmmanager.createPullRequest(source, target, title, description)` - Creates a pull request, or empty, if not present.
+* `scmm.createPullRequest(repository, source, target, title, description)` - Creates a pull request, or empty, if not present.
     * Use the `source` (String) as the source branch of the pull request.
     * Use the `target` (String) as the target branch of the pull request.
     * Use the `title` (String) as the title of the pull request.
     * Use the `description` (String) as the description of the pull request.
-* `scmmanager.updateDescription(pullRequestId, title, description)` - Updates the description of a pull request.
+* `scmm.updateDescription(repository, pullRequestId, title, description)` - Updates the description of a pull request.
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `title` (String) as the title of the pull request.
     * Use the `description` (String) as the description of the pull request.
-* `scmmanager.addComment(pullRequestId, comment)` - Adds a comment to a pull request.
+* `scmm.addComment(repository, pullRequestId, comment)` - Adds a comment to a pull request.
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `comment` (String) as the comment to add to the pull request.
+
+Example:
+
+```groovy
+def scmm = new SCMManager(this, 'https://your.ecosystem.com/scm', scmManagerCredentials)
+
+def pullRequestId = scmm.createPullRequest('cloudogu/ces-build-lib', 'feature/abc', 'develop', 'My title', 'My description')
+pullRequestId = scmm.searchPullRequestIdByTitle('cloudogu/ces-build-lib', 'My title')
+scmm.updatePullRequest('cloudogu/ces-build-lib', pullRequestId, 'My new title', 'My new description')
+scmm.addComment('cloudogu/ces-build-lib', pullRequestId, 'A comment')
+```
 
 # HttpClient
 
