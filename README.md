@@ -924,6 +924,8 @@ Each method requires a `repository` parameter, a String containing namespace and
 
 * `scmm.searchPullRequestIdByTitle(repository, title)` - Returns a pull request ID by title, or empty, if not present.
     * Use the `title` (String) as the title of the pull request in question.
+    * This methods requires the `readJSON()` step from the 
+      [Pipeline Utility Steps plugin](https://plugins.jenkins.io/pipeline-utility-steps/).
 * `scmm.createPullRequest(repository, source, target, title, description)` - Creates a pull request, or empty, if not present.
     * Use the `source` (String) as the source branch of the pull request.
     * Use the `target` (String) as the target branch of the pull request.
