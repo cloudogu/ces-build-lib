@@ -5,7 +5,7 @@ import groovy.json.JsonOutput
 class SCMManager implements Serializable {
 
     private script
-    private HttpClient http
+    protected HttpClient http
     String repositoryUrl
 
     SCMManager(script, credentials) {
