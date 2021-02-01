@@ -38,7 +38,7 @@ abstract class Maven implements Serializable {
     protected abstract def mvn(String args, boolean printStdOut = true)
 
     def mvnw(String args, boolean printStdOut) {
-        sh("./mvnw ${createCommandLineArgs(args)}", printStdOut)
+        sh("MVNW_VERBOSE=true ./mvnw ${createCommandLineArgs(args)}", printStdOut)
     }
 
     void sh(String command, boolean printStdOut) {

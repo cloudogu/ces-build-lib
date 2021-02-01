@@ -13,7 +13,7 @@ class MavenWrapperTest {
         def mvn = new MavenWrapper(scriptMock)
         mvn 'ourGoal'
         assert scriptMock.getActualShStringArgs().size() == 1
-        assert scriptMock.getActualShStringArgs().get(0).startsWith('./mvnw')
+        assert scriptMock.getActualShStringArgs().get(0).startsWith('MVNW_VERBOSE=true ./mvnw')
         assert scriptMock.getActualShStringArgs().get(0).contains('ourGoal')
         assert scriptMock.actualWithEnv == null
     }
@@ -25,7 +25,7 @@ class MavenWrapperTest {
         mvn 'ourGoal'
 
         assert scriptMock.getActualShStringArgs().size() == 1
-        assert scriptMock.getActualShStringArgs().get(0).startsWith('./mvnw')
+        assert scriptMock.getActualShStringArgs().get(0).startsWith('MVNW_VERBOSE=true ./mvnw')
         assert scriptMock.getActualShStringArgs().get(0).contains('ourGoal')
         assert scriptMock.actualWithEnv == ["JAVA_HOME=/java", "PATH+JDK=/env/java/bin"]
     }
