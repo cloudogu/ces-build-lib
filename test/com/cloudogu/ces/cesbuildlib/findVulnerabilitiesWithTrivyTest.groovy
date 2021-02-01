@@ -9,20 +9,15 @@ import org.junit.Test
 class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
 
     def script
-    String jsonOutput
-    def slurper = new JsonSlurper() 
+    def slurper = new JsonSlurper()
 
     @Override
     @Before
     void setUp() throws Exception {
         super.setUp()
-        jsonOutput = trivyVulns
         script = loadScript('vars/findVulnerabilitiesWithTrivy.groovy')
         script.env = [WORKSPACE: '/tmp/workspace']
         Docker.metaClass.constructor = { def script -> DockerMock.create() }
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(jsonOutput)
-        })
     }
 
     @After
@@ -33,19 +28,91 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
 
     @Test
     void "return a list of vulnerabilities"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithVulns)
+        })
+
         def vulnerabilityList = script.call([imageName: 'nginx'])
-        assert vulnerabilityList == slurper.parseText(expectedVulnList)
-        
-        // TODO validate image name is passed
-        
-        // TODO test empty list
-        // TODO test trivy version
-        // TODO test severity
-        
+        assert vulnerabilityList == slurper.parseText(expectedFullVulnerabilityList)
+        assert vulnerabilityList.size() == 2
     }
 
-    String expectedVulnList = """
-[
+    @Test
+    void "return false if imageName is not passed"() {
+        assert script.validateArgs() == false
+    }
+
+    @Test
+    void "return false if imageName is emptyString"() {
+        assert script.validateArgs([imageName: '']) == false
+    }
+
+    @Test
+    void "return empty list if no imageName is passed"() {
+        assert script.call() == Collections.emptyList()
+    }
+
+    @Test
+    void "return empty list if imageName is emptyString"() {
+        assert script.call([imageName: '']) == Collections.emptyList()
+    }
+
+    @Test
+    void "return empty list when no vulnerabilities"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithoutVulns)
+        })
+
+        assert script.call([imageName: 'nginx']) == Collections.emptyList()
+    }
+
+    @Test
+    void "only single vulnerability when allowList matches vulnerability1"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithVulns)
+        })
+
+        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3374']])
+        assert vulnerabilityList == slurper.parseText(expectedVulnerability2List)
+        assert vulnerabilityList.size() == 1
+    }
+
+    @Test
+    void "only single vulnerability when allowList matches vulnerability2"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithVulns)
+        })
+
+        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2019-18276']])
+        assert vulnerabilityList == slurper.parseText(expectedVulnerability1List)
+        assert vulnerabilityList.size() == 1
+    }
+
+    @Test
+    void "return empty list when both vulnerabilites are on allow list"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithVulns)
+        })
+
+        assert script.call([imageName: 'nginx', allowList: ['CVE-2019-18276', 'CVE-2011-3374']]) == Collections.emptyList()
+    }
+
+    @Test
+    void "full vulnerability list when allowList does not match"() {
+        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
+            return slurper.parseText(trivyOutputWithVulns)
+        })
+
+        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3371']])
+        assert vulnerabilityList == slurper.parseText(expectedFullVulnerabilityList)
+        assert vulnerabilityList.size() == 2
+    }
+
+    // TODO test trivy version ??
+    // TODO test severity ??
+
+
+    String vulnerability1 = """
       {
         "VulnerabilityID": "CVE-2011-3374",
         "PkgName": "apt",
@@ -78,7 +145,10 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
         ],
         "PublishedDate": "2019-11-26T00:15:00Z",
         "LastModifiedDate": "2019-12-04T15:35:00Z"
-      },
+      }
+"""
+
+    String vulnerability2 = """
       {
         "VulnerabilityID": "CVE-2019-18276",
         "PkgName": "bash",
@@ -91,7 +161,7 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
         "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-18276",
         "Title": "bash: when effective UID is not equal to its real UID the saved UID is not dropped",
         "Description": "An issue was discovered in disable_priv_mode in shell.c in GNU Bash through 5.0 patch 11. By default, if Bash is run with its effective UID not equal to its real UID, it will drop privileges by setting its effective UID to its real UID. However, it does so incorrectly. On Linux and other systems that support \\"saved UID\\" functionality, the saved UID is not dropped. An attacker with command execution in the shell can use \\"enable -f\\" for runtime loading of a new builtin, which can be a shared object that calls setuid() and therefore regains privileges. However, binaries running with an effective UID of 0 are unaffected.",
-        "Severity": "LOW",
+        "Severity": "HIGH",
         "CweIDs": [
           "CWE-273"
         ],
@@ -117,14 +187,44 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
         "PublishedDate": "2019-11-28T01:15:00Z",
         "LastModifiedDate": "2020-04-30T19:15:00Z"
       }
+"""
+
+    String expectedFullVulnerabilityList = """
+[
+        ${vulnerability1},
+        ${vulnerability2}
+      
     ]
 """
-    String trivyVulns = """
+
+    String expectedVulnerability1List = """
+[
+        ${vulnerability1}      
+    ]
+"""
+
+    String expectedVulnerability2List = """
+[
+        ${vulnerability2}      
+    ]
+"""
+
+    String trivyOutputWithVulns = """
 [
   {
     "Target": "nginx (debian 10.7)",
     "Type": "debian",
-    "Vulnerabilities": ${expectedVulnList}
+    "Vulnerabilities": ${expectedFullVulnerabilityList}
+  }
+]
+"""
+
+    String trivyOutputWithoutVulns = """
+[
+  {
+    "Target": "nginx (debian 10.7)",
+    "Type": "debian",
+    "Vulnerabilities": null
   }
 ]
 """

@@ -1,1 +1,1 @@
-todo
+Returns a list of vulnerabilities or an empty list if there are no vulnerabilities for the given severity.
