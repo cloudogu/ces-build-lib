@@ -195,7 +195,7 @@ providing the JDK.
 See [MavenWrapperInDocker](src/com/cloudogu/ces/cesbuildlib/MavenWrapperInDocker.groovy)
 
 ```
-Maven mvn = MavenWrapperInDocker(this, 'adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine')
+Maven mvn = MavenWrapperInDocker(this, 'adoptopenjdk/openjdk11:jdk-11.0.10_9-alpine')
 
 stage('Build') {
     mvn 'clean install'
