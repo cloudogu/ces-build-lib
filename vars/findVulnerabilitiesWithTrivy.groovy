@@ -4,6 +4,8 @@ import java.util.function.BiConsumer
 import java.util.function.Consumer
 
 //findVulnerabilitiesWithTrivy([ imageName: 'nginx', severities=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'], allowList: ['CVE-0000-0000, CVE-0000-0001'])
+// If no vulnerabilities are found or no imageName was passed an empty List is returned
+// Otherwise the list with all vulnerabilities (excluding the ones in the allowList if one was passed)
 ArrayList call (Map args) {
     //imageName is mandatory
     if(validateArgs(args)) {
