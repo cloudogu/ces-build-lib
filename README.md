@@ -923,19 +923,29 @@ SCMManager scmm = new SCMManager(this, 'https://hostname/scm', 'ourCredentials')
 Each method requires a `repository` parameter, a String containing namespace and name, e.g. `cloudogu/ces-build-lib`.
 
 * `scmm.searchPullRequestIdByTitle(repository, title)` - Returns a pull request ID by title, or empty, if not present.
+    * Use the `repository` (String) as the GitOps repository
     * Use the `title` (String) as the title of the pull request in question.
     * This methods requires the `readJSON()` step from the 
       [Pipeline Utility Steps plugin](https://plugins.jenkins.io/pipeline-utility-steps/).
 * `scmm.createPullRequest(repository, source, target, title, description)` - Creates a pull request, or empty, if not present.
+    * Use the `repository` (String) as the GitOps repository
     * Use the `source` (String) as the source branch of the pull request.
     * Use the `target` (String) as the target branch of the pull request.
     * Use the `title` (String) as the title of the pull request.
     * Use the `description` (String) as the description of the pull request.
 * `scmm.updateDescription(repository, pullRequestId, title, description)` - Updates the description of a pull request.
+    * Use the `repository` (String) as the GitOps repository
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `title` (String) as the title of the pull request.
     * Use the `description` (String) as the description of the pull request.
+* `scmm.createOrUpdatePullRequest(repository, source, target, title, description)` - Creates a pull request if no PR is found or updates the existing one.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `source` (String) as the source branch of the pull request.
+    * Use the `target` (String) as the target branch of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
 * `scmm.addComment(repository, pullRequestId, comment)` - Adds a comment to a pull request.
+    * Use the `repository` (String) as the GitOps repository
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `comment` (String) as the comment to add to the pull request.
 

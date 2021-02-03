@@ -171,4 +171,84 @@ class SCMManagerTest {
         scmm.addComment(repo,'123', 'comment')
         assertThat(scriptMock.unstable).isTrue()
     }
+
+    @Test
+    void "returns pr id when creating pr with createOrUpdate"() {
+        def expected = [
+            title      : 'ti',
+            description: 'd',
+            source     : 's',
+            target     : 'ta'
+        ]
+
+        when(httpMock.get(any(), any())).thenReturn([
+            httpCode: '200',
+            body    : jsonTwoPrs.toString()
+        ])
+
+        when(httpMock.post(any(), any(), any())).then({ invocation ->
+            assert invocation.getArguments()[0] == 'http://ho.st/scm/api/v2/pull-requests/scm/repo'
+            assert invocation.getArguments()[1] == 'application/vnd.scmm-pullRequest+json;v=2'
+            assert invocation.getArguments()[2] == JsonOutput.toJson(expected)
+
+            return [
+                httpCode: '201',
+                headers: [ location: 'https://a/long/url/with/id/id/12' ]
+            ]
+        })
+
+        def id = scmm.createOrUpdatePullRequest(repo, expected.source, expected.target, expected.title, expected.description)
+        assertThat(id.toString()).isEqualTo('12')
+    }
+
+    @Test
+    void "returns pr id when updating pr with createOrUpdate"() {
+        def expected = [
+            title      : 'one',
+            description: 'd',
+            source     : 's',
+            target     : 'ta'
+        ]
+
+        when(httpMock.get(any(), any())).thenReturn([
+            httpCode: '200',
+            body    : jsonTwoPrs.toString()
+        ])
+
+        when(httpMock.put(any(), any(), any())).then({ invocation ->
+            assert invocation.getArguments()[0] == 'http://ho.st/scm/api/v2/pull-requests/scm/repo/1'
+            assert invocation.getArguments()[1] == 'application/vnd.scmm-pullRequest+json;v=2'
+            def body = slurper.parseText(invocation.getArguments()[2])
+            assert body.title == expected.title
+            assert body.description == expected.description
+
+            return [ httpCode: '204' ]
+        })
+
+        def id = scmm.createOrUpdatePullRequest(repo, expected.source, expected.target, expected.title, expected.description)
+        assertThat(id.toString()).isEqualTo('1')
+    }
+
+    @Test
+    void "returns empty string when updating pr with createOrUpdate and fails"() {
+        def expected = [
+            title      : 'one',
+            description: 'd',
+            source     : 's',
+            target     : 'ta'
+        ]
+
+        when(httpMock.get(any(), any())).thenReturn([
+            httpCode: '200',
+            body    : jsonTwoPrs.toString()
+        ])
+
+        when(httpMock.put(any(), any(), any())).then({ invocation ->
+            return [ httpCode: '500' ]
+        })
+
+        def id = scmm.createOrUpdatePullRequest(repo, expected.source, expected.target, expected.title, expected.description)
+        assertThat(scriptMock.unstable).isTrue()
+        assertThat(id.toString()).isEqualTo('')
+    }
 }

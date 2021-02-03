@@ -25,7 +25,7 @@ class SCMManager implements Serializable {
         if (pullRequest) {
             return pullRequest.id.toString()
         } else {
-            return ""
+            return ''
         }
     }
 
@@ -49,7 +49,7 @@ class SCMManager implements Serializable {
         return httpResponse.headers.location.split("/")[-1]
     }
 
-    void updatePullRequest(String repository, String pullRequestId, String title, String description) {
+    boolean updatePullRequest(String repository, String pullRequestId, String title, String description) {
         // In order to update the description put in also the title. Otherwise the title is overwritten with an empty string.
         def dataJson = JsonOutput.toJson([
             title      : title,
@@ -60,7 +60,24 @@ class SCMManager implements Serializable {
 
         script.echo "Description update yields http_code: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "204") {
-            script.unstable 'Could not update description'
+            script.unstable 'Could not update pull request'
+            return false
+        }
+        return true
+    }
+
+    String createOrUpdatePullRequest(String repository, String source, String target, String title, String description) {
+
+        def pullRequestId = searchPullRequestIdByTitle(repository, title)
+
+        if(pullRequestId.isEmpty()) {
+            return createPullRequest(repository, source, target, title, description)
+        } else {
+            if(updatePullRequest(repository, pullRequestId, title, description)) {
+                return pullRequestId
+            } else {
+                return ''
+            }
         }
     }
 
