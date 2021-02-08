@@ -32,7 +32,6 @@ ArrayList getVulnerabilities(String trivyVersion, String severityFlag, String im
     if(trivyOutput[0].Vulnerabilities == null || trivyOutput[0].Vulnerabilities.equals("null")) {
         return []
     } else {
-        println(trivyOutput[0].Vulnerabilities)
         def vulnerabilities = filterAllowList(trivyOutput[0].Vulnerabilities as ArrayList, allowList as ArrayList)
         return vulnerabilities
     }
