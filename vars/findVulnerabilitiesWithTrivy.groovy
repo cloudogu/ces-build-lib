@@ -3,7 +3,7 @@ package com.cloudogu.ces.cesbuildlib
 import java.util.function.BiConsumer
 import java.util.function.Consumer
 
-//findVulnerabilitiesWithTrivy([ imageName: 'nginx', severities=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'], allowList: ['CVE-0000-0000, CVE-0000-0001'])
+//findVulnerabilitiesWithTrivy([ imageName: 'nginx', severity=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0', allowList: ['CVE-0000-0000, CVE-0000-0001'] ])
 // If no vulnerabilities are found or no imageName was passed an empty List is returned
 // Otherwise the list with all vulnerabilities (excluding the ones in the allowList if one was passed)
 ArrayList call (Map args) {
@@ -11,7 +11,8 @@ ArrayList call (Map args) {
     if(validateArgs(args)) {
         def imageName = args.imageName
         def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.15.0'
-        def severityFlag = args.severity ? "--severity=${severity.join(',')}" : ''
+        def severityFlag = args.severity ? "--severity=${args.severity.join(',')}" : ''
+        println(severityFlag)
         def allowList = args.allowList ? args.allowList : []
 
         sh "mkdir -p .trivy/.cache"
