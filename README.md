@@ -934,7 +934,7 @@ Each method requires a `repository` parameter, a String containing namespace and
     * Use the `target` (String) as the target branch of the pull request.
     * Use the `title` (String) as the title of the pull request.
     * Use the `description` (String) as the description of the pull request.
-* `scmm.updateDescription(repository, pullRequestId, title, description)` - Updates the description of a pull request.
+* `scmm.updatePullRequest(repository, pullRequestId, title, description)` - Updates the pull request.
     * Use the `repository` (String) as the GitOps repository
     * Use the `pullRequestId` (String) as the ID of the pull request.
     * Use the `title` (String) as the title of the pull request.
