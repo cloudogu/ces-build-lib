@@ -11,7 +11,7 @@ node('docker') {
 
     def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
 
-    def mvn = cesBuildLib.MavenInDocker.new(this, "3.6.3-jdk-11")
+    def mvn = cesBuildLib.MavenWrapperInDocker.new(this, 'adoptopenjdk/openjdk11:jdk-11.0.10_9-alpine')
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
 
