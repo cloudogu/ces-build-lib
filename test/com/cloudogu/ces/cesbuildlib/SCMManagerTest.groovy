@@ -90,7 +90,7 @@ class SCMManagerTest {
             source     : 's',
             target     : 'ta'
         ]
-        
+
         when(httpMock.post(any(), any(), any())).then({ invocation ->
             assert invocation.getArguments()[0] == 'http://ho.st/scm/api/v2/pull-requests/scm/repo'
             assert invocation.getArguments()[1] == 'application/vnd.scmm-pullRequest+json;v=2'
@@ -101,7 +101,7 @@ class SCMManagerTest {
                 headers: [ location: 'https://a/long/url/with/id/id/12' ]
             ]
         })
-   
+
         def id = scmm.createPullRequest(repo, expected.source, expected.target, expected.title, expected.description)
         assertThat(id.toString()).isEqualTo('12')
     }
@@ -112,10 +112,9 @@ class SCMManagerTest {
             httpCode: '500',
             headers: [ location: 'https://a/long/url/with/id/id/12' ]
         ])
-        
+
         def id = scmm.createPullRequest(repo, 'source', 'target', 'title', 'description')
         assertThat(id.toString()).isEqualTo("")
-        assertThat(scriptMock.unstable)
     }
 
     @Test
@@ -129,11 +128,11 @@ class SCMManagerTest {
             def body = slurper.parseText(invocation.getArguments()[2])
             assert body.title == expectedTitle
             assert body.description == expectedDescription
-            
+
             return [ httpCode: '204' ]
         })
-        scmm.updatePullRequest(repo, '123', expectedTitle, expectedDescription)
-        assertThat(scriptMock.unstable).isFalse()
+        boolean response = scmm.updatePullRequest(repo, '123', expectedTitle, expectedDescription)
+        assertThat(response).isTrue()
     }
 
     @Test
@@ -142,8 +141,8 @@ class SCMManagerTest {
             return [ httpCode: '500' ]
         })
 
-        scmm.updatePullRequest(repo, '123', 'title', 'description')
-        assertThat(scriptMock.unstable).isTrue()
+        boolean response = scmm.updatePullRequest(repo, '123', 'title', 'description')
+        assertThat(response).isFalse()
     }
 
     @Test
@@ -157,9 +156,9 @@ class SCMManagerTest {
                 httpCode: '201'
             ]
         })
-        
-        scmm.addComment(repo,'123', expectedComment)
-        assertThat(scriptMock.unstable).isFalse()
+
+        boolean response = scmm.addComment(repo,'123', expectedComment)
+        assertThat(response).isTrue()
     }
 
     @Test
@@ -167,9 +166,9 @@ class SCMManagerTest {
         when(httpMock.post(any(), any(), any())).thenReturn([
             httpCode: '500'
         ])
-        
-        scmm.addComment(repo,'123', 'comment')
-        assertThat(scriptMock.unstable).isTrue()
+
+        boolean response = scmm.addComment(repo,'123', 'comment')
+        assertThat(response).isFalse()
     }
 
     @Test
@@ -248,7 +247,6 @@ class SCMManagerTest {
         })
 
         def id = scmm.createOrUpdatePullRequest(repo, expected.source, expected.target, expected.title, expected.description)
-        assertThat(scriptMock.unstable).isTrue()
         assertThat(id.toString()).isEqualTo('')
     }
 }

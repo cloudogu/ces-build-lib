@@ -41,7 +41,6 @@ class SCMManager implements Serializable {
         script.echo "Creating pull request yields httpCode: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "201") {
             script.echo 'WARNING: Http status code indicates, that pull request was not created'
-            script.unstable 'Could not create pull request'
             return ''
         }
 
@@ -58,9 +57,9 @@ class SCMManager implements Serializable {
 
         def httpResponse = http.put("${pullRequestEndpoint(repository)}/${pullRequestId}", 'application/vnd.scmm-pullRequest+json;v=2', dataJson)
 
-        script.echo "Description update yields http_code: ${httpResponse.httpCode}"
+        script.echo "Pull request update yields http_code: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "204") {
-            script.unstable 'Could not update pull request'
+            script.echo 'WARNING: Http status code indicates, that the pull request was not updated'
             return false
         }
         return true
@@ -81,7 +80,7 @@ class SCMManager implements Serializable {
         }
     }
 
-    void addComment(String repository, String pullRequestId, String comment) {
+    boolean addComment(String repository, String pullRequestId, String comment) {
         def dataJson = JsonOutput.toJson([
             comment: comment
         ])
@@ -89,8 +88,10 @@ class SCMManager implements Serializable {
 
         script.echo "Adding comment yields http_code: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "201") {
-            script.unstable 'Could not add comment'
+            script.echo 'WARNING: Http status code indicates, that the comment was not added'
+            return false
         }
+        return true
     }
 
     protected String pullRequestEndpoint(String repository) {
@@ -123,12 +124,13 @@ class SCMManager implements Serializable {
      *  * emergencyMerged
      *  * ignoredMergeObstacles
      */
-    protected getPullRequests(String repository) {
+    protected List getPullRequests(String repository) {
         def httpResponse = http.get(pullRequestEndpoint(repository), 'application/vnd.scmm-pullRequestCollection+json;v=2')
 
         script.echo "Getting all pull requests yields httpCode: ${httpResponse.httpCode}"
         if (httpResponse.httpCode != "200") {
-            script.unstable 'Could not create pull request'
+            script.echo 'WARNING: Http status code indicates, that the pull requests could not be retrieved'
+            return []
         }
 
         def prsAsJson = script.readJSON text: httpResponse.body
