@@ -59,6 +59,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [findEmailRecipients](#findemailrecipients)
   - [findHostName](#findhostname)
   - [isBuildSuccessful](#isbuildsuccessful)
+  - [findVulnerabilitiesWithTrivy](#findvulnerabilitieswithtrivy)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -949,6 +950,49 @@ For example, if running on `http(s)://server:port/jenkins`, `server` is returned
 ## isBuildSuccessful
 
 Returns true if the build is successful, i.e. not failed or unstable (yet).
+
+## findVulnerabilitiesWithTrivy
+
+Returns a list of vulnerabilities or an empty list if there are no vulnerabilities for the given severity.
+
+I.e. `findVulnerabilitiesWithTrivy([ imageName: 'nginx', severity=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'])`
+
+This is looking in the nginx image for all vulnerabilities with a severity of HIGH and CIRITCAL using the docker trivy version 0.15.0
+
+If there are vulnerabilities the output looks as follows.
+
+```json
+[
+      {
+        "VulnerabilityID": "CVE-XXX-XXX",
+        "PkgName": "",
+        "InstalledVersion": "",
+        "Layer": {
+          "Digest": "",
+          "DiffID": ""
+        },
+        "SeveritySource": "",
+        "PrimaryURL": "",
+        "Description": "",
+        "Severity": "",
+        "CweIDs": [
+        ],
+        "CVSS": {
+          "nvd": {
+            "V2Vector": "",
+            "V3Vector": "",
+            "V2Score": x.x,
+            "V3Score": x.x
+          }
+        },
+        "References": [
+        ],
+        "PublishedDate": "",
+        "LastModifiedDate": ""
+      },
+      {...}
+]
+```
 
 # Examples
   * This library is built using itself! See [Jenkinsfile](Jenkinsfile)
