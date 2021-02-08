@@ -955,7 +955,7 @@ Returns true if the build is successful, i.e. not failed or unstable (yet).
 
 Returns a list of vulnerabilities or an empty list if there are no vulnerabilities for the given severity.
 
-I.e. `findVulnerabilitiesWithTrivy([ imageName: 'nginx', severities=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'])`
+I.e. `findVulnerabilitiesWithTrivy([ imageName: 'nginx', severity=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'])`
 
 This is looking in the nginx image for all vulnerabilities with a severity of HIGH and CIRITCAL using the docker trivy version 0.15.0
 
