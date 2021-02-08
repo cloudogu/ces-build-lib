@@ -50,9 +50,12 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [SonarCloud](#sonarcloud)
   - [Pull Requests in SonarQube](#pull-requests-in-sonarqube)
 - [Changelog](#changelog)
-  - [changelogFileName](#changelogFileName)
+  - [changelogFileName](#changelogfilename)
 - [GitHub](#github)
 - [GitFlow](#gitflow)
+- [SCM-Manager](#scm-manager)
+  - [Pull Requests](#pull-requests)
+- [HttpClient](#httpclient)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -898,6 +901,105 @@ stage('Gitflow') {
 * `gitflow.finishRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
    * Use the `releaseVersion` (String) as the name of the new git release. 
    
+# SCM-Manager
+
+Provides the functionality to handle pull requests on a SCMManager repository.
+
+You need to pass `usernamePassword` (i.e. a String containing the ID that refers to the
+[Jenkins credentials](https://jenkins.io/doc/book/using/using-credentials/)) to `SCMManager` during construction.
+These are then used for handling the pull requests.
+
+```groovy
+SCMManager scmm = new SCMManager(this, 'ourCredentials')
+```
+
+Set the repository url through the `repositoryUrl` property like so:
+
+```groovy
+SCMManager scmm = new SCMManager(this, 'https://hostname/scm', 'ourCredentials')
+```
+
+## Pull Requests
+
+Each method requires a `repository` parameter, a String containing namespace and name, e.g. `cloudogu/ces-build-lib`.
+
+* `scmm.searchPullRequestIdByTitle(repository, title)` - Returns a pull request ID by title, or empty, if not present.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `title` (String) as the title of the pull request in question.
+    * This methods requires the `readJSON()` step from the 
+      [Pipeline Utility Steps plugin](https://plugins.jenkins.io/pipeline-utility-steps/).
+* `scmm.createPullRequest(repository, source, target, title, description)` - Creates a pull request, or empty, if not present.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `source` (String) as the source branch of the pull request.
+    * Use the `target` (String) as the target branch of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
+* `scmm.updateDescription(repository, pullRequestId, title, description)` - Updates the description of a pull request.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `pullRequestId` (String) as the ID of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
+* `scmm.createOrUpdatePullRequest(repository, source, target, title, description)` - Creates a pull request if no PR is found or updates the existing one.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `source` (String) as the source branch of the pull request.
+    * Use the `target` (String) as the target branch of the pull request.
+    * Use the `title` (String) as the title of the pull request.
+    * Use the `description` (String) as the description of the pull request.
+* `scmm.addComment(repository, pullRequestId, comment)` - Adds a comment to a pull request.
+    * Use the `repository` (String) as the GitOps repository
+    * Use the `pullRequestId` (String) as the ID of the pull request.
+    * Use the `comment` (String) as the comment to add to the pull request.
+
+Example:
+
+```groovy
+def scmm = new SCMManager(this, 'https://your.ecosystem.com/scm', scmManagerCredentials)
+
+def pullRequestId = scmm.createPullRequest('cloudogu/ces-build-lib', 'feature/abc', 'develop', 'My title', 'My description')
+pullRequestId = scmm.searchPullRequestIdByTitle('cloudogu/ces-build-lib', 'My title')
+scmm.updatePullRequest('cloudogu/ces-build-lib', pullRequestId, 'My new title', 'My new description')
+scmm.addComment('cloudogu/ces-build-lib', pullRequestId, 'A comment')
+```
+
+# HttpClient
+
+`HttpClient` provides a simple `curl` frontend for groovy. 
+
+* Not surprisingly, it requires `curl` on the jenkins agents.
+* If you need to authenticate, you can create a `HttpClient` with optional credentials ID (`usernamePassword` credentials)
+* `HttpClient` provides `get()`, `put()` and `post()` methods 
+* All methods have the same signature, e.g.  
+  `http.get(url, contentType = '', data = '')`
+   * `url` (String) 
+   * optional `contentType` (String) - set as acceptHeader in the request 
+   * optional `data` (Object) - sent in the body of the request
+* If successful, all methods return the same data structure a map of
+  * `httpCode` - as string containing the http status code
+  * `headers` - a map containing the response headers, e.g. `[ location: 'http://url' ]`
+  * `body` - an optional string containing the body of the response  
+* In case of an error (Connection refused, Could not resolve host, etc.) an exception is thrown which fails the build
+  right away. If you don't want the build to fail, wrap the call in a `try`/`catch` block.
+
+Example:
+
+```groovy
+HttpClient http = new HttpClient(scriptMock, 'myCredentialID')
+
+// Simplest example
+echo http.get('http://url')
+
+// POSTing data
+def dataJson = JsonOutput.toJson([
+    comment: comment
+])
+def response = http.post('http://url/comments"', 'application/json', dataJson)
+
+if (response.status == '201' && response.content-type == 'application/json') {
+    def json = readJSON text: response.body
+    echo json.count
+}
+```
+
 # Steps
 
 ## mailIfStatusChanged
