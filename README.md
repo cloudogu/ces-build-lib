@@ -1074,7 +1074,7 @@ Here the only mandatory field is the imageName. If no imageName was passed the f
 - **severity** *(list of strings)*: If left blank all severities will be shown. If one or more are specified only these will be shown
   i.e. if 'HIGH' is passed then only vulnerabilities with the 'HIGH' score are shown
 - **trivyVersion** *(string)*: The version of the trivy image
-- **allowList** *(list of strings)*: A list of allowed vulnerabilities which will be ignored if there are matches. So if for example 2 vulnerabilities are orifinally found and
+- **allowList** *(list of strings)*: A list of allowed vulnerabilities which will be ignored if there are matches. So if for example 2 vulnerabilities are originally found and
   a VulnerabilityID is passed which matches one of the two found vulnerabilities only the one vulnerability will be returned which was not specified in the allowList 
 
 If there are vulnerabilities the output looks as follows.
