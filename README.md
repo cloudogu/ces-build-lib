@@ -1057,16 +1057,32 @@ Returns true if the build is successful, i.e. not failed or unstable (yet).
 
 Returns a list of vulnerabilities or an empty list if there are no vulnerabilities for the given severity.
 
-I.e. `findVulnerabilitiesWithTrivy([ imageName: 'nginx', severity=[ 'HIGH, CRITICAL' ], trivyVersion: '0.15.0'])`
+`findVulnerabilitiesWithTrivy(trivyConfig as Map)`
 
-This is looking in the nginx image for all vulnerabilities with a severity of HIGH and CIRITCAL using the docker trivy version 0.15.0
+```groovy
+trivyConfig = [ 
+    imageName: 'nginx', 
+    severity: [ 'HIGH, CRITICAL' ], 
+    trivyVersion: '0.15.0', 
+    allowList: [ 'CVE-XXXX-XXX', 'CVE-XXXX-XXX' ]
+]
+```
+
+Here the only mandatory field is the imageName. If no imageName was passed the function returns an empty list.
+
+- **imageName** *(string)*: The name of the image to be scanned
+- **severity** *(list of strings)*: If left blank all severities will be shown. If one or more are specified only these will be shown
+  i.e. if 'HIGH' is passed then only vulnerabilities with the 'HIGH' score are shown
+- **trivyVersion** *(string)*: The version of the trivy image
+- **allowList** *(list of strings)*: A list of allowed vulnerabilities which will be ignored if there are matches. So if for example 2 vulnerabilities are orifinally found and
+  a VulnerabilityID is passed which matches one of the two found vulnerabilities only the one vulnerability will be returned which was not specified in the allowList 
 
 If there are vulnerabilities the output looks as follows.
 
 ```json
 [
       {
-        "VulnerabilityID": "CVE-XXX-XXX",
+        "VulnerabilityID": "CVE-XXXX-XXX",
         "PkgName": "",
         "InstalledVersion": "",
         "Layer": {
