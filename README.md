@@ -22,6 +22,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Advanced Maven in Docker features](#advanced-maven-in-docker-features)
       - [Maven starts new containers](#maven-starts-new-containers)
       - [Local repo](#local-repo)
+        - [Containers](#containers)
+        - [Without Containers](#without-containers)
       - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
   - [Repository Credentials](#repository-credentials)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
@@ -234,14 +236,27 @@ There are some security-related concerns about this. See [Docker](#docker).
 
 #### Local repo
 
-If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) instead of a maven repo per job (within each workspace), you can use the following option.
+##### Maven in Docker
+If you would like to use Jenkin's local maven repo (or more accurate the one of the build executor, typically at `/home/jenkins/.m2`) 
+instead of a maven repo per job (within each workspace), you can use the following options:
+
 ```
 Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
 mvn.useLocalRepoFromJenkins = true
 ```
 
-This speed speeds up the first build and uses less memory. 
+This speed speeds up the first build and uses less memory.
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
+
+##### Maven without Docker
+
+The default is the default maven behavior `/home/jenkins/.m2` is used.
+If you want to use a separate maven repo per Workspace (e.g. in order to avoid concurrent builds overwriting 
+dependencies of multi module projects building the same version (e.g. a SNAPSHOT) the following will work:
+
+```groovy
+mvn.additionalArgs += " -Dmaven.repo.local=${env.WORKSPACE}/.m2"
+```
 
 #### Lazy evaluation / execute more steps inside container
  
