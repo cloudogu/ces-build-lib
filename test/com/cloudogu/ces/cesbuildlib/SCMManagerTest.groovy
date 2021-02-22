@@ -98,7 +98,7 @@ class SCMManagerTest {
 
             return [
                 httpCode: '201',
-                headers: [ location: 'https://a/long/url/with/id/id/12' ]
+                headers: [ Location: 'https://a/long/url/with/id/id/12' ]
             ]
         })
 
@@ -110,7 +110,7 @@ class SCMManagerTest {
     void "error on pull request creation makes build unstable"() {
         when(httpMock.post(any(), any(), any())).thenReturn([
             httpCode: '500',
-            headers: [ location: 'https://a/long/url/with/id/id/12' ]
+            headers: [ Location: 'https://a/long/url/with/id/id/12' ]
         ])
 
         def id = scmm.createPullRequest(repo, 'source', 'target', 'title', 'description')
@@ -192,7 +192,7 @@ class SCMManagerTest {
 
             return [
                 httpCode: '201',
-                headers: [ location: 'https://a/long/url/with/id/id/12' ]
+                headers: [ Location: 'https://a/long/url/with/id/id/12' ]
             ]
         })
 
