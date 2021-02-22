@@ -45,7 +45,7 @@ class SCMManager implements Serializable {
         }
 
         // example: "location: https://some/pr/42" - extract id
-        return httpResponse.headers.location.split("/")[-1]
+        return httpResponse.headers.Location.split("/")[-1]
     }
 
     boolean updatePullRequest(String repository, String pullRequestId, String title, String description) {
