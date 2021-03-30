@@ -875,12 +875,14 @@ stage('Github') {
 }
 ```
 
-* `github.createRelease(releaseVersion, changes)` - Creates a release on github.
+* `github.createRelease(releaseVersion, changes [, productionBranch])` - Creates a release on github.
    * Use the `releaseVersion` (String) as name and tag.
    * Use the `changes` (String) as body of the release.
-* `github.createReleaseWithChangelog(releaseVersion, changelog)` - Creates a release on github. 
+   * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
+* `github.createReleaseWithChangelog(releaseVersion, changelog [, productionBranch])` - Creates a release on github.
    * Use the `releaseVersion` (String) as name and tag.
    * Use the `changelog` (Changelog) to extract the changes out of a changelog and add them to the body of the release.
+   * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
 * `pushPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
    the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
    * Uses the name and email of the last committer as author and committer.
@@ -913,8 +915,9 @@ stage('Gitflow') {
 ```
 
 * `gitflow.isReleaseBranch()` - Checks if the currently checked out branch is a gitflow release branch.
-* `gitflow.finishRelease(releaseVersion)` - Finishes a git release by merging into develop and master.
-   * Use the `releaseVersion` (String) as the name of the new git release. 
+* `gitflow.finishRelease(releaseVersion [, productionBranch])` - Finishes a git release by merging into develop and production release branch (default: "master").
+   * Use the `releaseVersion` (String) as the name of the new git release.
+   * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
    
 # SCM-Manager
 
