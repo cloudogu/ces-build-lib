@@ -25,7 +25,7 @@ class GitFlow implements Serializable {
      *
      * @param releaseVersion the version that is going to be released
      */
-    void finishRelease(String releaseVersion, String productionBranch="master") {
+    void finishRelease(String releaseVersion, String productionBranch = "master") {
         String branchName = git.getBranchName()
 
         // Stop the build here if there is already a tag for this version on remote.
@@ -70,7 +70,7 @@ class GitFlow implements Serializable {
         git.checkout(releaseVersion)
 
         // Push changes and tags
-        git.push("origin " + productionBranch + " develop ${releaseVersion}")
+        git.push("origin ${productionBranch} develop ${releaseVersion}")
         git.deleteOriginBranch(branchName)
     }
 }
