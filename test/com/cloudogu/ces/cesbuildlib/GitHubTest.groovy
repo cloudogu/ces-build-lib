@@ -73,7 +73,30 @@ class GitHubTest extends GroovyTestCase {
         assertEquals("git remote get-url origin", scriptMock.allActualArgs[i++])
 
         String expectedData = """--data '{"tag_name": "v1.0.0", "target_commitish": "master", """ +
-                """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
+            """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
+        String expectedHeader = """--header "Content-Type: application/json"  https://api.github.com/repos/myRepoName/releases"""
+
+        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
+    }
+
+    @Test
+    void testCreateReleaseByChangelogOnMainBranch() {
+        String expectedProductionBranch = "main"
+
+        scriptMock.files.put('CHANGELOG.md', testChangelog)
+        scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        Git git = new Git(scriptMock, "credentials")
+        GitHub github = new GitHub(scriptMock, git)
+        Changelog changelog = new Changelog(scriptMock)
+
+        github.createReleaseWithChangelog("v1.0.0", changelog, expectedProductionBranch)
+
+        assertEquals(2, scriptMock.allActualArgs.size())
+        int i = 0;
+        assertEquals("git remote get-url origin", scriptMock.allActualArgs[i++])
+
+        String expectedData = """--data '{"tag_name": "v1.0.0", "target_commitish": "${expectedProductionBranch}", """ +
+            """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
         String expectedHeader = """--header "Content-Type: application/json"  https://api.github.com/repos/myRepoName/releases"""
 
         assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
