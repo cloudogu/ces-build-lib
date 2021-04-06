@@ -25,7 +25,7 @@ class GitFlow implements Serializable {
      *
      * @param releaseVersion the version that is going to be released
      */
-    void finishRelease(String releaseVersion) {
+    void finishRelease(String releaseVersion, String productionBranch = "master") {
         String branchName = git.getBranchName()
 
         // Stop the build here if there is already a tag for this version on remote.
@@ -50,9 +50,9 @@ class GitFlow implements Serializable {
         String releaseBranchEmail = git.commitAuthorEmail
 
         git.checkoutLatest('develop')
-        git.checkoutLatest('master')
+        git.checkoutLatest(productionBranch)
 
-        // Merge release branch into master
+        // Merge release branch into productionBranch
         git.mergeNoFastForward(branchName, releaseBranchAuthor, releaseBranchEmail)
 
         // Create tag. Use -f because the created tag will persist when build has failed.
@@ -70,7 +70,7 @@ class GitFlow implements Serializable {
         git.checkout(releaseVersion)
 
         // Push changes and tags
-        git.push("origin master develop ${releaseVersion}")
+        git.push("origin ${productionBranch} develop ${releaseVersion}")
         git.deleteOriginBranch(branchName)
     }
 }

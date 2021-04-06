@@ -15,11 +15,11 @@ class GitHub implements Serializable {
      * @param releaseVersion the version for the github release
      * @param changelog the changelog object to extract the release information from
      */
-    void createReleaseWithChangelog(String releaseVersion, Changelog changelog) {
+    void createReleaseWithChangelog(String releaseVersion, Changelog changelog, String productionBranch = "master") {
         try {
             def changelogText = changelog.changesForVersion(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
-            createRelease(releaseVersion, changelogText)
+            createRelease(releaseVersion, changelogText, productionBranch)
         } catch (IllegalArgumentException e) {
             script.unstable("Release failed due to error: ${e}")
             script.echo 'Please manually update github release.'
@@ -29,7 +29,7 @@ class GitHub implements Serializable {
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void createRelease(String releaseVersion, String changes) {
+    void createRelease(String releaseVersion, String changes, String productionBranch = "master") {
         def repositoryName = git.getRepositoryName()
         if (!git.credentials) {
             throw new IllegalArgumentException('Unable to create Github release without credentials.')
@@ -38,7 +38,7 @@ class GitHub implements Serializable {
                 credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
             
             def body = 
-                    """{"tag_name": "${releaseVersion}", "target_commitish": "master", "name": "${releaseVersion}", "body":"${changes}"}"""
+                    """{"tag_name": "${releaseVersion}", "target_commitish": "${productionBranch}", "name": "${releaseVersion}", "body":"${changes}"}"""
             def apiUrl = "https://api.github.com/repos/${repositoryName}/releases"
             def flags = """--request POST --data '${body.trim()}' --header "Content-Type: application/json" """
             def username = '\$GIT_AUTH_USR'
