@@ -47,10 +47,8 @@ class SCMManager implements Serializable {
         // example: "location: https://some/pr/42" - extract id
         // in some cases the location key might be upper case so we check for that
         if (httpResponse.headers.containsKey("location")) {
-            script.echo 'location is with lower l'
             return httpResponse.headers.location.split("/")[-1]
         } else {
-            script.echo 'location is with upper l'
             return httpResponse.headers.Location.split("/")[-1]
         }
     }
