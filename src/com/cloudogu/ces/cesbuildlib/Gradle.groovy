@@ -23,9 +23,7 @@ abstract class Gradle implements Serializable {
     void sh(String command, boolean printStdOut) {
         script.echo "executing sh: ${command}, return Stdout: ${printStdOut}"
         if (printStdOut) {
-            // -V : strongly recommended in CI, will display the JDK and Maven versions in use.
-            // Don't use this with sh(returnStdout: true ..) !
-            script.sh "${command} -V"
+            script.sh "${command}"
         } else {
             new Sh(script).returnStdOut command
         }
