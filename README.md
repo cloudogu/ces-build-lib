@@ -441,6 +441,27 @@ Available from both local Maven and Maven in Docker.
 
 See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
+# Gradle
+
+## Gradle in Docker
+
+Run gradle in a docker container. This can be helpful, when
+
+* constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running
+  integration tests, unit tests that use infrastructure that binds to ports or
+* one maven repo per builds is required For example when concurrent builds of multi module project install the same
+  snapshot versions.
+
+Example:
+```groovy
+String gradleDockerImage = 'openjdk:11.0.10-jdk'
+Gradle gradlew = new GradleWrapperInDocker(this, gradleDockerImage)
+
+stage('Build') {
+    gradlew "clean build"
+}
+```
+
 # Git
 
 An extension to the `git` step, that provides an API for some commonly used git commands and utilities.
