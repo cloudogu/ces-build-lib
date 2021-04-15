@@ -34,6 +34,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Deploying sites](#deploying-sites)
     - [Passing additional arguments](#passing-additional-arguments)
   - [Maven Utilities](#maven-utilities)
+- [Gradle](#gradle)
+  - [Gradle Wrapper in Docker](#gradle-wrapper-in-docker)
 - [Git](#git)
   - [Credentials](#credentials)
   - [Git Utilities](#git-utilities)
@@ -440,6 +442,28 @@ Available from both local Maven and Maven in Docker.
 * `mvn.getMavenProperty('project.build.sourceEncoding')`
 
 See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
+
+# Gradle
+
+## Gradle Wrapper in Docker
+
+It's also possible to use a GradleWrapper in a Docker Container. Here, the Docker container is responsible for
+providing the JDK.
+
+See [GradleWrapperInDocker](src/com/cloudogu/ces/cesbuildlib/GradleWrapperInDocker.groovy)
+
+Example:
+```groovy
+String gradleDockerImage = 'openjdk:11.0.10-jdk'
+Gradle gradlew = new GradleWrapperInDocker(this, gradleDockerImage)
+
+stage('Build') {
+    gradlew "clean build"
+}
+```
+
+Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image
+registries, where `adoptopenjdk` is just one option. The choice is yours.
 
 # Git
 
