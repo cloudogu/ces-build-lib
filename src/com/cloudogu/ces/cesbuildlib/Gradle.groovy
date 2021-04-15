@@ -17,7 +17,7 @@ abstract class Gradle implements Serializable {
     protected abstract def gradle(String args, boolean printStdOut = true)
 
     def gradlew(String args, boolean printStdOut) {
-        sh("./gradlew -q "+ args, printStdOut)
+        sh("./gradlew "+ args, printStdOut)
     }
 
     void sh(String command, boolean printStdOut) {
