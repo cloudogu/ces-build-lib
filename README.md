@@ -34,6 +34,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Deploying sites](#deploying-sites)
     - [Passing additional arguments](#passing-additional-arguments)
   - [Maven Utilities](#maven-utilities)
+- [Gradle](#gradle)
+  - [Gradle Wrapper in Docker](#gradle-wrapper-in-docker)
 - [Git](#git)
   - [Credentials](#credentials)
   - [Git Utilities](#git-utilities)
@@ -443,14 +445,12 @@ See [Maven](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 # Gradle
 
-## Gradle in Docker
+## Gradle Wrapper in Docker
 
-Run gradle in a docker container. This can be helpful, when
+It's also possible to use a GradleWrapper in a Docker Container. Here, the Docker container is responsible for
+providing the JDK.
 
-* constant ports are bound during the build that cause port conflicts in concurrent builds. For example, when running
-  integration tests, unit tests that use infrastructure that binds to ports or
-* one maven repo per builds is required For example when concurrent builds of multi module project install the same
-  snapshot versions.
+See [GradleWrapperInDocker](src/com/cloudogu/ces/cesbuildlib/GradleWrapperInDocker.groovy)
 
 Example:
 ```groovy
@@ -461,6 +461,9 @@ stage('Build') {
     gradlew "clean build"
 }
 ```
+
+Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image
+registries, where `adoptopenjdk` is just one option. The choice is yours.
 
 # Git
 
