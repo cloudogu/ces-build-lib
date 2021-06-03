@@ -38,6 +38,7 @@ abstract class Maven implements Serializable {
     protected abstract def mvn(String args, boolean printStdOut = true)
 
     def mvnw(String args, boolean printStdOut) {
+        script.sh "MAVEN_USER_HOME=${script.env.WORKSPACE}/.m2"
         sh("MVNW_VERBOSE=true ./mvnw ${createCommandLineArgs(args)}", printStdOut)
     }
 
