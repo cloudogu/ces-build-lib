@@ -9,27 +9,42 @@ class GitHub implements Serializable {
         this.git = git
     }
 
+    void addReleaseAsset(String releaseId, String filePath){
+        def repositoryName = git.getRepositoryName()
+
+        script.withCredentials([script.usernamePassword(
+            credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
+
+            def apiUrl = "https://uploads.github.com/repos/${repositoryName}/releases/${releaseId}/assets?name=\$(basename ${filePath})}"
+            def flags = """--header "Content-Type: multipart/form-data" --data-binary @${filePath}}"""
+            def username = '\$GIT_AUTH_USR'
+            def password = '\$GIT_AUTH_PSW'
+            script.sh.returnStdOut "curl -u ${username}:${password} ${flags} ${apiUrl}"
+        }
+    }
+
     /**
      * Creates a new release on Github and adds changelog info to it
      *
      * @param releaseVersion the version for the github release
      * @param changelog the changelog object to extract the release information from
      */
-    void createReleaseWithChangelog(String releaseVersion, Changelog changelog, String productionBranch = "master") {
+    String createReleaseWithChangelog(String releaseVersion, Changelog changelog, String productionBranch = "master") {
         try {
             def changelogText = changelog.changesForVersion(releaseVersion)
             script.echo "The description of github release will be: >>>${changelogText}<<<"
-            createRelease(releaseVersion, changelogText, productionBranch)
+            return createRelease(releaseVersion, changelogText, productionBranch)
         } catch (IllegalArgumentException e) {
             script.unstable("Release failed due to error: ${e}")
             script.echo 'Please manually update github release.'
+            return ""
         }
     }
 
     /**
      * Creates a release on Github and fills it with the changes provided
      */
-    void createRelease(String releaseVersion, String changes, String productionBranch = "master") {
+    String createRelease(String releaseVersion, String changes, String productionBranch = "master") {
         def repositoryName = git.getRepositoryName()
         if (!git.credentials) {
             throw new IllegalArgumentException('Unable to create Github release without credentials.')
@@ -43,7 +58,7 @@ class GitHub implements Serializable {
             def flags = """--request POST --data '${body.trim()}' --header "Content-Type: application/json" """
             def username = '\$GIT_AUTH_USR'
             def password = '\$GIT_AUTH_PSW'
-            script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
+            script.sh.returnStdOut "curl -u ${username}:${password} ${flags} ${apiUrl}"
         }
     }
 
