@@ -62,11 +62,13 @@ class GitHubTest extends GroovyTestCase {
     void testCreateReleaseByChangelog() {
         scriptMock.files.put('CHANGELOG.md', testChangelog)
         scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        scriptMock.expectedShRetValueForScript.put("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST --data '{\"tag_name\": \"v1.0.0\", \"target_commitish\": \"master\", \"name\": \"v1.0.0\", \"body\":\"### Added\\n- everything\"}' --header \"Content-Type: application/json\"  https://api.github.com/repos/myRepoName/releases", "{\"id\": 12345}")
         Git git = new Git(scriptMock, "credentials")
         GitHub github = new GitHub(scriptMock, git)
         Changelog changelog = new Changelog(scriptMock)
 
-        github.createReleaseWithChangelog("v1.0.0", changelog)
+        String response=github.createReleaseWithChangelog("v1.0.0", changelog)
+        assertEquals(response, "12345")
 
         assertEquals(2, scriptMock.allActualArgs.size())
         int i = 0;
@@ -85,11 +87,14 @@ class GitHubTest extends GroovyTestCase {
 
         scriptMock.files.put('CHANGELOG.md', testChangelog)
         scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        scriptMock.expectedShRetValueForScript.put("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST --data '{\"tag_name\": \"v1.0.0\", \"target_commitish\": \"main\", \"name\": \"v1.0.0\", \"body\":\"### Added\\n- everything\"}' --header \"Content-Type: application/json\"  https://api.github.com/repos/myRepoName/releases", "{\"id\": 12345}")
+
         Git git = new Git(scriptMock, "credentials")
         GitHub github = new GitHub(scriptMock, git)
         Changelog changelog = new Changelog(scriptMock)
 
-        github.createReleaseWithChangelog("v1.0.0", changelog, expectedProductionBranch)
+        String response=github.createReleaseWithChangelog("v1.0.0", changelog, expectedProductionBranch)
+        assertEquals(response, "12345")
 
         assertEquals(2, scriptMock.allActualArgs.size())
         int i = 0;
@@ -117,6 +122,18 @@ class GitHubTest extends GroovyTestCase {
 
         assertFalse(scriptMock.unstable)
         github.createReleaseWithChangelog("v1.0.0", changelog)
+        assertTrue(scriptMock.unstable)
+    }
+
+    @Test
+    void testAddReleaseAssetFailsWithoutCredentials() {
+        scriptMock.files.put('tool.sha256sum.asc', "")
+        scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        Git git = new Git(scriptMock)
+        GitHub github = new GitHub(scriptMock, git)
+
+        assertFalse(scriptMock.unstable)
+        github.addReleaseAsset("12345", "tool.sha256sum.asc")
         assertTrue(scriptMock.unstable)
     }
 }

@@ -17,6 +17,10 @@ class GitHub implements Serializable {
         def repositoryName = git.getRepositoryName()
 
         try {
+            if (!git.credentials) {
+                throw new IllegalArgumentException('Unable to create Github release without credentials.')
+            }
+
             script.withCredentials([script.usernamePassword(
                 credentialsId: git.credentials, usernameVariable: 'GIT_AUTH_USR', passwordVariable: 'GIT_AUTH_PSW')]) {
 
@@ -66,9 +70,9 @@ class GitHub implements Serializable {
             def flags = """--request POST --data '${body.trim()}' --header "Content-Type: application/json" """
             def username = '\$GIT_AUTH_USR'
             def password = '\$GIT_AUTH_PSW'
-            def var=this.sh.returnStdOut("curl -u ${username}:${password} ${flags} ${apiUrl}")
             def jsonSlurper = new JsonSlurper()
-            return jsonSlurper.parseText(var).id
+            println "curl -u ${username}:${password} ${flags} ${apiUrl}"
+            return jsonSlurper.parseText(this.sh.returnStdOut("curl -u ${username}:${password} ${flags} ${apiUrl}")).id
         }
     }
 
