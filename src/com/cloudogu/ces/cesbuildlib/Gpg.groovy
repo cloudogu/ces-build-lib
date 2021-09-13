@@ -54,7 +54,7 @@ class Gpg {
             script.withCredentials([script.file(credentialsId: 'jenkins_gpg_private_key_for_ces_tool_release_signing', variable: 'pkey')]) {
                 try {
                     withGpg {
-                        script.sh "gpg --yes --always-trust --pinentry-mode loopback --passphrase=\"${passphrase}\" --import ${pkey}"
+                        script.sh "gpg --yes --always-trust --pinentry-mode loopback --passphrase=\"\$passphrase\" --import \$pkey"
                         closure.call()
                     }
                 } catch(e){
@@ -62,7 +62,7 @@ class Gpg {
                     throw e
                 }
                 finally {
-                    script.sh "rm -f ${pkey}"
+                    script.sh "rm -f \$pkey"
                     script.sh "rm -rf .gnupg"
                 }
             }
