@@ -50,8 +50,8 @@ class Gpg {
     }
 
     private void withPrivateKey(Closure closure){
-        script.withCredentials([string(credentialsId: 'jenkins_gpg_private_key_passphrase', variable: 'passphrase')]) {
-            script.withCredentials([file(credentialsId: 'jenkins_gpg_private_key_for_ces_tool_release_signing', variable: 'pkey')]) {
+        script.withCredentials([script.string(credentialsId: 'jenkins_gpg_private_key_passphrase', variable: 'passphrase')]) {
+            script.withCredentials([script.file(credentialsId: 'jenkins_gpg_private_key_for_ces_tool_release_signing', variable: 'pkey')]) {
                 try {
                     withGpg {
                         script.sh "gpg --yes --always-trust --pinentry-mode loopback --passphrase=\"${passphrase}\" --import ${pkey}"
