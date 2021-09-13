@@ -136,4 +136,17 @@ class GitHubTest extends GroovyTestCase {
         github.addReleaseAsset("12345", "tool.sha256sum.asc")
         assertTrue(scriptMock.unstable)
     }
+
+    @Test
+    void testAddReleaseAssetWithoutError() {
+        scriptMock.files.put('tool.sha256sum.asc', "")
+        scriptMock.expectedShRetValueForScript.put("git remote get-url origin", "myRepoName")
+        Git git = new Git(scriptMock, "credentials")
+        scriptMock.usernamePassword(["username": "password"])
+        GitHub github = new GitHub(scriptMock, git)
+
+        assertFalse(scriptMock.unstable)
+        github.addReleaseAsset("12345", "tool.sha256sum.asc")
+        assertFalse(scriptMock.unstable)
+    }
 }

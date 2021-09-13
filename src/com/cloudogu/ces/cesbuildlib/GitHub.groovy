@@ -33,7 +33,7 @@ class GitHub implements Serializable {
                 def flags = """--header "Content-Type: multipart/form-data" --data-binary @${filePath}"""
                 def username = '\$GIT_AUTH_USR'
                 def password = '\$GIT_AUTH_PSW'
-                this.sh.returnStdOut "curl -u ${username}:${password} ${flags} ${apiUrl}"
+                script.sh "curl -u ${username}:${password} ${flags} ${apiUrl}"
             }
         } catch (Exception e) {
             script.unstable("Asset upload failed due to error: ${e}")
@@ -76,7 +76,6 @@ class GitHub implements Serializable {
             def username = '\$GIT_AUTH_USR'
             def password = '\$GIT_AUTH_PSW'
             def jsonSlurper = new JsonSlurper()
-            println "curl -u ${username}:${password} ${flags} ${apiUrl}"
             return jsonSlurper.parseText(this.sh.returnStdOut("curl -u ${username}:${password} ${flags} ${apiUrl}")).id
         }
     }
