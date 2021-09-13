@@ -14,6 +14,7 @@ class ScriptMock {
     /** Used when no value in expectedShRetValueForScript matches **/
     def expectedDefaultShRetValue
     def expectedShRetValueForScript = [:]
+    Map<String,Throwable> expectedShCommandToThrow = [:]
 
     String actualSonarQubeEnv
 
@@ -35,6 +36,15 @@ class ScriptMock {
     String actualDir
     def actualGitArgs
     private ignoreOutputFile
+    Docker docker
+
+    ScriptMock(Docker docker){
+        this.docker = docker
+    }
+
+    ScriptMock(){
+        this(DockerMock.create())
+    }
 
     String sh(String args) {
         actualShStringArgs.add(args.toString())
@@ -53,6 +63,11 @@ class ScriptMock {
 
     private Object getReturnValueFor(Object arg) {
         // toString() to make Map also match GStrings
+        def error = expectedShCommandToThrow.get(arg.toString().trim())
+        if (error != null){
+            throw error
+        }
+
         def value = expectedShRetValueForScript.get(arg.toString().trim())
         if (value == null) {
             return expectedDefaultShRetValue

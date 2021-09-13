@@ -4,9 +4,9 @@ class Gpg {
     private script
     private docker
 
-    Gpg(script) {
+    Gpg(script, docker) {
         this.script = script
-        this.docker = new Docker(script)
+        this.docker = docker
     }
 
     /**
