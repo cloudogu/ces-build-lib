@@ -38,7 +38,7 @@ class Gpg {
         ENTRYPOINT ["/usr/bin/gpg"]
     """
         try {
-            writeFile encoding: 'UTF-8', file: 'Dockerfile.gpgbuild', text: dockerfile.trim()
+            script.writeFile encoding: 'UTF-8', file: 'Dockerfile.gpgbuild', text: dockerfile.trim()
             new Docker(this).build("cloudogu/gpg:1.0", "-f Dockerfile.gpgbuild .")
             closure.call()
         } catch(e){
@@ -50,10 +50,9 @@ class Gpg {
     }
 
     private void withPrivateKey(Closure closure){
-        withCredentials([string(credentialsId: 'jenkins_gpg_private_key_passphrase', variable: 'passphrase')]) {
-            withCredentials([file(credentialsId: 'jenkins_gpg_private_key_for_ces_tool_release_signing', variable: 'pkey')]) {
+        script.withCredentials([string(credentialsId: 'jenkins_gpg_private_key_passphrase', variable: 'passphrase')]) {
+            script.withCredentials([file(credentialsId: 'jenkins_gpg_private_key_for_ces_tool_release_signing', variable: 'pkey')]) {
                 try {
-                    def etcdContainerName = "${JOB_BASE_NAME}-${BUILD_NUMBER}".replaceAll("\\/|%2[fF]", "-")
                     withGpg {
                         script.sh "gpg --yes --always-trust --pinentry-mode loopback --passphrase=\"${passphrase}\" --import ${pkey}"
                         closure.call()
