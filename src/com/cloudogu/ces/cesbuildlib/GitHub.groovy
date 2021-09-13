@@ -13,6 +13,11 @@ class GitHub implements Serializable {
         this.sh = new Sh(script)
     }
 
+    /**
+     * Uploads a file and adds it to the release assets of a release.
+     * @param releaseId The API-ID of the release. Can be obtained as return value of 'createReleaseWithChangelog' or 'createRelease'.
+     * @param filePath The path to the file which should be uploaded.
+     */
     void addReleaseAsset(String releaseId, String filePath) {
         def repositoryName = git.getRepositoryName()
 
