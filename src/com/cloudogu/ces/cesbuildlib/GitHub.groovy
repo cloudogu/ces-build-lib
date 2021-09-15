@@ -75,8 +75,9 @@ class GitHub implements Serializable {
             def flags = """--request POST --data '${body.trim()}' --header "Content-Type: application/json" """
             def username = '\$GIT_AUTH_USR'
             def password = '\$GIT_AUTH_PSW'
+            def jsonResponse = this.sh.returnStdOut("curl -u ${username}:${password} ${flags} ${apiUrl}")
             def jsonSlurper = new JsonSlurper()
-            return jsonSlurper.parseText(this.sh.returnStdOut("curl -u ${username}:${password} ${flags} ${apiUrl}")).id
+            return jsonSlurper.parseText(jsonResponse).id
         }
     }
 
