@@ -899,14 +899,17 @@ stage('Github') {
 }
 ```
 
-* `github.createRelease(releaseVersion, changes [, productionBranch])` - Creates a release on github.
+* `github.createRelease(releaseVersion, changes [, productionBranch])` - Creates a release on github. Returns the GitHub Release-ID.
    * Use the `releaseVersion` (String) as name and tag.
    * Use the `changes` (String) as body of the release.
    * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
-* `github.createReleaseWithChangelog(releaseVersion, changelog [, productionBranch])` - Creates a release on github.
+* `github.createReleaseWithChangelog(releaseVersion, changelog [, productionBranch])` - Creates a release on github. Returns the GitHub Release-ID.
    * Use the `releaseVersion` (String) as name and tag.
    * Use the `changelog` (Changelog) to extract the changes out of a changelog and add them to the body of the release.
    * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
+* `github.addReleaseAsset(releaseId, filePath)`
+  * The `releaseId` (String) is the unique identifier of a release in the github API. Can be obtained as return value of `createReleaseWithChangelog` or `createRelease`.
+  * The `filePath` specifies the path to the file which should be uploaded.
 * `pushPagesBranch('folderToPush', 'commit Message')` - Commits and pushes a folder to the `gh-pages` branch of 
    the current repo. Can be used to conveniently deliver websites. See https://pages.github.com. Note:
    * Uses the name and email of the last committer as author and committer.
