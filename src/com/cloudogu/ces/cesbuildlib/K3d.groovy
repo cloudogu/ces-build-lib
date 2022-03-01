@@ -1,14 +1,16 @@
 package com.cloudogu.ces.cesbuildlib
 
+import com.cloudbees.groovy.cps.NonCPS
+
 class K3d {
     private String workspace
     private String clusterName
     private script
     private String path
 
-    K3d(String workspace, String clusterName, script, String path) {
+    K3d(String workspace, script, String path) {
         this.workspace = workspace
-        this.clusterName = clusterName
+        this.clusterName = createClusterName()
         this.script = script
         this.path = path
     }
@@ -18,7 +20,8 @@ class K3d {
      *
      * @return new randomized cluster name
      */
-    String createClusterName() {
+    @NonCPS
+    static String createClusterName() {
         String[] randomUUIDs = UUID.randomUUID().toString().split("-")
         String uuid = randomUUIDs[randomUUIDs.length-1]
         return "citest-" + uuid
