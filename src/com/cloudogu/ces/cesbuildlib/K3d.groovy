@@ -8,11 +8,11 @@ class K3d {
     private script
     private String path
 
-    K3d(String workspace, script, String path) {
-        this.workspace = workspace
+    K3d(script, String envWorkspace, String envPath) {
+        this.workspace = envWorkspace
         this.clusterName = createClusterName()
         this.script = script
-        this.path = path
+        this.path = envPath
     }
 
     /**
@@ -23,8 +23,9 @@ class K3d {
     @NonCPS
     static String createClusterName() {
         String[] randomUUIDs = UUID.randomUUID().toString().split("-")
-        String uuid = randomUUIDs[randomUUIDs.length-1]
-        return "citest-" + uuid
+        String uuid_snippet = randomUUIDs[randomUUIDs.length-1]
+        // Cluster name must be <= 32 characters
+        return "citest-" + uuid_snippet
     }
 
     /**
