@@ -50,6 +50,13 @@ class K3d {
     }
 
     /**
+     * Installs kubectl via snap
+     */
+    void installKubectl() {
+        script.sh("sudo snap install kubectl --classic")
+    }
+
+        /**
      * Delete a k3d cluster in Docker
      *
      * @param clusterName The name of the cluster you want to delete
