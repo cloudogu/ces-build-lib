@@ -80,7 +80,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 @Library('github.com/cloudogu/ces-build-lib@6cd41e0')
 import com.cloudogu.ces.cesbuildlib.*
 ```
-* Best practice: Use a defined version (e.g. a commit, such as `6cd41e0` in the example above) and not a branch such as `develop`. Otherwise your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
+* Best practice: Use a defined version (e.g. a git commit hash or a git tag, such as `6cd41e0` or `v1.49.0` in the example above) and not a branch such as `develop`. Otherwise, your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 * When build executors are docker containers and you intend to use their Docker host in the Pipeline: Please see [#8](https://github.com/cloudogu/ces-build-lib/issues/8#issuecomment-353584252).
 
 # Syntax completion
