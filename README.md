@@ -60,6 +60,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [SCM-Manager](#scm-manager)
   - [Pull Requests](#pull-requests)
 - [HttpClient](#httpclient)
+- [K3d](#k3d)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -1042,6 +1043,32 @@ def response = http.post('http://url/comments"', 'application/json', dataJson)
 if (response.status == '201' && response.content-type == 'application/json') {
     def json = readJSON text: response.body
     echo json.count
+}
+```
+
+# K3d
+
+`K3d` provides functions to set up and administer a lokal k3s cluster in Docker
+
+Example:
+
+```groovy
+K3d k3d = new K3d(this, env.WORKSPACE, env.PATH)
+
+stage('Set up k3d cluster') {
+    k3d.startK3d()
+}
+
+stage('Install kubectl') {
+    k3d.installKubectl()
+}
+
+stage('Do something with your cluster') {
+    k3d.kubectl("get nodes")
+}
+
+stage('Remove k3d cluster') {
+    k3d.deleteK3d()
 }
 ```
 
