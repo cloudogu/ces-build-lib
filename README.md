@@ -60,6 +60,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [SCM-Manager](#scm-manager)
   - [Pull Requests](#pull-requests)
 - [HttpClient](#httpclient)
+- [K3d](#k3d)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -79,7 +80,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 @Library('github.com/cloudogu/ces-build-lib@6cd41e0')
 import com.cloudogu.ces.cesbuildlib.*
 ```
-* Best practice: Use a defined version (e.g. a commit, such as `6cd41e0` in the example above) and not a branch such as `develop`. Otherwise your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
+* Best practice: Use a defined version (e.g. a git commit hash or a git tag, such as `6cd41e0` or `v1.49.0` in the example above) and not a branch such as `develop`. Otherwise, your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 * When build executors are docker containers and you intend to use their Docker host in the Pipeline: Please see [#8](https://github.com/cloudogu/ces-build-lib/issues/8#issuecomment-353584252).
 
 # Syntax completion
@@ -1042,6 +1043,32 @@ def response = http.post('http://url/comments"', 'application/json', dataJson)
 if (response.status == '201' && response.content-type == 'application/json') {
     def json = readJSON text: response.body
     echo json.count
+}
+```
+
+# K3d
+
+`K3d` provides functions to set up and administer a lokal k3s cluster in Docker
+
+Example:
+
+```groovy
+K3d k3d = new K3d(this, env.WORKSPACE, env.PATH)
+
+stage('Set up k3d cluster') {
+    k3d.startK3d()
+}
+
+stage('Install kubectl') {
+    k3d.installKubectl()
+}
+
+stage('Do something with your cluster') {
+    k3d.kubectl("get nodes")
+}
+
+stage('Remove k3d cluster') {
+    k3d.deleteK3d()
 }
 ```
 

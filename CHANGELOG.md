@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v1.48.0](https://github.com/cloudogu/ces-build-lib/releases/tag/v1.48.0) 2021-9-16
+## [v1.49.0](https://github.com/cloudogu/ces-build-lib/releases/tag/v1.49.0) 2022-03-02
+
+### Added
+- Add Kubernetes support by spinning-up a k3d cluster #67
+  - see the README.md for further information
+
+## [v1.48.0](https://github.com/cloudogu/ces-build-lib/releases/tag/v1.48.0) 2021-09-16
 ### Added
 - Add gpg class to perform gpp based task such as signing; #64
 - Add option to upload artifacts to a GitHub release; #64
