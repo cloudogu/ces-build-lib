@@ -38,4 +38,20 @@ class K3dTest extends GroovyTestCase {
 
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl get nodes")
     }
+
+    void testStartK3d() {
+        def gitOpsPlaygroundDir="leWorkspace"
+        def k3dVer="1.2.3"
+
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh".toString(), "${k3dVer}".toString())
+
+        K3d sut = new K3d(scriptMock,"${gitOpsPlaygroundDir}", "path", "credentials")
+
+        sut.startK3d()
+
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("mkdir -p ${gitOpsPlaygroundDir}/.k3d/bin".toString())
+        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${gitOpsPlaygroundDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.actualShStringArgs[2].trim()).startsWith("yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=citest-".toString())
+    }
 }
