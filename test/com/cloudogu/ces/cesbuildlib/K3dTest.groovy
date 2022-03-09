@@ -18,6 +18,15 @@ class K3dTest extends GroovyTestCase {
 
         sut.installKubectl()
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).contains("sudo snap install kubectl --classic")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo snap install kubectl --classic")
+    }
+
+    void testDeleteK3d() {
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock,"workspace", "path", "credentials")
+
+        sut.deleteK3d()
+
+        assertThat(scriptMock.actualShStringArgs[0].trim()).contains("k3d cluster delete citest-")
     }
 }
