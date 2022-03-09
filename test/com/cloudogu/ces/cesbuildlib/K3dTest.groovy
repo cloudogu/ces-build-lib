@@ -1,4 +1,5 @@
 package com.cloudogu.ces.cesbuildlib
+import static org.assertj.core.api.Assertions.assertThat
 
 class K3dTest extends GroovyTestCase {
     void testCreateClusterName() {
@@ -9,5 +10,14 @@ class K3dTest extends GroovyTestCase {
         assertTrue(testClusterName.length() <= 32)
         String testClusterName2 = sut.createClusterName()
         assertTrue(testClusterName != testClusterName2)
+    }
+
+    void testInstallKubectl() {
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock,"workspace", "path", "credentials")
+
+        sut.installKubectl()
+
+        assertThat(scriptMock.actualShStringArgs[0].trim()).contains("sudo snap install kubectl --classic")
     }
 }
