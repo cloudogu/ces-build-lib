@@ -29,4 +29,13 @@ class K3dTest extends GroovyTestCase {
 
         assertThat(scriptMock.actualShStringArgs[0].trim()).contains("k3d cluster delete citest-")
     }
+
+    void testKubectl() {
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock,"leWorkspace", "path", "credentials")
+
+        sut.kubectl("get nodes")
+
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl get nodes")
+    }
 }
