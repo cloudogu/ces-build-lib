@@ -50,8 +50,9 @@ class K3dTest extends GroovyTestCase {
 
         sut.startK3d()
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("mkdir -p ${gitOpsPlaygroundDir}/.k3d/bin".toString())
-        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${gitOpsPlaygroundDir}/.k3d/bin bash -s -- --no-sudo".toString())
-        assertThat(scriptMock.actualShStringArgs[2].trim()).startsWith("yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=citest-".toString())
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("rm -rf ${gitOpsPlaygroundDir}".toString())
+        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("mkdir -p ${gitOpsPlaygroundDir}/.k3d/bin".toString())
+        assertThat(scriptMock.actualShStringArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${gitOpsPlaygroundDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.actualShStringArgs[3].trim()).startsWith("yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=citest-".toString())
     }
 }

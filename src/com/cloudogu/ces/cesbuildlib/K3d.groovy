@@ -49,6 +49,8 @@ class K3d {
      * Utilizes code from the cloudogu/gitops-playground
      */
     void startK3d() {
+        script.sh "rm -rf ${gitOpsPlaygroundDir}"
+
         git.executeGit("clone https://github.com/cloudogu/gitops-playground ${gitOpsPlaygroundDir}", true)
 
         script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
