@@ -3,25 +3,32 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 
 class K3d {
-    private String workspace
+    private String gitOpsPlaygroundDir
     private String clusterName
     private script
     private String path
+    private String k3dDir
     private String k3dBinaryDir
+    private Sh sh
+    private Git git
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
-     * @param envWorkspace The WORKSPACE environment variable; in Jenkins use "env.WORKSPACE" for example
+     * @param envWorkspace The designated directory for the GitOps playground and K3d installation
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
+     * @param gitCredentials credentials used for checking out the GitOps playground
      */
-     K3d(script, String envWorkspace, String envPath) {
-        this.workspace = envWorkspace
+    K3d(script, String envWorkspace, String envPath, String gitCredentials) {
+        this.gitOpsPlaygroundDir = envWorkspace
         this.clusterName = createClusterName()
         this.script = script
         this.path = envPath
-        this.k3dBinaryDir = "${workspace}/.k3d/bin"
+        this.k3dDir = "${gitOpsPlaygroundDir}/.k3d"
+        this.k3dBinaryDir = "${k3dDir}/bin"
+        this.sh = new Sh(script)
+        this.git = new Git(script, gitCredentials)
     }
 
     /**
@@ -32,7 +39,7 @@ class K3d {
     @NonCPS
     static String createClusterName() {
         String[] randomUUIDs = UUID.randomUUID().toString().split("-")
-        String uuid_snippet = randomUUIDs[randomUUIDs.length-1]
+        String uuid_snippet = randomUUIDs[randomUUIDs.length - 1]
         // Cluster name must be <= 32 characters
         return "citest-" + uuid_snippet
     }
@@ -42,19 +49,22 @@ class K3d {
      * Utilizes code from the cloudogu/gitops-playground
      */
     void startK3d() {
-        script.sh "mkdir -p ${k3dBinaryDir}"
+        git.executeGit("clone https://github.com/cloudogu/gitops-playground ${gitOpsPlaygroundDir}", true)
 
-        script.git branch: 'main', url: 'https://github.com/cloudogu/gitops-playground'
-
-        script.withEnv(["HOME=${workspace}", "PATH=${k3dBinaryDir}:${path}"]) { // Make k3d write kubeconfig to WORKSPACE
+        script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
+            // Make k3d write kubeconfig to WORKSPACE
             // Install k3d binary to workspace in order to avoid concurrency issues
+            String k3dVersion = sh.returnStdOut "sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh"
+            String tagArgument = "TAG=v${k3dVersion}"
+            String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
+            String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
 
-            script.sh "if ! command -v k3d >/dev/null 2>&1; then " +
-                "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh |" +
-                'TAG=v$(sed -n "s/^K3D_VERSION=//p" scripts/init-cluster.sh) ' +
-                "K3D_INSTALL_DIR=${k3dBinaryDir} " +
-                'bash -s -- --no-sudo; fi'
-            script.sh "yes | ./scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
+            script.sh "mkdir -p ${k3dBinaryDir}"
+
+            script.echo "Installing K3d Version: ${k3dVersion}"
+
+            script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
+            script.sh "yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
         }
     }
 
@@ -80,7 +90,6 @@ class K3d {
      * @param command The kubectl command you want to execute, without the leading "kubectl"
      */
     void kubectl(command) {
-        script.sh "sudo KUBECONFIG=${workspace}/.kube/config kubectl ${command}"
+        script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
     }
-
 }

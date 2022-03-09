@@ -1,8 +1,8 @@
 package com.cloudogu.ces.cesbuildlib
 
-class k3dTest extends GroovyTestCase {
+class K3dTest extends GroovyTestCase {
     void testCreateClusterName() {
-        K3d sut = new K3d("script","workspace", "path")
+        K3d sut = new K3d("script","workspace", "path", "credentials")
         String testClusterName = sut.createClusterName()
         assertTrue(testClusterName.contains("citest-"))
         assertTrue(testClusterName != "citest-")
