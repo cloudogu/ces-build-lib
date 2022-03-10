@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.49.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.49.0) - 2022-03-02
+## [1.49.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.50.0) - 2022-03-10
+### Changed
+- Install Gitops Playground and K3d into a subfolder for better CI experience
+  - see the README.md for updated usage tips 
 
+## [1.49.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.49.0) - 2022-03-02
 ### Added
 - Add Kubernetes support by spinning-up a k3d cluster #67
   - see the README.md for further information
