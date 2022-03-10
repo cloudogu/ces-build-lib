@@ -1053,22 +1053,24 @@ if (response.status == '201' && response.content-type == 'application/json') {
 Example:
 
 ```groovy
-K3d k3d = new K3d(this, env.WORKSPACE, env.PATH)
+K3d k3d = new K3d(this, "${WORKSPACE}/k3d", env.PATH, gitCredentials)
 
-stage('Set up k3d cluster') {
-    k3d.startK3d()
-}
+try {
+    stage('Set up k3d cluster') {
+        k3d.startK3d()
+    }
 
-stage('Install kubectl') {
-    k3d.installKubectl()
-}
+    stage('Install kubectl') {
+        k3d.installKubectl()
+    }
 
-stage('Do something with your cluster') {
-    k3d.kubectl("get nodes")
-}
-
-stage('Remove k3d cluster') {
-    k3d.deleteK3d()
+    stage('Do something with your cluster') {
+        k3d.kubectl("get nodes")
+    }
+} finally {
+    stage('Remove k3d cluster') {
+        k3d.deleteK3d()
+    }
 }
 ```
 
