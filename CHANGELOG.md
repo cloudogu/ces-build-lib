@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Install kubectl on k3d setup automatically; #71
 
+### Removed
+- Remove unused git credentials parameter in k3d constructor
+
 ## [1.50.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.50.0) - 2022-03-10
 ### Changed
 - Install Gitops Playground and K3d into a subfolder for better CI experience

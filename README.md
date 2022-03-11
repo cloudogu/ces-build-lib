@@ -1053,7 +1053,7 @@ if (response.status == '201' && response.content-type == 'application/json') {
 Example:
 
 ```groovy
-K3d k3d = new K3d(this, "${WORKSPACE}/k3d", env.PATH, gitCredentials)
+K3d k3d = new K3d(this, "${WORKSPACE}/k3d", env.PATH)
 
 try {
     stage('Set up k3d cluster') {

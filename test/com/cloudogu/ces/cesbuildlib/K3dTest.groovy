@@ -3,7 +3,7 @@ import static org.assertj.core.api.Assertions.assertThat
 
 class K3dTest extends GroovyTestCase {
     void testCreateClusterName() {
-        K3d sut = new K3d("script","workspace", "path", "credentials")
+        K3d sut = new K3d("script","workspace", "path")
         String testClusterName = sut.createClusterName()
         assertTrue(testClusterName.contains("citest-"))
         assertTrue(testClusterName != "citest-")
@@ -14,7 +14,7 @@ class K3dTest extends GroovyTestCase {
 
     void testDeleteK3d() {
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"workspace", "path", "credentials")
+        K3d sut = new K3d(scriptMock,"workspace", "path")
 
         sut.deleteK3d()
 
@@ -23,7 +23,7 @@ class K3dTest extends GroovyTestCase {
 
     void testKubectl() {
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"leWorkspace", "path", "credentials")
+        K3d sut = new K3d(scriptMock,"leWorkspace", "path")
 
         sut.kubectl("get nodes")
 
@@ -37,7 +37,7 @@ class K3dTest extends GroovyTestCase {
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh".toString(), "${k3dVer}".toString())
 
-        K3d sut = new K3d(scriptMock,"${gitOpsPlaygroundDir}", "path", "credentials")
+        K3d sut = new K3d(scriptMock,"${gitOpsPlaygroundDir}", "path")
 
         sut.setupK3d()
 

@@ -18,9 +18,8 @@ class K3d {
      * @param script The Jenkins script you are coming from (aka "this")
      * @param envWorkspace The designated directory for the GitOps playground and K3d installation
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
-     * @param gitCredentials credentials used for checking out the GitOps playground
      */
-    K3d(script, String envWorkspace, String envPath, String gitCredentials) {
+    K3d(script, String envWorkspace, String envPath) {
         this.gitOpsPlaygroundDir = envWorkspace
         this.clusterName = createClusterName()
         this.script = script
@@ -28,7 +27,7 @@ class K3d {
         this.k3dDir = "${gitOpsPlaygroundDir}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.sh = new Sh(script)
-        this.git = new Git(script, gitCredentials)
+        this.git = new Git(script)
     }
 
     /**
