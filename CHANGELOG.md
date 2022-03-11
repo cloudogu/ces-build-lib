@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Install kubectl on k3d setup automatically; #71
+- Use workspace as k3d constructor parameter
 
 ### Removed
 - Remove unused git credentials parameter in k3d constructor

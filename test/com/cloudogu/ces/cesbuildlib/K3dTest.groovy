@@ -27,23 +27,23 @@ class K3dTest extends GroovyTestCase {
 
         sut.kubectl("get nodes")
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl get nodes")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/k3d/.k3d/.kube/config kubectl get nodes")
     }
 
     void testSetupK3d() {
-        def gitOpsPlaygroundDir="leWorkspace"
+        def workspace="leWorkspace"
         def k3dVer="1.2.3"
 
         def scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put("sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh".toString(), "${k3dVer}".toString())
+        scriptMock.expectedShRetValueForScript.put("sed -n 's/^K3D_VERSION=//p' ${workspace}/k3d/scripts/init-cluster.sh".toString(), "${k3dVer}".toString())
 
-        K3d sut = new K3d(scriptMock,"${gitOpsPlaygroundDir}", "path")
+        K3d sut = new K3d(scriptMock,"${workspace}", "path")
 
         sut.setupK3d()
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("rm -rf ${gitOpsPlaygroundDir}".toString())
-        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("mkdir -p ${gitOpsPlaygroundDir}/.k3d/bin".toString())
-        assertThat(scriptMock.actualShStringArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${gitOpsPlaygroundDir}/.k3d/bin bash -s -- --no-sudo".toString())
-        assertThat(scriptMock.actualShStringArgs[3].trim()).startsWith("yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=citest-".toString())
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("rm -rf ${workspace}/k3d".toString())
+        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("mkdir -p ${workspace}/k3d/.k3d/bin".toString())
+        assertThat(scriptMock.actualShStringArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${workspace}/k3d/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.actualShStringArgs[3].trim()).startsWith("yes | ${workspace}/k3d/scripts/init-cluster.sh --cluster-name=citest-".toString())
     }
 }

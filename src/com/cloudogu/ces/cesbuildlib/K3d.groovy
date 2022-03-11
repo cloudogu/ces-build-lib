@@ -16,11 +16,11 @@ class K3d {
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
-     * @param envWorkspace The designated directory for the GitOps playground and K3d installation
+     * @param envWorkspace The WORKSPACE environment variable; in Jenkins use "env.WORKSPACE" for example
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      */
     K3d(script, String envWorkspace, String envPath) {
-        this.gitOpsPlaygroundDir = envWorkspace
+        this.gitOpsPlaygroundDir = envWorkspace + "/k3d"
         this.clusterName = createClusterName()
         this.script = script
         this.path = envPath
