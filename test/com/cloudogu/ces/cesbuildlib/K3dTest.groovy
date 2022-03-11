@@ -12,15 +12,6 @@ class K3dTest extends GroovyTestCase {
         assertTrue(testClusterName != testClusterName2)
     }
 
-    void testInstallKubectl() {
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"workspace", "path", "credentials")
-
-        sut.installKubectl()
-
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo snap install kubectl --classic")
-    }
-
     void testDeleteK3d() {
         def scriptMock = new ScriptMock()
         K3d sut = new K3d(scriptMock,"workspace", "path", "credentials")
@@ -39,7 +30,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl get nodes")
     }
 
-    void testStartK3d() {
+    void testSetupK3d() {
         def gitOpsPlaygroundDir="leWorkspace"
         def k3dVer="1.2.3"
 
@@ -48,7 +39,7 @@ class K3dTest extends GroovyTestCase {
 
         K3d sut = new K3d(scriptMock,"${gitOpsPlaygroundDir}", "path", "credentials")
 
-        sut.startK3d()
+        sut.setupK3d()
 
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("rm -rf ${gitOpsPlaygroundDir}".toString())
         assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("mkdir -p ${gitOpsPlaygroundDir}/.k3d/bin".toString())

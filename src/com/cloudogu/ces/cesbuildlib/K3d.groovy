@@ -48,7 +48,7 @@ class K3d {
      * Starts a k3d cluster in Docker
      * Utilizes code from the cloudogu/gitops-playground
      */
-    void startK3d() {
+    void setupK3d() {
         script.sh "rm -rf ${gitOpsPlaygroundDir}"
 
         git.executeGit("clone https://github.com/cloudogu/gitops-playground ${gitOpsPlaygroundDir}", true)
@@ -67,14 +67,15 @@ class K3d {
 
             script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
             script.sh "yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
-        }
-    }
 
-    /**
-     * Installs kubectl via snap
-     */
-    void installKubectl() {
-        script.sh("sudo snap install kubectl --classic")
+            script.echo "Installing kubectl, if not already installed..."
+            def kubectlInstallationSuccess = installKubectl()
+            if (kubectlInstallationSuccess) {
+                script.echo "Kubectl successfully installed"
+            } else {
+                script.echo "Kubectl installation failed!"
+            }
+        }
     }
 
     /**
@@ -93,5 +94,21 @@ class K3d {
      */
     void kubectl(command) {
         script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
+    }
+
+    boolean installKubectl() {
+        def kubectlStatusCode = script.sh script:"snap list kubectl", returnStatus:true
+        if (kubectlStatusCode != 0) {
+            script.echo "Installing kubectl..."
+            def kubectlInstallationStatusCode = script.sh script:"sudo snap install kubectl --classic", returnStatus:true
+            if (kubectlInstallationStatusCode == 0) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            //Kubectl is already installed
+            return true
+        }
     }
 }

@@ -1057,11 +1057,7 @@ K3d k3d = new K3d(this, "${WORKSPACE}/k3d", env.PATH, gitCredentials)
 
 try {
     stage('Set up k3d cluster') {
-        k3d.startK3d()
-    }
-
-    stage('Install kubectl') {
-        k3d.installKubectl()
+        k3d.setupK3d()
     }
 
     stage('Do something with your cluster') {
