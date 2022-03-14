@@ -112,7 +112,7 @@ class K3d {
     }
 
     void installLocalRegistry() {
-        def registryPort = findFreeTcpPort(sh)
+        def registryPort = findFreeTcpPort()
         def registryName = clusterName
         this.registry = new K3dRegistry(script, docker, registryName, registryPort)
         this.registry.installLocalRegistry()
@@ -123,21 +123,8 @@ class K3d {
      *
      * @return new free, unprivileged TCP port
      */
-    String findFreeTcpPort(Sh sh) {
-        // based on https://unix.stackexchange.com/a/358101/440116 which uses only basic unix tools
-        return sh.returnStdOut("netstat -aln | awk '\n" +
-            "  \$6 == \"LISTEN\" {\n" +
-            "    if (\$4 ~ \"[.:][0-9]+\$\") {\n" +
-            "      split(\$4, a, /[:.]/);\n" +
-            "      port = a[length(a)];\n" +
-            "      p[port] = 1\n" +
-            "    }\n" +
-            "  }\n" +
-            "  END {\n" +
-            "    for (i = 3000; i < 65000 && p[i]; i++){};\n" +
-            "    if (i == 65000) {exit 1};\n" +
-            "    print i\n" +
-            "  }\n" +
-            "'")
+    String findFreeTcpPort() {
+        String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
+        return port
     }
 }

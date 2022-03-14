@@ -1,8 +1,5 @@
 package com.cloudogu.ces.cesbuildlib
 
-import com.cloudogu.ces.cesbuildlib.Docker
-import com.cloudogu.ces.cesbuildlib.Sh
-
 class K3dRegistry {
     private final String registryName
     private final String localRegistryPort
@@ -45,8 +42,6 @@ class K3dRegistry {
     def buildAndPushToLocalRegistry(String imageName, String tag) {
         def internalHandle="${imageName}:${tag}"
         def externalRegistry="${this.imageRegistryExternalHandle}"
-
-        script.echo "===== int ${internalHandle} ========== ext ${externalRegistry} ==============="
 
         def dockerImage = docker.build("${internalHandle}")
 
