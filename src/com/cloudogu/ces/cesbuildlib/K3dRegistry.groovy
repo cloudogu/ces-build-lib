@@ -7,7 +7,6 @@ class K3dRegistry {
     private String imageRegistryExternalHandle
     private Sh sh
     private script
-    private Docker docker
 
     /**
      *
@@ -15,12 +14,11 @@ class K3dRegistry {
      * @param registryName
      * @param port
      */
-    K3dRegistry(def script, Docker docker, String registryName, String port) {
+    K3dRegistry(def script, String registryName, String port) {
         this.localRegistryPort = port
         this.registryName = registryName
         this.script = script
         this.sh = new Sh(script)
-        this.docker = docker
     }
 
     /**
@@ -43,9 +41,9 @@ class K3dRegistry {
         def internalHandle="${imageName}:${tag}"
         def externalRegistry="${this.imageRegistryExternalHandle}"
 
-        def dockerImage = docker.build("${internalHandle}")
+        def dockerImage = script.docker.build("${internalHandle}")
 
-        docker.withRegistry("http://${externalRegistry}/") {
+        script.docker.withRegistry("http://${externalRegistry}/") {
             dockerImage.push("${tag}")
         }
     }

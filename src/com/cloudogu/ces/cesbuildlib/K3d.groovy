@@ -13,7 +13,6 @@ class K3d {
     private Git git
     private K3dRegistry registry
     private String registryName
-    private Docker docker
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
@@ -23,7 +22,7 @@ class K3d {
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param gitCredentials credentials used for checking out the GitOps playground
      */
-    K3d(script, Docker docker, String envWorkspace, String envPath, String gitCredentials) {
+    K3d(script, String envWorkspace, String envPath, String gitCredentials) {
         this.gitOpsPlaygroundDir = envWorkspace
         this.clusterName = createClusterName()
         this.registryName = clusterName
@@ -33,7 +32,6 @@ class K3d {
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.sh = new Sh(script)
         this.git = new Git(script, gitCredentials)
-        this.docker = docker
     }
 
     /**
@@ -114,7 +112,7 @@ class K3d {
     void installLocalRegistry() {
         def registryPort = findFreeTcpPort()
         def registryName = clusterName
-        this.registry = new K3dRegistry(script, docker, registryName, registryPort)
+        this.registry = new K3dRegistry(script, registryName, registryPort)
         this.registry.installLocalRegistry()
     }
 
