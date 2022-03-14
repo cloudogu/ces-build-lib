@@ -11,6 +11,9 @@ class K3d {
     private String k3dBinaryDir
     private Sh sh
     private Git git
+    private K3dRegistry registry
+    private String registryName
+    private Docker docker
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
@@ -20,15 +23,17 @@ class K3d {
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param gitCredentials credentials used for checking out the GitOps playground
      */
-    K3d(script, String envWorkspace, String envPath, String gitCredentials) {
+    K3d(script, Docker docker, String envWorkspace, String envPath, String gitCredentials) {
         this.gitOpsPlaygroundDir = envWorkspace
         this.clusterName = createClusterName()
+        this.registryName = clusterName
         this.script = script
         this.path = envPath
         this.k3dDir = "${gitOpsPlaygroundDir}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.sh = new Sh(script)
         this.git = new Git(script, gitCredentials)
+        this.docker = docker
     }
 
     /**
@@ -67,6 +72,8 @@ class K3d {
 
             script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
             script.sh "yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
+
+            installLocalRegistry()
         }
     }
 
@@ -82,10 +89,19 @@ class K3d {
      */
     void deleteK3d() {
         script.withEnv(["PATH=${k3dBinaryDir}:${path}"]) {
-            script.sh "k3d cluster delete ${clusterName}"
+            try {
+                script.echo "Deleting cluster registry..."
+                this.registry.delete()
+            } finally {
+                script.echo "Deleting cluster..."
+                script.sh "k3d cluster delete ${clusterName}"
+            }
         }
     }
 
+    void buildAndPushToLocalRegistry(String imageName, String tag) {
+        this.registry.buildAndPushToLocalRegistry(imageName, tag)
+    }
     /**
      * Execute a kubectl command on the cluster configured in your workspace
      *
@@ -93,5 +109,35 @@ class K3d {
      */
     void kubectl(command) {
         script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
+    }
+
+    void installLocalRegistry() {
+        def registryPort = findFreeTcpPort(sh)
+        def registryName = clusterName
+        this.registry = new K3dRegistry(script, docker, registryName, registryPort)
+        this.registry.installLocalRegistry()
+    }
+
+    /**
+     * returns a free, unprivileged TCP port
+     *
+     * @return new free, unprivileged TCP port
+     */
+    String findFreeTcpPort(Sh sh) {
+        // based on https://unix.stackexchange.com/a/358101/440116 which uses only basic unix tools
+        return sh.returnStdOut("netstat -aln | awk '\n" +
+            "  \$6 == \"LISTEN\" {\n" +
+            "    if (\$4 ~ \"[.:][0-9]+\$\") {\n" +
+            "      split(\$4, a, /[:.]/);\n" +
+            "      port = a[length(a)];\n" +
+            "      p[port] = 1\n" +
+            "    }\n" +
+            "  }\n" +
+            "  END {\n" +
+            "    for (i = 3000; i < 65000 && p[i]; i++){};\n" +
+            "    if (i == 65000) {exit 1};\n" +
+            "    print i\n" +
+            "  }\n" +
+            "'")
     }
 }
