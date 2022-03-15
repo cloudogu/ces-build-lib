@@ -101,7 +101,7 @@ class K3d {
      * @param tag the image tag, f. e. "1.2.3"
      * @return the image repository name of the built image relative to the internal image registry, f. i. localRegistyName:randomPort/my/image:tag
      */
-    String buildAndPushToLocalRegistry(def imageName, def tag) {
+    def buildAndPushToLocalRegistry(def imageName, def tag) {
         return this.registry.buildAndPushToLocalRegistry(imageName, tag)
     }
     /**

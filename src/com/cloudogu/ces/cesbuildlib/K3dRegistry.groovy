@@ -37,7 +37,7 @@ class K3dRegistry {
      * @param tag the image tag
      * @return the image repository name of the built image relative to the internal image registry, f. i. localRegistyName:randomPort/my/image:tag
      */
-    String buildAndPushToLocalRegistry(def imageName, def tag) {
+    def buildAndPushToLocalRegistry(def imageName, def tag) {
         def internalHandle="${imageName}:${tag}"
         def externalRegistry="${this.imageRegistryExternalHandle}"
 
