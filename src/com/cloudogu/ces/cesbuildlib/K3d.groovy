@@ -87,17 +87,20 @@ class K3d {
      */
     void deleteK3d() {
         script.withEnv(["PATH=${k3dBinaryDir}:${path}"]) {
-            try {
-                script.echo "Deleting cluster registry..."
-                this.registry.delete()
-            } finally {
-                script.echo "Deleting cluster..."
-                script.sh "k3d cluster delete ${clusterName}"
-            }
+            script.echo "Deleting cluster registry..."
+            this.registry?.delete()
+
+            script.echo "Deleting cluster..."
+            script.sh "k3d cluster delete ${clusterName}"
         }
     }
 
-    void buildAndPushToLocalRegistry(String imageName, String tag) {
+    /**
+     * Builds a local image and pushes it to the local registry
+     * @param imageName the image name without the local registry/port parts, f. e. "cloudogu/myimage"
+     * @param tag the image tag, f. e. "1.2.3"
+     */
+    void buildAndPushToLocalRegistry(def imageName, def tag) {
         this.registry.buildAndPushToLocalRegistry(imageName, tag)
     }
     /**
@@ -109,7 +112,10 @@ class K3d {
         script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
     }
 
-    void installLocalRegistry() {
+    /**
+     * installs a local image registry to k3d
+     */
+    private void installLocalRegistry() {
         def registryPort = findFreeTcpPort()
         def registryName = clusterName
         this.registry = new K3dRegistry(script, registryName, registryPort)
