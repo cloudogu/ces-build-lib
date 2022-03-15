@@ -22,13 +22,19 @@ class K3dRegistry {
     }
 
     /**
-     * installs a local registry avoiding double resource occupation for TCP ports and registry name
+     * installs a local registry avoiding double resource occupation for TCP ports and registry name.
+     * Note that k3d prefixes its internal registry with "k3d-".
      */
     protected void installLocalRegistry() {
         script.sh "k3d registry create ${this.registryName} --port ${localRegistryPort}"
 
-        this.imageRegistryInternalHandle = "${this.registryName}:${localRegistryPort}"
+        def sillyK3dRegistryPrefix="k3d-"
+        this.imageRegistryInternalHandle = "${sillyK3dRegistryPrefix}${this.registryName}:${localRegistryPort}"
         this.imageRegistryExternalHandle = "localhost:${localRegistryPort}"
+    }
+
+    def getImageRegistryInternalWithPort() {
+        return this.imageRegistryInternalHandle
     }
 
     /**

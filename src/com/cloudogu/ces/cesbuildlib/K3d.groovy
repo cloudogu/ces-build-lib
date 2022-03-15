@@ -3,14 +3,12 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 
 class K3d {
-    private String gitOpsPlaygroundDir
     private String clusterName
     private script
     private String path
     private String k3dDir
     private String k3dBinaryDir
     private Sh sh
-    private Git git
     private K3dRegistry registry
     private String registryName
 
@@ -18,20 +16,17 @@ class K3d {
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
-     * @param envWorkspace The designated directory for the GitOps playground and K3d installation
+     * @param envWorkspace The designated directory for the K3d installation
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
-     * @param gitCredentials credentials used for checking out the GitOps playground
      */
-    K3d(script, String envWorkspace, String envPath, String gitCredentials) {
-        this.gitOpsPlaygroundDir = envWorkspace
+    K3d(script, String envWorkspace, String envPath) {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
         this.path = envPath
-        this.k3dDir = "${gitOpsPlaygroundDir}/.k3d"
+        this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.sh = new Sh(script)
-        this.git = new Git(script, gitCredentials)
     }
 
     /**
@@ -49,17 +44,14 @@ class K3d {
 
     /**
      * Starts a k3d cluster in Docker
-     * Utilizes code from the cloudogu/gitops-playground
      */
     void startK3d() {
-        script.sh "rm -rf ${gitOpsPlaygroundDir}"
-
-        git.executeGit("clone https://github.com/cloudogu/gitops-playground ${gitOpsPlaygroundDir}", true)
+        script.sh "rm -rf ${k3dDir}"
 
         script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
             // Make k3d write kubeconfig to WORKSPACE
             // Install k3d binary to workspace in order to avoid concurrency issues
-            String k3dVersion = sh.returnStdOut "sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh"
+            String k3dVersion = "4.4.7"
             String tagArgument = "TAG=v${k3dVersion}"
             String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
             String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
@@ -69,9 +61,21 @@ class K3d {
             script.echo "Installing K3d Version: ${k3dVersion}"
 
             script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
-            script.sh "yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
 
             installLocalRegistry()
+            script.sh "k3d cluster create ${clusterName} "+
+                " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 "+
+                " -v /var/run/docker.sock:/var/run/docker.sock@server[0] "+
+                " -v /etc/group:/etc/group@server[0] "+
+                " -v /tmp:/tmp@server[0] "+
+                " --k3s-server-arg=--disable=traefik "+
+                " --k3s-server-arg=--disable=servicelb "+
+                " --image=rancher/k3s:v1.21.2-k3s1 "+
+                " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
+                " >/dev/null"
+
+            script.echo "Adding k3d cluster to ~/.kube/config"
+            script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
         }
     }
 
