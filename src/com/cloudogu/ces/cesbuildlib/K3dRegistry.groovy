@@ -35,8 +35,9 @@ class K3dRegistry {
      * builds an image with the given image name and image tag and pushes it to the local image registry
      * @param imageName the image name
      * @param tag the image tag
+     * @return the image repository name of the built image relative to the internal image registry, f. i. localRegistyName:randomPort/my/image:tag
      */
-    def buildAndPushToLocalRegistry(def imageName, def tag) {
+    String buildAndPushToLocalRegistry(def imageName, def tag) {
         def internalHandle="${imageName}:${tag}"
         def externalRegistry="${this.imageRegistryExternalHandle}"
 
@@ -45,6 +46,8 @@ class K3dRegistry {
         script.docker.withRegistry("http://${externalRegistry}/") {
             dockerImage.push("${tag}")
         }
+
+        return "${this.imageRegistryInternalHandle}/${internalHandle}"
     }
 
     /**

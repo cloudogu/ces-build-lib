@@ -99,9 +99,10 @@ class K3d {
      * Builds a local image and pushes it to the local registry
      * @param imageName the image name without the local registry/port parts, f. e. "cloudogu/myimage"
      * @param tag the image tag, f. e. "1.2.3"
+     * @return the image repository name of the built image relative to the internal image registry, f. i. localRegistyName:randomPort/my/image:tag
      */
-    void buildAndPushToLocalRegistry(def imageName, def tag) {
-        this.registry.buildAndPushToLocalRegistry(imageName, tag)
+    String buildAndPushToLocalRegistry(def imageName, def tag) {
+        return this.registry.buildAndPushToLocalRegistry(imageName, tag)
     }
     /**
      * Execute a kubectl command on the cluster configured in your workspace
