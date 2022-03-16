@@ -1057,12 +1057,20 @@ K3d k3d = new K3d(this, env.WORKSPACE, env.PATH)
 
 try {
     stage('Set up k3d cluster') {
-        k3d.setupK3d()
+        k3d.startK3d()
     }
 
     stage('Do something with your cluster') {
         k3d.kubectl("get nodes")
     }
+    
+    stage('build and push development artefact') {
+        String myCurrentArtefactVersion = "yourTag-1.2.3-dev"
+        imageName = k3d.buildAndPushToLocalRegistry("your/image", myCurrentArtefactVersion)
+        // your image name may look like this: k3d-citest-123456/your/image:yourTag-1.2.3-dev
+        // the image name can be applied to your cluster as usual, f. i. with k3d.kubectl() with a customized K8s resource 
+    }
+    
 } finally {
     stage('Remove k3d cluster') {
         k3d.deleteK3d()
