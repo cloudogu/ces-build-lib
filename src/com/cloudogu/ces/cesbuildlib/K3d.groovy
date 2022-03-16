@@ -52,30 +52,15 @@ class K3d {
             installK3d()
             installLocalRegistry()
             initializeCluster()
+
+            script.echo "Installing kubectl, if not already installed..."
+            def kubectlInstallationSuccess = installKubectl()
+            if (kubectlInstallationSuccess) {
+                script.echo "Kubectl successfully installed"
+            } else {
+                script.echo "Kubectl installation failed!"
+            }
         }
-    }
-
-    /**
-     * Installs k3d
-     */
-    void installK3d() {
-        script.sh "rm -rf ${k3dDir}"
-        script.sh "mkdir -p ${k3dBinaryDir}"
-
-        String k3dVersion = "4.4.7"
-        String tagArgument = "TAG=v${k3dVersion}"
-        String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
-        String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
-
-        script.echo "Installing K3d Version: ${k3dVersion}"
-        script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
-    }
-
-    /**
-     * Installs kubectl via snap
-     */
-    void installKubectl() {
-        script.sh("sudo snap install kubectl --classic")
     }
 
     /**
@@ -146,5 +131,21 @@ class K3d {
     String findFreeTcpPort() {
         String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
         return port
+    }
+
+    boolean installKubectl() {
+        def kubectlStatusCode = script.sh script:"snap list kubectl", returnStatus:true
+        if (kubectlStatusCode != 0) {
+            script.echo "Installing kubectl..."
+            def kubectlInstallationStatusCode = script.sh script:"sudo snap install kubectl --classic", returnStatus:true
+            if (kubectlInstallationStatusCode == 0) {
+                return true
+            } else {
+                return false
+            }
+        } else {
+            //Kubectl is already installed
+            return true
+        }
     }
 }
