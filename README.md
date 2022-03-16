@@ -1070,6 +1070,17 @@ try {
 }
 ```
 
+# Makefile
+
+`Makefile` provides function regarding the `Makefile` from the current directory.
+
+Example:
+
+```groovy
+    Makefile makefile = new Makefile(this)
+    String currentVersion = makefile.getVersion()
+```
+
 # Steps
 
 ## mailIfStatusChanged

@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Makefile class to extract the current version from the makefile #73
+
 ### Changed
 - Install kubectl on k3d setup automatically; #71
 - Use workspace as k3d constructor parameter
