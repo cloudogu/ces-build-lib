@@ -68,7 +68,7 @@ class K3d {
     /**
      * Initializes the cluster by creating a respective cluster in k3d
      */
-    void initializeCluster() {
+    private void initializeCluster() {
         script.sh "k3d cluster create ${clusterName} " +
             // Allow services to bind to ports < 30000
             " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
@@ -129,7 +129,7 @@ class K3d {
      *
      * @return new free, unprivileged TCP port
      */
-    String findFreeTcpPort() {
+    private String findFreeTcpPort() {
         String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
         return port
     }
@@ -147,7 +147,7 @@ class K3d {
     /**
      * Installs k3d
      */
-    void installK3d() {
+    private void installK3d() {
         script.sh "rm -rf ${k3dDir}"
         script.sh "mkdir -p ${k3dBinaryDir}"
 
@@ -162,7 +162,7 @@ class K3d {
     /**
      * Installs kubectl
      */
-    void installKubectl() {
+    private void installKubectl() {
         def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
         if (kubectlStatusCode == 0) {
             script.echo "Kubectl already installed"
