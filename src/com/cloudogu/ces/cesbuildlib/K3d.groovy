@@ -3,6 +3,15 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 
 class K3d {
+    /**
+     * The image of the k3s version defining the targeted k8s version
+     */
+    private static String K8S_IMAGE = "rancher/k3s:v1.21.2-k3s1"
+    /**
+     * The version of k3d to be installed
+     */
+    private static String K3D_VERSION = "4.4.7"
+
     private String clusterName
     private script
     private String path
@@ -52,14 +61,7 @@ class K3d {
             installK3d()
             installLocalRegistry()
             initializeCluster()
-
-            script.echo "Installing kubectl, if not already installed..."
-            def kubectlInstallationSuccess = installKubectl()
-            if (kubectlInstallationSuccess) {
-                script.echo "Kubectl successfully installed"
-            } else {
-                script.echo "Kubectl installation failed!"
-            }
+            installKubectl()
         }
     }
 
@@ -68,13 +70,21 @@ class K3d {
      */
     void initializeCluster() {
         script.sh "k3d cluster create ${clusterName} " +
+            // Allow services to bind to ports < 30000
             " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
+            // Used by Jenkins Agents pods
             " -v /var/run/docker.sock:/var/run/docker.sock@server[0] " +
+            // Allows for finding out the GID of the docker group in order to allow the Jenkins agents pod to access docker socket
             " -v /etc/group:/etc/group@server[0] " +
+            // Persists the cache of Jenkins agents pods for faster builds
             " -v /tmp:/tmp@server[0] " +
+            // Disable traefik (no ingresses used so far)
             " --k3s-server-arg=--disable=traefik " +
+            // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
             " --k3s-server-arg=--disable=servicelb " +
-            " --image=rancher/k3s:v1.21.2-k3s1 " +
+            // Pin k8s version to 1.21.2
+            " --image=${K8S_IMAGE} " +
+            // Use our k3d registry
             " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
             " >/dev/null"
 
@@ -104,6 +114,7 @@ class K3d {
     def buildAndPushToLocalRegistry(def imageName, def tag) {
         return this.registry.buildAndPushToLocalRegistry(imageName, tag)
     }
+
     /**
      * Execute a kubectl command on the cluster configured in your workspace
      *
@@ -111,6 +122,16 @@ class K3d {
      */
     void kubectl(command) {
         script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
+    }
+
+    /**
+     * returns a free, unprivileged TCP port
+     *
+     * @return new free, unprivileged TCP port
+     */
+    String findFreeTcpPort() {
+        String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
+        return port
     }
 
     /**
@@ -124,28 +145,31 @@ class K3d {
     }
 
     /**
-     * returns a free, unprivileged TCP port
-     *
-     * @return new free, unprivileged TCP port
+     * Installs k3d
      */
-    String findFreeTcpPort() {
-        String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
-        return port
+    void installK3d() {
+        script.sh "rm -rf ${k3dDir}"
+        script.sh "mkdir -p ${k3dBinaryDir}"
+
+        String tagArgument = "TAG=v${K3D_VERSION}"
+        String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
+        String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
+
+        script.echo "Installing K3d Version: ${K3D_VERSION}"
+        script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
     }
 
-    boolean installKubectl() {
-        def kubectlStatusCode = script.sh script:"snap list kubectl", returnStatus:true
-        if (kubectlStatusCode != 0) {
-            script.echo "Installing kubectl..."
-            def kubectlInstallationStatusCode = script.sh script:"sudo snap install kubectl --classic", returnStatus:true
-            if (kubectlInstallationStatusCode == 0) {
-                return true
-            } else {
-                return false
-            }
-        } else {
-            //Kubectl is already installed
-            return true
+    /**
+     * Installs kubectl
+     */
+    void installKubectl() {
+        def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
+        if (kubectlStatusCode == 0) {
+            script.echo "Kubectl already installed"
+            return
         }
+
+        script.echo "Installing kubectl..."
+        script.sh script: "sudo snap install kubectl --classic"
     }
 }
