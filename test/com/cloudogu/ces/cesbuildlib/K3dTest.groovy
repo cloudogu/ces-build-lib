@@ -58,7 +58,7 @@ class K3dTest extends GroovyTestCase {
 
         K3d sut = new K3d(scriptMock, "${workspaceDir}", "path")
 
-        sut.setupK3d()
+        sut.startK3d()
 
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("rm -rf ${workspaceDir}/.k3d".toString())
         assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("mkdir -p ${workspaceDir}/.k3d/bin".toString())
