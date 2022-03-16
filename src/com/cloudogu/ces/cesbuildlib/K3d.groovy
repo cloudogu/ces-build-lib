@@ -46,37 +46,29 @@ class K3d {
      * Starts a k3d cluster in Docker
      */
     void startK3d() {
-        script.sh "rm -rf ${k3dDir}"
-
+        // Make k3d write kubeconfig to WORKSPACE
+        // Install k3d binary to workspace in order to avoid concurrency issues
         script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
-            // Make k3d write kubeconfig to WORKSPACE
-            // Install k3d binary to workspace in order to avoid concurrency issues
-            String k3dVersion = "4.4.7"
-            String tagArgument = "TAG=v${k3dVersion}"
-            String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
-            String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
-
-            script.sh "mkdir -p ${k3dBinaryDir}"
-
-            script.echo "Installing K3d Version: ${k3dVersion}"
-
-            script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
-
+            installK3d()
             installLocalRegistry()
-            script.sh "k3d cluster create ${clusterName} "+
-                " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 "+
-                " -v /var/run/docker.sock:/var/run/docker.sock@server[0] "+
-                " -v /etc/group:/etc/group@server[0] "+
-                " -v /tmp:/tmp@server[0] "+
-                " --k3s-server-arg=--disable=traefik "+
-                " --k3s-server-arg=--disable=servicelb "+
-                " --image=rancher/k3s:v1.21.2-k3s1 "+
-                " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
-                " >/dev/null"
-
-            script.echo "Adding k3d cluster to ~/.kube/config"
-            script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
+            initializeCluster()
         }
+    }
+
+    /**
+     * Installs k3d
+     */
+    void installK3d() {
+        script.sh "rm -rf ${k3dDir}"
+        script.sh "mkdir -p ${k3dBinaryDir}"
+
+        String k3dVersion = "4.4.7"
+        String tagArgument = "TAG=v${k3dVersion}"
+        String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
+        String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
+
+        script.echo "Installing K3d Version: ${k3dVersion}"
+        script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
     }
 
     /**
@@ -84,6 +76,25 @@ class K3d {
      */
     void installKubectl() {
         script.sh("sudo snap install kubectl --classic")
+    }
+
+    /**
+     * Initializes the cluster by creating a respective cluster in k3d
+     */
+    void initializeCluster() {
+        script.sh "k3d cluster create ${clusterName} " +
+            " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
+            " -v /var/run/docker.sock:/var/run/docker.sock@server[0] " +
+            " -v /etc/group:/etc/group@server[0] " +
+            " -v /tmp:/tmp@server[0] " +
+            " --k3s-server-arg=--disable=traefik " +
+            " --k3s-server-arg=--disable=servicelb " +
+            " --image=rancher/k3s:v1.21.2-k3s1 " +
+            " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
+            " >/dev/null"
+
+        script.echo "Adding k3d cluster to ~/.kube/config"
+        script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
     }
 
     /**

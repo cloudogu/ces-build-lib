@@ -1,9 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
+
 import static org.assertj.core.api.Assertions.assertThat
 
 class K3dTest extends GroovyTestCase {
     void testCreateClusterName() {
-        K3d sut = new K3d("script","workspace", "path")
+        K3d sut = new K3d("script", "workspace", "path")
         String testClusterName = sut.createClusterName()
         assertTrue(testClusterName.contains("citest-"))
         assertTrue(testClusterName != "citest-")
@@ -14,7 +15,7 @@ class K3dTest extends GroovyTestCase {
 
     void testInstallKubectl() {
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"workspace", "path")
+        K3d sut = new K3d(scriptMock, "workspace", "path")
 
         sut.installKubectl()
 
@@ -22,17 +23,26 @@ class K3dTest extends GroovyTestCase {
     }
 
     void testDeleteK3d() {
+        // given
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"workspace", "path")
+        scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
+        K3d sut = new K3d(scriptMock, "workspace", "path")
+
+        // we need to create a registry so that the deletion of the registry is triggered
+        sut.startK3d()
+
+        // when
         sut.deleteK3d()
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).contains("k3d cluster delete citest-")
+        // then
+        assertThat(scriptMock.actualShStringArgs[6].trim()).contains("k3d registry delete citest-")
+        assertThat(scriptMock.actualShStringArgs[7].trim()).contains("k3d cluster delete citest-")
     }
 
     void testKubectl() {
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock,"leWorkspace", "path")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "path")
 
         sut.kubectl("get nodes")
 
@@ -40,13 +50,13 @@ class K3dTest extends GroovyTestCase {
     }
 
     void testStartK3d() {
-        def workspaceDir="leWorkspace"
-        def k3dVer="4.4.7"
+        def workspaceDir = "leWorkspace"
+        def k3dVer = "4.4.7"
 
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
-        K3d sut = new K3d(scriptMock,"${workspaceDir}", "path")
+        K3d sut = new K3d(scriptMock, "${workspaceDir}", "path")
 
         sut.startK3d()
 
