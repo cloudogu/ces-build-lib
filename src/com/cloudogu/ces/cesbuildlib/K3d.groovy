@@ -3,31 +3,39 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 
 class K3d {
-    private String gitOpsPlaygroundDir
+    /**
+     * The image of the k3s version defining the targeted k8s version
+     */
+    private static String K8S_IMAGE = "rancher/k3s:v1.21.2-k3s1"
+    /**
+     * The version of k3d to be installed
+     */
+    private static String K3D_VERSION = "4.4.7"
+
     private String clusterName
     private script
     private String path
     private String k3dDir
     private String k3dBinaryDir
     private Sh sh
-    private Git git
+    private K3dRegistry registry
+    private String registryName
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
-     * @param envWorkspace The WORKSPACE environment variable; in Jenkins use "env.WORKSPACE" for example
+     * @param envWorkspace The designated directory for the K3d installation
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      */
     K3d(script, String envWorkspace, String envPath) {
-        this.gitOpsPlaygroundDir = envWorkspace + "/k3d"
         this.clusterName = createClusterName()
+        this.registryName = clusterName
         this.script = script
         this.path = envPath
-        this.k3dDir = "${gitOpsPlaygroundDir}/.k3d"
+        this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.sh = new Sh(script)
-        this.git = new Git(script)
     }
 
     /**
@@ -45,36 +53,43 @@ class K3d {
 
     /**
      * Starts a k3d cluster in Docker
-     * Utilizes code from the cloudogu/gitops-playground
      */
-    void setupK3d() {
-        script.sh "rm -rf ${gitOpsPlaygroundDir}"
-
-        git.executeGit("clone https://github.com/cloudogu/gitops-playground ${gitOpsPlaygroundDir}", true)
-
+    void startK3d() {
+        // Make k3d write kubeconfig to WORKSPACE
+        // Install k3d binary to workspace in order to avoid concurrency issues
         script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
-            // Make k3d write kubeconfig to WORKSPACE
-            // Install k3d binary to workspace in order to avoid concurrency issues
-            String k3dVersion = sh.returnStdOut "sed -n 's/^K3D_VERSION=//p' ${gitOpsPlaygroundDir}/scripts/init-cluster.sh"
-            String tagArgument = "TAG=v${k3dVersion}"
-            String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
-            String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
-
-            script.sh "mkdir -p ${k3dBinaryDir}"
-
-            script.echo "Installing K3d Version: ${k3dVersion}"
-
-            script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
-            script.sh "yes | ${gitOpsPlaygroundDir}/scripts/init-cluster.sh --cluster-name=${clusterName} --bind-localhost=false"
-
-            script.echo "Installing kubectl, if not already installed..."
-            def kubectlInstallationSuccess = installKubectl()
-            if (kubectlInstallationSuccess) {
-                script.echo "Kubectl successfully installed"
-            } else {
-                script.echo "Kubectl installation failed!"
-            }
+            installK3d()
+            installLocalRegistry()
+            initializeCluster()
+            installKubectl()
         }
+    }
+
+    /**
+     * Initializes the cluster by creating a respective cluster in k3d
+     */
+    private void initializeCluster() {
+        script.sh "k3d cluster create ${clusterName} " +
+            // Allow services to bind to ports < 30000
+            " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
+            // Used by Jenkins Agents pods
+            " -v /var/run/docker.sock:/var/run/docker.sock@server[0] " +
+            // Allows for finding out the GID of the docker group in order to allow the Jenkins agents pod to access docker socket
+            " -v /etc/group:/etc/group@server[0] " +
+            // Persists the cache of Jenkins agents pods for faster builds
+            " -v /tmp:/tmp@server[0] " +
+            // Disable traefik (no ingresses used so far)
+            " --k3s-server-arg=--disable=traefik " +
+            // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
+            " --k3s-server-arg=--disable=servicelb " +
+            // Pin k8s version to 1.21.2
+            " --image=${K8S_IMAGE} " +
+            // Use our k3d registry
+            " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
+            " >/dev/null"
+
+        script.echo "Adding k3d cluster to ~/.kube/config"
+        script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
     }
 
     /**
@@ -82,8 +97,22 @@ class K3d {
      */
     void deleteK3d() {
         script.withEnv(["PATH=${k3dBinaryDir}:${path}"]) {
+            script.echo "Deleting cluster registry..."
+            this.registry?.delete()
+
+            script.echo "Deleting cluster..."
             script.sh "k3d cluster delete ${clusterName}"
         }
+    }
+
+    /**
+     * Builds a local image and pushes it to the local registry
+     * @param imageName the image name without the local registry/port parts, f. e. "cloudogu/myimage"
+     * @param tag the image tag, f. e. "1.2.3"
+     * @return the image repository name of the built image relative to the internal image registry, f. i. localRegistyName:randomPort/my/image:tag
+     */
+    def buildAndPushToLocalRegistry(def imageName, def tag) {
+        return this.registry.buildAndPushToLocalRegistry(imageName, tag)
     }
 
     /**
@@ -95,19 +124,52 @@ class K3d {
         script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
     }
 
-    boolean installKubectl() {
-        def kubectlStatusCode = script.sh script:"snap list kubectl", returnStatus:true
-        if (kubectlStatusCode != 0) {
-            script.echo "Installing kubectl..."
-            def kubectlInstallationStatusCode = script.sh script:"sudo snap install kubectl --classic", returnStatus:true
-            if (kubectlInstallationStatusCode == 0) {
-                return true
-            } else {
-                return false
-            }
-        } else {
-            //Kubectl is already installed
-            return true
+    /**
+     * returns a free, unprivileged TCP port
+     *
+     * @return new free, unprivileged TCP port
+     */
+    private String findFreeTcpPort() {
+        String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
+        return port
+    }
+
+    /**
+     * installs a local image registry to k3d
+     */
+    private void installLocalRegistry() {
+        def registryPort = findFreeTcpPort()
+        def registryName = clusterName
+        this.registry = new K3dRegistry(script, registryName, registryPort)
+        this.registry.installLocalRegistry()
+    }
+
+    /**
+     * Installs k3d
+     */
+    private void installK3d() {
+        script.sh "rm -rf ${k3dDir}"
+        script.sh "mkdir -p ${k3dBinaryDir}"
+
+        String tagArgument = "TAG=v${K3D_VERSION}"
+        String tagK3dInstallDir = "K3D_INSTALL_DIR=${k3dBinaryDir}"
+        String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
+
+        script.echo "Installing K3d Version: ${K3D_VERSION}"
+        script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
+    }
+
+    /**
+     * Installs kubectl
+     */
+    private void installKubectl() {
+        def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
+        if (kubectlStatusCode == 0) {
+            script.echo "Kubectl already installed"
+            return
         }
+
+        script.echo "Installing kubectl..."
+        script.sh script: "sudo snap install kubectl --classic"
     }
 }

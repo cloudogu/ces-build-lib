@@ -6,12 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Makefile class to extract the current version from the makefile #73
+
 ### Changed
 - Install kubectl on k3d setup automatically; #71
 - Use workspace as k3d constructor parameter
+- Install local image registry during k3d setup #71
+
+### Added
+- Add k3d method `buildAndPushToLocalRegistry()` for cluster-local access of development images #71
+  - see the README.md for updated usage tips
 
 ### Removed
 - Remove unused git credentials parameter in k3d constructor
+- Remove dependency to GitOps playground
 
 ## [1.50.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.50.0) - 2022-03-10
 ### Changed
