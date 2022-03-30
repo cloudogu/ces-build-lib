@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.52.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.52.0) - 2022-03-30
+## Added
+- Automatic k8s secret generation for k3d clusters when starting the cluster. The secret contains
+the login data used for the dogu-registry; #75
+
 ## [1.51.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.51.0) - 2022-03-16
 ### Added
 - Add k3d method `buildAndPushToLocalRegistry()` for cluster-local access of development images #71
