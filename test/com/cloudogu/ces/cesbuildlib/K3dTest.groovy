@@ -40,12 +40,13 @@ class K3dTest extends GroovyTestCase {
     }
 
     void testKubectl() {
+        def workspaceDir = "leWorkspace"
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, "leWorkspace", "path")
+        K3d sut = new K3d(scriptMock, "${workspaceDir}", "path")
 
         sut.kubectl("get nodes")
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl get nodes")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl get nodes")
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(1)
     }
 
@@ -67,8 +68,8 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualShStringArgs[4].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.actualShStringArgs[5].trim()).startsWith("k3d kubeconfig merge citest-")
         assertThat(scriptMock.actualShStringArgs[6].trim()).startsWith("echo \"Using credentials: cesmarvin-setup\"")
-        assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl delete secret dogu-cloudogu-com || true")
-        assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl create secret generic dogu-cloudogu-com --from-literal=username=\"null\" --from-literal=password=\"null\"")
+        assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret dogu-cloudogu-com || true")
+        assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret generic dogu-cloudogu-com --from-literal=username=\"null\" --from-literal=password=\"null\"")
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(9)
     }
 
@@ -90,8 +91,8 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualShStringArgs[4].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.actualShStringArgs[5].trim()).startsWith("k3d kubeconfig merge citest-")
         assertThat(scriptMock.actualShStringArgs[6].trim()).startsWith("echo \"Using credentials: myBackendCredentialsID\"")
-        assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl delete secret dogu-cloudogu-com || true")
-        assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=leWorkspace/.k3d/.kube/config kubectl create secret generic dogu-cloudogu-com --from-literal=username=\"null\" --from-literal=password=\"null\"")
+        assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret dogu-cloudogu-com || true")
+        assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret generic dogu-cloudogu-com --from-literal=username=\"null\" --from-literal=password=\"null\"")
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(9)
     }
 
