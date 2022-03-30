@@ -17,6 +17,7 @@ class K3d {
     private String path
     private String k3dDir
     private String k3dBinaryDir
+    private String backendCredentialsID
     private Sh sh
     private K3dRegistry registry
     private String registryName
@@ -27,14 +28,16 @@ class K3d {
      * @param script The Jenkins script you are coming from (aka "this")
      * @param envWorkspace The designated directory for the K3d installation
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
+     * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
      */
-    K3d(script, String envWorkspace, String envPath) {
+    K3d(script, String envWorkspace, String envPath, String backendCredentialsID="cesmarvin-setup") {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
         this.path = envPath
         this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
+        this.backendCredentialsID = backendCredentialsID
         this.sh = new Sh(script)
     }
 
@@ -62,11 +65,27 @@ class K3d {
             installLocalRegistry()
             initializeCluster()
             installKubectl()
+            loginBackend()
         }
     }
 
     /**
-     * Initializes the cluster by creating a respective cluster in k3d
+     * Creates the secret necessary for applications that need to log into the cloudogu backend, e.g., dogu-operator.
+     */
+    private void loginBackend() {
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
+            script.sh "echo \"Using credentials: ${backendCredentialsID}\""
+
+            // delete old secret if available
+            kubectl("delete secret dogu-cloudogu-com || true")
+
+            //create secret for the backend registry
+            kubectl("create secret generic dogu-cloudogu-com --from-literal=username=\"${script.env.TOKEN_ID}\" --from-literal=password=\"${script.env.TOKEN_SECRET}\"")
+        }
+    }
+
+    /**
+     * Initializes the cluster by creating a respective cluster in k3d.
      */
     private void initializeCluster() {
         script.sh "k3d cluster create ${clusterName} " +
