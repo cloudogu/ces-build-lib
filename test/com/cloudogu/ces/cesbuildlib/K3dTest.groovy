@@ -23,6 +23,7 @@ class K3dTest extends GroovyTestCase {
     void testDeleteK3d() {
         // given
         def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsocconfig kubectl get nodeskname()[1]); s.close()\');'.toString(), "54321")
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
         K3d sut = new K3d(scriptMock, "workspace", "path")
@@ -40,13 +41,13 @@ class K3dTest extends GroovyTestCase {
     }
 
     void testKubectl() {
-        def workspaceDir = "leWorkspace"
+        String workspaceDir = "leWorkspace"
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, "${workspaceDir}", "path")
+        K3d sut = new K3d(scriptMock, workspaceDir, "path")
 
         sut.kubectl("get nodes")
 
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl get nodes")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl get nodes".trim())
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(1)
     }
 
