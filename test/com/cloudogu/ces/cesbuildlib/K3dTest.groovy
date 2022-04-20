@@ -72,7 +72,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
         assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
         assertThat(scriptMock.actualShStringArgs[9].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.actualShStringArgs[10].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-benutzername=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.actualShStringArgs[10].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(11)
     }
 
@@ -97,7 +97,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualShStringArgs[7].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
         assertThat(scriptMock.actualShStringArgs[8].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
         assertThat(scriptMock.actualShStringArgs[9].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.actualShStringArgs[10].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-benutzername=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.actualShStringArgs[10].trim()).startsWith("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(11)
     }
 
