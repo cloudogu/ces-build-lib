@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.53.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.53.0) - 2022-04-20
+## Changed
+- Adapt the secret creation for the k3d cluster according to the new secrets required by the `k8s-dogu-operator` #77
+
 ## [1.52.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.52.0) - 2022-03-30
 ## Added
 - Automatic k8s secret generation for k3d clusters when starting the cluster. The secret contains
