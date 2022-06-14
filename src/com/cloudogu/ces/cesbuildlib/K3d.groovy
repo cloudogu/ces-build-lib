@@ -20,7 +20,7 @@ class K3d {
     private String backendCredentialsID
     private Sh sh
     private K3dRegistry registry
-    private String registryName
+    public String registryName
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
