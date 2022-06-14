@@ -90,6 +90,12 @@ class K3d {
      * Initializes the cluster by creating a respective cluster in k3d.
      */
     private void initializeCluster() {
+        script.writeFile file:'registry_config.yaml', text: """
+mirrors:
+  "localhost:5000":
+    endpoint:
+      - http://localhost:5000
+"""
         script.sh "k3d cluster create ${clusterName} " +
             // Allow services to bind to ports < 30000
             " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
@@ -107,7 +113,10 @@ class K3d {
             " --image=${K8S_IMAGE} " +
             // Use our k3d registry
             " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
+            // TODO Test
+            "--registry-config registry_config.yaml" +
             " >/dev/null"
+
 
         script.echo "Adding k3d cluster to ~/.kube/config"
         script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
