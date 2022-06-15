@@ -90,11 +90,29 @@ class K3d {
      * Initializes the cluster by creating a respective cluster in k3d.
      */
     private void initializeCluster() {
+        def dockerInspect = sh(script: "docker inspect k3d-${this.registryName}", returnStdout: true)
+        def registryIp
+
+        Docker docker = new Docker(this)
+
+        docker.image('mikefarah/yq:4.22.1')
+            .mountJenkinsUser()
+            .inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
+                registryIp = sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.k3d-${this.registryName}.IPAddress'", returnStdout: true).trim()
+            }
+
+        sh "echo testttttttttttttttttt lib"
+        sh "echo ${registryIp}"
+
         script.writeFile file:'registry_config.yaml', text: """
 mirrors:
-  "localhost:5000":
+  ${registryIp}:5000:
     endpoint:
-      - http://localhost:5000
+      - http://${registryIp}:5000
+configs:
+  ${registryIp}:
+    tls:
+      insecure_skip_verify: true
 """
         script.sh "k3d cluster create ${clusterName} " +
             // Allow services to bind to ports < 30000
