@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when
 
 class K3dTest extends GroovyTestCase {
     void testCreateClusterName() {
-        K3d sut = new K3d("script", "workspace", "path")
+        K3d sut = new K3d("script", "leWorkSpace", "leK3dWorkSpace", "path")
         String testClusterName = sut.createClusterName()
         assertTrue(testClusterName.contains("citest-"))
         assertTrue(testClusterName != "citest-")
@@ -26,7 +26,7 @@ class K3dTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsocconfig kubectl get nodeskname()[1]); s.close()\');'.toString(), "54321")
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
-        K3d sut = new K3d(scriptMock, "workspace", "path")
+        K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
         // we need to create a registry so that the deletion of the registry is triggered
         sut.startK3d()
@@ -41,12 +41,15 @@ class K3dTest extends GroovyTestCase {
     }
 
     void testKubectl() {
+        // given
         String workspaceDir = "leWorkspace"
         def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, "path")
+        K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
+        // when
         sut.kubectl("get nodes")
 
+        // then
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=${workspaceDir}/.k3d/.kube/config kubectl get nodes".trim())
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(1)
     }
@@ -58,7 +61,7 @@ class K3dTest extends GroovyTestCase {
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
-        K3d sut = new K3d(scriptMock, "${workspaceDir}", "path")
+        K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
         sut.startK3d()
 
@@ -126,7 +129,7 @@ class K3dTest extends GroovyTestCase {
         })
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
-        K3d sut = new K3d(scriptMock, "leWorkspace", "path")
+        K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
         sut.startK3d()
 
         // when
@@ -135,5 +138,33 @@ class K3dTest extends GroovyTestCase {
         // then
         assertThat(scriptMock.actualShStringArgs[11].trim()).isEqualTo("image pushed".toString())
         assertThat(scriptMock.actualShStringArgs.size()).isEqualTo(12)
+    }
+
+    void testSetup() {
+        // given
+        def workspaceEnvDir = "leWorkspace/k3d"
+        String tag = "v0.6.0"
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml".toString(), "fake setup yaml with {{ .Namespace }}")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".toString(), "successfully rolled out")
+
+        K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.setup(tag, 1, 1)
+
+        // then
+        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml".trim())
+        assertThat(scriptMock.writeFileParams.get(0)["setup.json"]).isNotEmpty()
+        assertThat(scriptMock.actualShStringArgs[1].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl create configmap k8s-ces-setup-json --from-file=setup.json".trim())
+        assertThat(scriptMock.actualShStringArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml".trim())
+        String setupYaml = scriptMock.writeFileParams.get(1)["setup.yaml"]
+        assertThat(setupYaml).isNotEmpty()
+        assertThat(setupYaml.contains("{{ .Namespace }}")).isFalse()
+        assertThat(scriptMock.actualShStringArgs[3].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f setup.yaml".trim())
+        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("Wait for dogu-operator to be ready...")
+        assertThat(scriptMock.actualShStringArgs[4].trim()).isEqualTo("sleep 1s")
+        assertThat(scriptMock.actualShStringArgs[5].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
     }
 }

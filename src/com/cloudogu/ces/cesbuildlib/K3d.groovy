@@ -20,21 +20,24 @@ class K3d {
     private String backendCredentialsID
     private Sh sh
     private K3dRegistry registry
-    public String registryName
+    private String registryName
+    private String workspace
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
      * @param envWorkspace The designated directory for the K3d installation
+     * @param workspace The designated directory for working dir
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
      */
-    K3d(script, String envWorkspace, String envPath, String backendCredentialsID="cesmarvin-setup") {
+    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID="cesmarvin-setup") {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
         this.path = envPath
+        this.workspace = workspace
         this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.backendCredentialsID = backendCredentialsID
@@ -153,21 +156,23 @@ class K3d {
      * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
      * After that the method will wait until the dogu-operator is ready.
      * @param tag Tag of the setup e. g. "v0.6.0"
+     * @param timout Timeout in seconds for the setup process e. g. 300
+     * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
      */
-    void setup(String tag) {
+    void setup(String tag, Integer timout, Integer interval) {
         // Config
         script.echo "Installing setup..."
         kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
         writeSetupJson()
         kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
 
-        String setup = script.sh(script: "curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml", returnStdout: true)
+        String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
         setup = setup.replace("{{ .Namespace }}", "default")
         script.writeFile file: 'setup.yaml', text: setup
         kubectl('apply -f setup.yaml')
 
-        script.sh "Wait for dogu-operator to be ready..."
-        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", 300, 5)
+        script.echo "Wait for dogu-operator to be ready..."
+        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timout, interval)
     }
 
     /**
@@ -181,7 +186,7 @@ class K3d {
      * @param doguYaml Name of the custom resources
      */
     void installDogu(String dogu, String image, String doguYaml) {
-        Docker docker = new Docker(this)
+        Docker docker = new Docker(script)
         String[] IpPort = getRegistryIpAndPort(docker)
         String imageUrl = image.split(":")[0]
         patchCoreDNS(IpPort[0], imageUrl)
@@ -196,11 +201,11 @@ class K3d {
 
     private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
         String imageDev
-        String doguJsonDevFile = "${WORKSPACE}/target/dogu.json"
+        String doguJsonDevFile = "${this.workspace}/target/dogu.json"
         docker.image('mikefarah/yq:4.22.1')
             .mountJenkinsUser()
-            .inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
-                imageDev = script.sh(script: "yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'", returnStdout: true)
+            .inside("--volume ${this.workspace}:/workdir -w /workdir") {
+                imageDev =  this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
                 script.sh "yq '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
             }
         kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
@@ -269,15 +274,15 @@ class K3d {
     }
 
     private String getExecPodName(String dogu, Integer timeout, Integer interval) {
-        String execPodName
         for (int i = 0; i < timeout/interval; i++) {
-            sleep(time: interval, unit: "SECONDS")
+            script.sh("sleep ${interval}s")
             try {
-                execPodName = script.sh(script: "kubectl get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}' | grep '${dogu}-execpod'", returnStdout: true).trim()
+                String podList = kubectl("get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+                String execPodName = this.sh.returnStdOut("echo '${podList}' | grep '${dogu}-execpod'")
                 if (execPodName.contains("${dogu}-execpod")) {
                     return execPodName
                 }
-            } catch (exception) {
+            } catch (ignored) {
                 // Ignore Error.
             }
         }
@@ -288,9 +293,10 @@ class K3d {
 
     void waitForDeployment(String deployment, Integer timeout, Integer interval) {
         for (int i = 0; i < timeout/interval; i++) {
-            sleep(time: interval, unit: "SECONDS")
+            script.sh("sleep ${interval}s")
             try {
-                String statusMsg = script.sh(script: "kubectl get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}' | grep '${deployment}'", returnStdout: true)
+                String deploymentList = kubectl("get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+                String statusMsg = this.sh.returnStdOut("echo '${deploymentList}' | grep '${deployment}'")
                 if (statusMsg == deployment) {
                     return
                 }
@@ -304,7 +310,7 @@ class K3d {
 
     void waitForDeploymentRollout(String deployment, Integer timeout, Integer interval) {
         for (int i = 0; i < timeout/interval; i++) {
-            sleep(time: interval, unit: "SECONDS")
+            script.sh("sleep ${interval}s")
             try {
                 String statusMsg = kubectl("rollout status deployment/${deployment}", true)
                 if (statusMsg.contains("successfully rolled out")) {
@@ -359,10 +365,10 @@ data:
         String prefixedRegistryName = "k3d-${this.registryName}"
         String dockerInspect = script.sh(script: "docker inspect ${prefixedRegistryName}", returnStdout: true)
         docker.image('mikefarah/yq:4.22.1')
-            .mountJenkinsUser().inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
-                registryIp = script.sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.${prefixedRegistryName}.IPAddress'", returnStdout: true).trim()
-                registryPortProtocol = script.sh(script: "echo '${dockerInspect}' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", returnStdout: true).trim()
-            }
+            .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
+            registryIp = script.sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.${prefixedRegistryName}.IPAddress'", returnStdout: true).trim()
+            registryPortProtocol = script.sh(script: "echo '${dockerInspect}' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", returnStdout: true).trim()
+        }
         String registryPort = registryPortProtocol.split("/")[0]
 
         return [registryIp, registryPort]
