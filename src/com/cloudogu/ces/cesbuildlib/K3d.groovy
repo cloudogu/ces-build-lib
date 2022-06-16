@@ -90,30 +90,6 @@ class K3d {
      * Initializes the cluster by creating a respective cluster in k3d.
      */
     private void initializeCluster() {
-        def dockerInspect = sh(script: "docker inspect k3d-${this.registryName}", returnStdout: true)
-        def registryIp
-
-        Docker docker = new Docker(this)
-
-        docker.image('mikefarah/yq:4.22.1')
-            .mountJenkinsUser()
-            .inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
-                registryIp = sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.k3d-${this.registryName}.IPAddress'", returnStdout: true).trim()
-            }
-
-        sh "echo testttttttttttttttttt lib"
-        sh "echo ${registryIp}"
-
-        script.writeFile file:'registry_config.yaml', text: """
-mirrors:
-  ${registryIp}:5000:
-    endpoint:
-      - http://${registryIp}:5000
-configs:
-  ${registryIp}:
-    tls:
-      insecure_skip_verify: true
-"""
         script.sh "k3d cluster create ${clusterName} " +
             // Allow services to bind to ports < 30000
             " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
@@ -131,10 +107,7 @@ configs:
             " --image=${K8S_IMAGE} " +
             // Use our k3d registry
             " --registry-use ${registry.getImageRegistryInternalWithPort()} " +
-            // TODO Test
-            "--registry-config registry_config.yaml" +
             " >/dev/null"
-
 
         script.echo "Adding k3d cluster to ~/.kube/config"
         script.sh "k3d kubeconfig merge ${clusterName} --kubeconfig-switch-context > /dev/null"
@@ -169,7 +142,81 @@ configs:
      * @param command The kubectl command you want to execute, without the leading "kubectl"
      */
     void kubectl(command) {
-        script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
+        kubectl(command, false)
+    }
+
+    String kubectl(command, returnStdout) {
+        return script.sh(script: "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}", returnStdout: returnStdout)
+    }
+
+    /**
+     * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
+     * After that the method will wait until the dogu-operator is ready.
+     * @param tag Tag of the setup e. g. "v0.6.0"
+     */
+    void setup(String tag) {
+        // Config
+        script.echo "Installing setup..."
+        kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
+        writeSetupJson()
+        kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
+
+        String setup = script.sh(script: "curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml", returnStdout: true)
+        setup = setup.replace("{{ .Namespace }}", "default")
+        script.writeFile file: 'setup.yaml', text: setup
+        kubectl('apply -f setup.yaml')
+
+        script.sh "Wait for dogu-operator to be ready..."
+        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", 300, 5)
+    }
+
+    /**
+     * Installs a given dogu. Before applying the dogu.yaml to the cluster the method creates a custom dogu
+     * descriptor with an .local ip. This is required for the crane library in the dogu operator. The .local forces it
+     * to use http. Afterwards the .local will be patched out from the dogu resources so that kubelet has no problem to
+     * pull the image-
+     *
+     * @param dogu Name of the dogu e. g. "nginx-ingress"
+     * @param image Name of the image e. g. "k3d-citest-d9753c5632bc:1234/k8s/nginx-ingress"
+     * @param doguYaml Name of the custom resources
+     */
+    void installDogu(String dogu, String image, String doguYaml) {
+        Docker docker = new Docker(this)
+        String[] IpPort = getRegistryIpAndPort(docker)
+        String imageUrl = image.split(":")[0]
+        patchCoreDNS(IpPort[0], imageUrl)
+
+        applyDevDoguDescriptor(docker, dogu, imageUrl, IpPort[1])
+        kubectl("apply -f ${doguYaml}")
+
+        // Remove .local from Images.
+        patchDoguExecPod(dogu, image)
+        patchDoguDeployment(dogu, image)
+    }
+
+    private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
+        String imageDev
+        String doguJsonDevFile = "${WORKSPACE}/target/dogu.json"
+        docker.image('mikefarah/yq:4.22.1')
+            .mountJenkinsUser()
+            .inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
+                imageDev = script.sh(script: "yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'", returnStdout: true)
+                script.sh "yq '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
+            }
+        kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
+    }
+
+    private void patchDoguExecPod(String dogu, String image) {
+        String execPodName = getExecPodName(dogu, 30, 2)
+        if (execPodName == "") {
+            return
+        }
+        kubectl("patch pod '${execPodName}' -p '{\"spec\":{\"containers\":[{\"name\":\"${execPodName}\",\"image\":\"${image}\"}]}}'")
+    }
+
+    private void patchDoguDeployment(String dogu, String image) {
+        waitForDeployment(dogu, 300, 5)
+        kubectl("patch deployment '${dogu}' -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"${dogu}\",\"image\":\"${image}\"}]}}}}'")
     }
 
     /**
@@ -219,5 +266,162 @@ configs:
 
         script.echo "Installing kubectl..."
         script.sh script: "sudo snap install kubectl --classic"
+    }
+
+    private String getExecPodName(String dogu, Integer timeout, Integer interval) {
+        String execPodName
+        for (int i = 0; i < timeout/interval; i++) {
+            sleep(time: interval, unit: "SECONDS")
+            try {
+                execPodName = script.sh(script: "kubectl get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}' | grep '${dogu}-execpod'", returnStdout: true).trim()
+                if (execPodName.contains("${dogu}-execpod")) {
+                    return execPodName
+                }
+            } catch (exception) {
+                // Ignore Error.
+            }
+        }
+
+        // Don't throw an error here because in the future the won't be exec pods for every dogu
+        return ""
+    }
+
+    void waitForDeployment(String deployment, Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout/interval; i++) {
+            sleep(time: interval, unit: "SECONDS")
+            try {
+                String statusMsg = script.sh(script: "kubectl get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}' | grep '${deployment}'", returnStdout: true)
+                if (statusMsg == deployment) {
+                    return
+                }
+            } catch (ignored) {
+                // Ignore Error.
+            }
+        }
+
+        throw new Exception("failed to wait for deployment/${deployment}: timeout")
+    }
+
+    void waitForDeploymentRollout(String deployment, Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout/interval; i++) {
+            sleep(time: interval, unit: "SECONDS")
+            try {
+                String statusMsg = kubectl("rollout status deployment/${deployment}", true)
+                if (statusMsg.contains("successfully rolled out")) {
+                    return
+                }
+            } catch (ignored) {
+                // If the deployment does not even exists an error will be thrown. Ignore this case.
+            }
+        }
+
+        throw new Exception("failed to wait for deployment/${deployment} rollout: timeout")
+    }
+
+    private void patchCoreDNS(String ip, String imageUrl) {
+        String fileName = "coreDNSPatch.yaml"
+        script.writeFile file: fileName, text: """
+data:
+    Corefile: |
+        ${imageUrl}.local:53 {
+            hosts {
+                ${ip} ${imageUrl}.local
+            }
+        }
+        .:53 {
+            errors
+            health
+            ready
+            kubernetes cluster.local in-addr.arpa ip6.arpa {
+                pods insecure
+                fallthrough in-addr.arpa ip6.arpa
+            }
+            hosts /etc/coredns/NodeHosts {
+                reload 1s
+                fallthrough
+            }
+            prometheus :9153
+            forward . /etc/resolv.conf
+            cache 30
+            loop
+            reload
+            loadbalance
+        }
+"""
+
+        kubectl("-n kube-system patch cm coredns --patch-file ${fileName}")
+        kubectl("rollout restart -n kube-system deployment/coredns")
+    }
+
+    private String[] getRegistryIpAndPort(Docker docker) {
+        String registryIp
+        String registryPortProtocol
+        String prefixedRegistryName = "k3d-${this.registryName}"
+        String dockerInspect = script.sh(script: "docker inspect ${prefixedRegistryName}", returnStdout: true)
+        docker.image('mikefarah/yq:4.22.1')
+            .mountJenkinsUser().inside("--volume ${WORKSPACE}:/workdir -w /workdir") {
+                registryIp = script.sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.${prefixedRegistryName}.IPAddress'", returnStdout: true).trim()
+                registryPortProtocol = script.sh(script: "echo '${dockerInspect}' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", returnStdout: true).trim()
+            }
+        String registryPort = registryPortProtocol.split("/")[0]
+
+        return [registryIp, registryPort]
+    }
+
+    private void writeSetupJson() {
+        script.writeFile file: 'setup.json', text: """
+{
+  "naming": {
+    "fqdn": "192.168.56.2",
+    "domain": "k3ces.local",
+    "certificateType": "selfsigned",
+    "relayHost": "asdf",
+    "completed": true,
+    "useInternalIp": false,
+    "internalIp": ""
+  },
+  "dogus": {
+    "defaultDogu": "plantuml",
+    "install": [
+      "official/plantuml"
+    ],
+    "completed": true
+  },
+  "admin": {
+    "username": "admin",
+    "mail": "admin@admin.admin",
+    "password": "adminpw",
+    "adminGroup": "cesAdmin",
+    "completed": true,
+    "adminMember": true,
+    "sendWelcomeMail": false
+  },
+  "userBackend": {
+    "dsType": "embedded",
+    "server": "",
+    "attributeID": "uid",
+    "attributeGivenName": "",
+    "attributeSurname": "",
+    "attributeFullname": "cn",
+    "attributeMail": "mail",
+    "attributeGroup": "memberOf",
+    "baseDN": "",
+    "searchFilter": "(objectClass=person)",
+    "connectionDN": "",
+    "password": "",
+    "host": "ldap",
+    "port": "389",
+    "loginID": "",
+    "loginPassword": "",
+    "encryption": "",
+    "completed": true,
+    "groupBaseDN": "",
+    "groupSearchFilter": "",
+    "groupAttributeName": "",
+    "groupAttributeDescription": "",
+    "groupAttributeMember": ""
+  }
+}
+"""
     }
 }
