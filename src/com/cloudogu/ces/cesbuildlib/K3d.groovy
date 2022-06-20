@@ -39,6 +39,10 @@ class K3d {
         registryConfigEncrypted: ""
     ]
 
+    String getRegistryName() {
+        return registryName
+    }
+
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
      *
