@@ -1063,12 +1063,19 @@ try {
     stage('Do something with your cluster') {
         k3d.kubectl("get nodes")
     }
-    
+
     stage('build and push development artefact') {
         String myCurrentArtefactVersion = "yourTag-1.2.3-dev"
         imageName = k3d.buildAndPushToLocalRegistry("your/image", myCurrentArtefactVersion)
         // your image name may look like this: k3d-citest-123456/your/image:yourTag-1.2.3-dev
         // the image name can be applied to your cluster as usual, f. i. with k3d.kubectl() with a customized K8s resource 
+    }
+
+    stage('install resources and wait for them') {
+        imageName = "registry.cloudogu.com/official/my-dogu-name:1.0.0"
+        k3d.installDogu("my-dogu-name", imageName, myDoguResourceYamlFile)
+
+        k3d.waitForDeploymentRollout("my-dogu-name", 300, 5)
     }
     
 } finally {
