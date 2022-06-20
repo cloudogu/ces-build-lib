@@ -18,10 +18,26 @@ class K3d {
     private String k3dDir
     private String k3dBinaryDir
     private String backendCredentialsID
+    private String externalIP
     private Sh sh
     private K3dRegistry registry
     private String registryName
     private String workspace
+
+    def defaultSetupConfig = [
+        adminUsername          : "ces-admin",
+        adminPassword          : "ecosystem2016",
+        adminGroup             : "CesAdministrators",
+        dependencies           : ["official/ldap",
+                                  "official/cas",
+                                  "k8s/nginx-ingress",
+                                  "official/postfix",
+                                  "official/usermgt"],
+        defaultDogu            : "cockpit",
+        additionalDependencies : [],
+        registryConfig         : "",
+        registryConfigEncrypted: ""
+    ]
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
@@ -32,7 +48,7 @@ class K3d {
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
      */
-    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID="cesmarvin-setup") {
+    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID = "cesmarvin-setup") {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
@@ -159,11 +175,18 @@ class K3d {
      * @param timout Timeout in seconds for the setup process e. g. 300
      * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
      */
-    void setup(String tag, Integer timout, Integer interval) {
+    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+        this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
+        script.echo "Get external ip..." + externalIP
+
         // Config
         script.echo "Installing setup..."
         kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
-        writeSetupJson()
+
+        // Merge default config with the one passed as parameter
+        config = defaultSetupConfig << config
+        writeSetupJson(config)
+
         kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
 
         String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
@@ -205,7 +228,7 @@ class K3d {
         docker.image('mikefarah/yq:4.22.1')
             .mountJenkinsUser()
             .inside("--volume ${this.workspace}:/workdir -w /workdir") {
-                imageDev =  this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
+                imageDev = this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
                 script.sh "yq '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
             }
         kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
@@ -274,7 +297,7 @@ class K3d {
     }
 
     private String getExecPodName(String dogu, Integer timeout, Integer interval) {
-        for (int i = 0; i < timeout/interval; i++) {
+        for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             try {
                 String podList = kubectl("get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
@@ -292,7 +315,7 @@ class K3d {
     }
 
     void waitForDeployment(String deployment, Integer timeout, Integer interval) {
-        for (int i = 0; i < timeout/interval; i++) {
+        for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             try {
                 String deploymentList = kubectl("get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
@@ -309,7 +332,7 @@ class K3d {
     }
 
     void waitForDeploymentRollout(String deployment, Integer timeout, Integer interval) {
-        for (int i = 0; i < timeout/interval; i++) {
+        for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             try {
                 String statusMsg = kubectl("rollout status deployment/${deployment}", true)
@@ -374,60 +397,64 @@ data:
         return [registryIp, registryPort]
     }
 
-    private void writeSetupJson() {
+    static String formatDependencies(List<String> deps) {
+        String formatted = ""
+
+        for (int i = 0; i < deps.size(); i++) {
+            formatted += "\"${deps[i]}\""
+
+            if ((i + 1) < deps.size()) {
+                formatted += ', '
+            }
+        }
+
+        return formatted
+    }
+
+    private void writeSetupJson(config) {
+        List<String> deps = config.dependencies + config.additionalDependencies
+        String formattedDeps = formatDependencies(deps)
+
         script.writeFile file: 'setup.json', text: """
 {
-  "naming": {
-    "fqdn": "192.168.56.2",
-    "domain": "k3ces.local",
-    "certificateType": "selfsigned",
-    "relayHost": "asdf",
-    "completed": true,
-    "useInternalIp": false,
-    "internalIp": ""
+  "naming":{
+    "fqdn":"${externalIP}",
+    "hostname":"ces",
+    "domain":"ces.local",
+    "certificateType":"selfsigned",
+    "relayHost":"mail.ces.local",
+    "completed":true
   },
-  "dogus": {
-    "defaultDogu": "plantuml",
-    "install": [
-      "official/plantuml"
+  "dogus":{
+    "defaultDogu":"${config.defaultDogu}",
+    "install":[
+       ${formattedDeps}
     ],
-    "completed": true
+    "completed":true
   },
-  "admin": {
-    "username": "admin",
-    "mail": "admin@admin.admin",
-    "password": "adminpw",
-    "adminGroup": "cesAdmin",
-    "completed": true,
-    "adminMember": true,
-    "sendWelcomeMail": false
+  "admin":{
+    "username":"${config.adminUsername}",
+    "mail":"ces-admin@cloudogu.com",
+    "password":"${config.adminPassword}",
+    "adminGroup":"${config.adminGroup}",
+    "adminMember":true,
+    "completed":true
   },
-  "userBackend": {
-    "dsType": "embedded",
-    "server": "",
-    "attributeID": "uid",
-    "attributeGivenName": "",
-    "attributeSurname": "",
-    "attributeFullname": "cn",
-    "attributeMail": "mail",
-    "attributeGroup": "memberOf",
-    "baseDN": "",
-    "searchFilter": "(objectClass=person)",
-    "connectionDN": "",
-    "password": "",
-    "host": "ldap",
-    "port": "389",
-    "loginID": "",
-    "loginPassword": "",
-    "encryption": "",
-    "completed": true,
-    "groupBaseDN": "",
-    "groupSearchFilter": "",
-    "groupAttributeName": "",
-    "groupAttributeDescription": "",
-    "groupAttributeMember": ""
-  }
-}
-"""
+  "userBackend":{
+    "port":"389",
+    "useUserConnectionToFetchAttributes":true,
+    "dsType":"embedded",
+    "attributeID":"uid",
+    "attributeFullname":"cn",
+    "attributeMail":"mail",
+    "attributeGroup":"memberOf",
+    "searchFilter":"(objectClass=person)",
+    "host":"ldap",
+    "completed":true
+  },
+  "registryConfig": {${config.registryConfig}},
+  "registryConfigEncrypted": {${config.registryConfigEncrypted}}
+}"""
     }
 }
+
