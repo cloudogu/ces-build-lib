@@ -177,7 +177,6 @@ class K3d {
      */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
-        script.echo "Get external ip..." + externalIP
 
         // Config
         script.echo "Installing setup..."
@@ -328,7 +327,7 @@ class K3d {
             }
         }
 
-        throw new Exception("failed to wait for deployment/${deployment}: timeout")
+        this.script.error "failed to wait for deployment/${deployment}: timeout"
     }
 
     void waitForDeploymentRollout(String deployment, Integer timeout, Integer interval) {
@@ -344,7 +343,7 @@ class K3d {
             }
         }
 
-        throw new Exception("failed to wait for deployment/${deployment} rollout: timeout")
+        this.script.error "failed to wait for deployment/${deployment} rollout: timeout"
     }
 
     private void patchCoreDNS(String ip, String imageUrl) {
