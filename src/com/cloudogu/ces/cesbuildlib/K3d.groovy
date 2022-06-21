@@ -18,23 +18,46 @@ class K3d {
     private String k3dDir
     private String k3dBinaryDir
     private String backendCredentialsID
+    private String externalIP
     private Sh sh
     private K3dRegistry registry
     private String registryName
+    private String workspace
+
+    def defaultSetupConfig = [
+        adminUsername          : "ces-admin",
+        adminPassword          : "ecosystem2016",
+        adminGroup             : "CesAdministrators",
+        dependencies           : ["official/ldap",
+                                  "official/cas",
+                                  "k8s/nginx-ingress",
+                                  "official/postfix",
+                                  "official/usermgt"],
+        defaultDogu            : "cockpit",
+        additionalDependencies : [],
+        registryConfig         : "",
+        registryConfigEncrypted: ""
+    ]
+
+    String getRegistryName() {
+        return registryName
+    }
 
     /**
      * Create an object to set up, modify and tear down a local k3d cluster
      *
      * @param script The Jenkins script you are coming from (aka "this")
      * @param envWorkspace The designated directory for the K3d installation
+     * @param workspace The designated directory for working dir
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
      */
-    K3d(script, String envWorkspace, String envPath, String backendCredentialsID="cesmarvin-setup") {
+    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID = "cesmarvin-setup") {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
         this.path = envPath
+        this.workspace = workspace
         this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.backendCredentialsID = backendCredentialsID
@@ -142,7 +165,89 @@ class K3d {
      * @param command The kubectl command you want to execute, without the leading "kubectl"
      */
     void kubectl(command) {
-        script.sh "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}"
+        kubectl(command, false)
+    }
+
+    String kubectl(command, returnStdout) {
+        return script.sh(script: "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}", returnStdout: returnStdout)
+    }
+
+    /**
+     * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
+     * After that the method will wait until the dogu-operator is ready.
+     * @param tag Tag of the setup e. g. "v0.6.0"
+     * @param timout Timeout in seconds for the setup process e. g. 300
+     * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
+     */
+    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+        this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
+
+        // Config
+        script.echo "Installing setup..."
+        kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
+
+        // Merge default config with the one passed as parameter
+        config = defaultSetupConfig << config
+        writeSetupJson(config)
+
+        kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
+
+        String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
+        setup = setup.replace("{{ .Namespace }}", "default")
+        script.writeFile file: 'setup.yaml', text: setup
+        kubectl('apply -f setup.yaml')
+
+        script.echo "Wait for dogu-operator to be ready..."
+        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timout, interval)
+    }
+
+    /**
+     * Installs a given dogu. Before applying the dogu.yaml to the cluster the method creates a custom dogu
+     * descriptor with an .local ip. This is required for the crane library in the dogu operator. The .local forces it
+     * to use http. Afterwards the .local will be patched out from the dogu resources so that kubelet has no problem to
+     * pull the image-
+     *
+     * @param dogu Name of the dogu e. g. "nginx-ingress"
+     * @param image Name of the image e. g. "k3d-citest-d9753c5632bc:1234/k8s/nginx-ingress"
+     * @param doguYaml Name of the custom resources
+     */
+    void installDogu(String dogu, String image, String doguYaml) {
+        Docker docker = new Docker(script)
+        String[] IpPort = getRegistryIpAndPort(docker)
+        String imageUrl = image.split(":")[0]
+        patchCoreDNS(IpPort[0], imageUrl)
+
+        applyDevDoguDescriptor(docker, dogu, imageUrl, IpPort[1])
+        kubectl("apply -f ${doguYaml}")
+
+        // Remove .local from Images.
+        patchDoguExecPod(dogu, image)
+        patchDoguDeployment(dogu, image)
+    }
+
+    private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
+        String imageDev
+        String doguJsonDevFile = "${this.workspace}/target/dogu.json"
+        docker.image('mikefarah/yq:4.22.1')
+            .mountJenkinsUser()
+            .inside("--volume ${this.workspace}:/workdir -w /workdir") {
+                imageDev = this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
+                script.sh "yq '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
+            }
+        kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
+    }
+
+    private void patchDoguExecPod(String dogu, String image) {
+        String execPodName = getExecPodName(dogu, 30, 2)
+        if (execPodName == "") {
+            return
+        }
+        kubectl("patch pod '${execPodName}' -p '{\"spec\":{\"containers\":[{\"name\":\"${execPodName}\",\"image\":\"${image}\"}]}}'")
+    }
+
+    private void patchDoguDeployment(String dogu, String image) {
+        waitForDeployment(dogu, 300, 5)
+        kubectl("patch deployment '${dogu}' -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"${dogu}\",\"image\":\"${image}\"}]}}}}'")
     }
 
     /**
@@ -193,4 +298,166 @@ class K3d {
         script.echo "Installing kubectl..."
         script.sh script: "sudo snap install kubectl --classic"
     }
+
+    private String getExecPodName(String dogu, Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout / interval; i++) {
+            script.sh("sleep ${interval}s")
+            try {
+                String podList = kubectl("get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+                String execPodName = this.sh.returnStdOut("echo '${podList}' | grep '${dogu}-execpod'")
+                if (execPodName.contains("${dogu}-execpod")) {
+                    return execPodName
+                }
+            } catch (ignored) {
+                // Ignore Error.
+            }
+        }
+
+        // Don't throw an error here because in the future the won't be exec pods for every dogu
+        return ""
+    }
+
+    void waitForDeployment(String deployment, Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout / interval; i++) {
+            script.sh("sleep ${interval}s")
+            try {
+                String deploymentList = kubectl("get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+                String statusMsg = this.sh.returnStdOut("echo '${deploymentList}' | grep '${deployment}'")
+                if (statusMsg == deployment) {
+                    return
+                }
+            } catch (ignored) {
+                // Ignore Error.
+            }
+        }
+
+        this.script.error "failed to wait for deployment/${deployment}: timeout"
+    }
+
+    void waitForDeploymentRollout(String deployment, Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout / interval; i++) {
+            script.sh("sleep ${interval}s")
+            try {
+                String statusMsg = kubectl("rollout status deployment/${deployment}", true)
+                if (statusMsg.contains("successfully rolled out")) {
+                    return
+                }
+            } catch (ignored) {
+                // If the deployment does not even exists an error will be thrown. Ignore this case.
+            }
+        }
+
+        this.script.error "failed to wait for deployment/${deployment} rollout: timeout"
+    }
+
+    private void patchCoreDNS(String ip, String imageUrl) {
+        String fileName = "coreDNSPatch.yaml"
+        script.writeFile file: fileName, text: """
+data:
+    Corefile: |
+        ${imageUrl}.local:53 {
+            hosts {
+                ${ip} ${imageUrl}.local
+            }
+        }
+        .:53 {
+            errors
+            health
+            ready
+            kubernetes cluster.local in-addr.arpa ip6.arpa {
+                pods insecure
+                fallthrough in-addr.arpa ip6.arpa
+            }
+            hosts /etc/coredns/NodeHosts {
+                reload 1s
+                fallthrough
+            }
+            prometheus :9153
+            forward . /etc/resolv.conf
+            cache 30
+            loop
+            reload
+            loadbalance
+        }
+"""
+
+        kubectl("-n kube-system patch cm coredns --patch-file ${fileName}")
+        kubectl("rollout restart -n kube-system deployment/coredns")
+    }
+
+    private String[] getRegistryIpAndPort(Docker docker) {
+        String registryIp
+        String registryPortProtocol
+        String prefixedRegistryName = "k3d-${this.registryName}"
+        String dockerInspect = script.sh(script: "docker inspect ${prefixedRegistryName}", returnStdout: true)
+        docker.image('mikefarah/yq:4.22.1')
+            .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
+            registryIp = script.sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.${prefixedRegistryName}.IPAddress'", returnStdout: true).trim()
+            registryPortProtocol = script.sh(script: "echo '${dockerInspect}' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", returnStdout: true).trim()
+        }
+        String registryPort = registryPortProtocol.split("/")[0]
+
+        return [registryIp, registryPort]
+    }
+
+    static String formatDependencies(List<String> deps) {
+        String formatted = ""
+
+        for (int i = 0; i < deps.size(); i++) {
+            formatted += "\"${deps[i]}\""
+
+            if ((i + 1) < deps.size()) {
+                formatted += ', '
+            }
+        }
+
+        return formatted
+    }
+
+    private void writeSetupJson(config) {
+        List<String> deps = config.dependencies + config.additionalDependencies
+        String formattedDeps = formatDependencies(deps)
+
+        script.writeFile file: 'setup.json', text: """
+{
+  "naming":{
+    "fqdn":"${externalIP}",
+    "hostname":"ces",
+    "domain":"ces.local",
+    "certificateType":"selfsigned",
+    "relayHost":"mail.ces.local",
+    "completed":true
+  },
+  "dogus":{
+    "defaultDogu":"${config.defaultDogu}",
+    "install":[
+       ${formattedDeps}
+    ],
+    "completed":true
+  },
+  "admin":{
+    "username":"${config.adminUsername}",
+    "mail":"ces-admin@cloudogu.com",
+    "password":"${config.adminPassword}",
+    "adminGroup":"${config.adminGroup}",
+    "adminMember":true,
+    "completed":true
+  },
+  "userBackend":{
+    "port":"389",
+    "useUserConnectionToFetchAttributes":true,
+    "dsType":"embedded",
+    "attributeID":"uid",
+    "attributeFullname":"cn",
+    "attributeMail":"mail",
+    "attributeGroup":"memberOf",
+    "searchFilter":"(objectClass=person)",
+    "host":"ldap",
+    "completed":true
+  },
+  "registryConfig": {${config.registryConfig}},
+  "registryConfigEncrypted": {${config.registryConfigEncrypted}}
+}"""
+    }
 }
+

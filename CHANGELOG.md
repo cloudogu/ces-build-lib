@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.54.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.54.0) - 2022-06-21
+### Added
+- A ces setup is can automatically be performed for a K3d CES instance #79
+
 ## [1.53.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.53.0) - 2022-04-20
 ## Changed
 - Adapt the secret creation for the k3d cluster according to the new secrets required by the `k8s-dogu-operator` #77

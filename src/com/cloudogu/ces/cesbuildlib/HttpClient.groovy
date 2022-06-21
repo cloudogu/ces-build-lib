@@ -52,12 +52,12 @@ class HttpClient implements Serializable {
         def body
         
         executeWithCredentials {
-            
+            String dataStr = data.toString().replaceAll("'", "'\"'\"'")
             String curlCommand =
                 "curl -i -X ${httpMethod} " +
                     (credentials ? "${getCurlAuthParam()} " : '') +
                     (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
-                    (data ? "-d '${data.toString()}' " : '') +
+                    (data ? "-d '" + dataStr + "' "  : '') +
                     "${url}"
             
             // Command must be run inside this closure, otherwise the credentials will not be masked (using '*') in the console
