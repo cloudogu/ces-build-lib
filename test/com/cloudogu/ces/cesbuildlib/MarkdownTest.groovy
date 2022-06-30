@@ -17,7 +17,7 @@ class MarkdownTest extends GroovyTestCase {
         markdown.check()
 
         assert scriptMock.allActualArgs.size() == 1
-        assert scriptMock.allActualArgs[0] == "find /tmp -name \\*.md -print0 | xargs -0 -n1 markdown-link-check -v"
+        assert scriptMock.allActualArgs[0] == "find /docs -name \\*.md -print0 | xargs -0 -n1 markdown-link-check -v"
 
         verify(dockerMock.image(""), times(1)).mountJenkinsUser()
     }
