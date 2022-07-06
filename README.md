@@ -1096,6 +1096,19 @@ Example:
     String currentVersion = makefile.getVersion()
 ```
 
+# Markdown
+
+`Markdown` provides function regardig the `Markdown Files` from the projects docs directory  
+
+```groovy
+    Markdown markdown = new Markdown(this)
+    markdown.check()
+```
+
+`markdown.check` executes the function defined in `Markdown`
+running a container with the latest https://github.com/tcort/markdown-link-check image
+and verifies that the links in the defined project directory are alive
+
 # Steps
 
 ## mailIfStatusChanged
