@@ -7,4 +7,4 @@ Run tests with
 ./mvnw test
 ```
 
-If you want to run tests within IntelliJ you need to install Groovy 2.5.3 into the project's `Plattform settings` -> `Global settings`. 
+If you want to run tests within IntelliJ you need to use Java 8.

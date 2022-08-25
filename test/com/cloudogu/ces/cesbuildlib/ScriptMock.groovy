@@ -32,6 +32,8 @@ class ScriptMock {
     Map actualStringArgs
     Map files = new HashMap<String, String>()
     List<List<String>> actualWithEnv = []
+
+    Map<String, Object> jsonFiles = new HashMap<>()
     
     String actualDir
     def actualGitArgs
@@ -150,8 +152,17 @@ class ScriptMock {
 
     Object readJSON(Map<String, Object> args) {
         String text = args.get('text')
-        def slurper = new JsonSlurper()
-        return slurper.parseText(text)
+        if (text != null) {
+            def slurper = new JsonSlurper()
+            return slurper.parseText(text)
+        }
+
+        String path = args.get("file")
+        if (path != null) {
+            return jsonFiles.get(path)
+        }
+
+        throw new InputMismatchException()
     }
 
     void dir(String dir, Closure closure) {
