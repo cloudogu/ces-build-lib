@@ -4,12 +4,12 @@ package com.cloudogu.ces.cesbuildlib
  * This class contain methods and workflows to upload dogus (json) or k8s components (yaml) to a specified dogu registry.
  */
 class DoguRegistry {
+    public Sh sh
+    public HttpClient doguRegistryHttpClient
 
     private script
-    private Sh sh
     private String backendCredentialsID
     private String doguRegistryURL
-    private HttpClient doguRegistryHttpClient
 
     private static String DOGU_POST_ENDPOINT = "api/v2/dogus"
     private static String K8S_POST_ENDPOINT = "api/v1/k8s"
@@ -40,19 +40,9 @@ class DoguRegistry {
         script.sh "echo 'Push Dogu:\n-Namespace/Name: ${doguNameWithNamespace}\n-Version: ${doguVersion}'"
 
         def doguString =  this.sh.returnStdOut("cat ${pathToDoguJson}")
-        def result = doguRegistryHttpClient.put("https://staging-dogu.cloudogu.com/${DOGU_POST_ENDPOINT}/${doguNameWithNamespace}", "application/json", doguString)
+        def trimmedUrl = trimSuffix(doguRegistryURL, '/')
+        def result = doguRegistryHttpClient.put("${trimmedUrl}/${DOGU_POST_ENDPOINT}/${doguNameWithNamespace}", "application/json", doguString)
         checkStatus(result, pathToDoguJson)
-    }
-
-    private void checkStatus(LinkedHashMap<String, Serializable> result, String fileName) {
-        def status = result["httpCode"]
-        def body = result["body"]
-
-        if ((status as Integer) >= 400) {
-            script.echo "Error pushing ${fileName}"
-            script.echo "${body}"
-            script.sh "exit 1"
-        }
     }
 
     /**
@@ -67,7 +57,26 @@ class DoguRegistry {
         script.sh "echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${k8sNamespace}\n-Version: ${versionWithoutVPrefix}'"
 
         def k8sComponentYaml =  this.sh.returnStdOut("cat ${pathToYaml}")
-        def result = doguRegistryHttpClient.put("https://staging-dogu.cloudogu.com/${K8S_POST_ENDPOINT}/${k8sNamespace}/${k8sName}/${versionWithoutVPrefix}", "application/yaml", k8sComponentYaml)
+        def trimmedUrl = trimSuffix(doguRegistryURL, '/')
+        def result = doguRegistryHttpClient.put("${trimmedUrl}/${K8S_POST_ENDPOINT}/${k8sNamespace}/${k8sName}/${versionWithoutVPrefix}", "application/yaml", k8sComponentYaml)
         checkStatus(result, pathToYaml)
+    }
+
+    private static String trimSuffix(String original, String suffix) {
+        if(original.endsWith(suffix)) {
+            return original.substring(0, original.length() - suffix.length())
+        }
+        return original
+    }
+
+    private void checkStatus(LinkedHashMap<String, Serializable> result, String fileName) {
+        def status = result["httpCode"]
+        def body = result["body"]
+
+        if ((status as Integer) >= 400) {
+            script.sh "echo 'Error pushing ${fileName}'"
+            script.sh "echo '${body}'"
+            script.sh "exit 1"
+        }
     }
 }
