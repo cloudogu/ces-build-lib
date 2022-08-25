@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.56.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.56.0) - 2022-08-25
+### Added
+- New class `DockerRegistry` providing methods to: #83
+  - push a dogu (json)
+  - push a k8s component (yaml)
+
 ## [1.55.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.55.0) - 2022-07-06
 ### Added
-- Link checker #81 see `README.md#Link-checker`
+- Markdown Link checker #81 see `README.md#Link-checker`
 
 ## [1.54.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.54.0) - 2022-06-21
 ### Added

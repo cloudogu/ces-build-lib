@@ -61,6 +61,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Pull Requests](#pull-requests)
 - [HttpClient](#httpclient)
 - [K3d](#k3d)
+- [DoguRegistry](#doguregistry)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -1085,6 +1086,22 @@ try {
 }
 ```
 
+# DoguRegistry
+
+`DoguRegistry` provides functions to easily push dogus and k8s components to a configured registry.
+
+Example:
+
+```groovy
+DoguRegistry registry = new DoguRegistry(this)
+
+// push dogu
+registry.pushDogu()
+
+// push k8s component
+registry.pushK8sYaml("pathToMyK8sYaml.yaml", "k8s-dogu-operator", "mynamespace", "0.9.0")
+```
+
 # Makefile
 
 `Makefile` provides function regarding the `Makefile` from the current directory.
@@ -1095,6 +1112,19 @@ Example:
     Makefile makefile = new Makefile(this)
     String currentVersion = makefile.getVersion()
 ```
+
+# Markdown
+
+`Markdown` provides function regardig the `Markdown Files` from the projects docs directory  
+
+```groovy
+    Markdown markdown = new Markdown(this)
+    markdown.check()
+```
+
+`markdown.check` executes the function defined in `Markdown`
+running a container with the latest https://github.com/tcort/markdown-link-check image
+and verifies that the links in the defined project directory are alive
 
 # Steps
 
