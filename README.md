@@ -61,6 +61,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Pull Requests](#pull-requests)
 - [HttpClient](#httpclient)
 - [K3d](#k3d)
+- [DoguRegistry](#doguregistry)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -1083,6 +1084,22 @@ try {
         k3d.deleteK3d()
     }
 }
+```
+
+# DoguRegistry
+
+`DoguRegistry` provides functions to easily push dogus and k8s components to a configured registry.
+
+Example:
+
+```groovy
+DoguRegistry registry = new DoguRegistry(this)
+
+// push dogu
+registry.pushDogu()
+
+// push k8s component
+registry.pushK8sYaml(targetOperatorResourceYaml, repositoryName, "k8s", "${controllerVersion}")
 ```
 
 # Makefile
