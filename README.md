@@ -1099,7 +1099,7 @@ DoguRegistry registry = new DoguRegistry(this)
 registry.pushDogu()
 
 // push k8s component
-registry.pushK8sYaml(targetOperatorResourceYaml, repositoryName, "k8s", "${controllerVersion}")
+registry.pushK8sYaml("pathToMyK8sYaml.yaml", "k8s-dogu-operator", "mynamespace", "0.9.0")
 ```
 
 # Makefile

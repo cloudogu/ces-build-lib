@@ -18,6 +18,7 @@ class DoguRegistry {
      * Create an object to upload dogus or k8s components to a specified registry.
      *
      * @param script The Jenkins script you are coming from (aka "this").
+     * @param doguRegistryURL Url to the actual dogu registry. Default: 'https://dogu.cloudogu.com'.
      * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup.
      */
     DoguRegistry(script, String doguRegistryURL = "https://dogu.cloudogu.com", String backendCredentialsID = "cesmarvin-setup") {

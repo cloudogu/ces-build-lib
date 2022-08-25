@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- `DockerRegistry` class providing methods to:
-  - push a dogu
-  - push a k8s component
+- New class `DockerRegistry` providing methods to: #83
+  - push a dogu (json)
+  - push a k8s component (yaml)
 
 ## [1.55.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.55.0) - 2022-07-06
 ### Added
