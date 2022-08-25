@@ -10,7 +10,6 @@ class DoguRegistryTest extends GroovyTestCase {
 
     @Test
     void testCreateRegistryObjectWithDefaults() {
-        // given
         // when
         DoguRegistry sut = new DoguRegistry("script")
 

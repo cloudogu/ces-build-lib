@@ -17,8 +17,8 @@ class DoguRegistry {
     /**
      * Create an object to upload dogus or k8s components to a specified registry.
      *
-     * @param script The Jenkins script you are coming from (aka "this")
-     * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
+     * @param script The Jenkins script you are coming from (aka "this").
+     * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup.
      */
     DoguRegistry(script, String doguRegistryURL = "https://dogu.cloudogu.com", String backendCredentialsID = "cesmarvin-setup") {
         this.script = script
@@ -48,9 +48,9 @@ class DoguRegistry {
     /**
      * Pushes a yaml tapestry to the dogu registry for k8s components.
      *
-     * @param pathToYaml Path to the yaml containing the
-     * @param k8sName Name of the k8s component
-     * @param k8sNamespace Namespace of the k8s component
+     * @param pathToYaml Path to the yaml containing the k8s component.
+     * @param k8sName Name of the k8s component.
+     * @param k8sNamespace Namespace of the k8s component.
      * @param versionWithoutVPrefix The version of the component without the version prefix.
      */
     void pushK8sYaml(String pathToYaml, String k8sName, String k8sNamespace, String versionWithoutVPrefix) {
