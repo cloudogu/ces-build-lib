@@ -62,6 +62,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [HttpClient](#httpclient)
 - [K3d](#k3d)
 - [DoguRegistry](#doguregistry)
+- [Bats](#bats)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -1100,6 +1101,21 @@ registry.pushDogu()
 
 // push k8s component
 registry.pushK8sYaml("pathToMyK8sYaml.yaml", "k8s-dogu-operator", "mynamespace", "0.9.0")
+```
+
+# Bats
+
+`Bats` provides functions to easily execute existing bats tests for a project. 
+
+Example:
+
+```groovy
+Docker docker = new Docker(this)
+
+stage('Bats Tests') {
+    Bats bats = new Bats(this, docker)
+    bats.checkAndExecuteTests()
+}
 ```
 
 # Makefile
