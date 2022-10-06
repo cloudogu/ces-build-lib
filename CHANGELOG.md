@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- [#85] New class `Bats` providing methods to easily execute existing bats (Bash Automated Testing System) tests.
+- New class `Bats` providing methods to easily execute existing bats (Bash Automated Testing System) tests. #85
 
 ## [1.56.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.56.0) - 2022-08-25
 ### Added
