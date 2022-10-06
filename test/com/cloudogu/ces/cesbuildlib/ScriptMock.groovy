@@ -25,6 +25,8 @@ class ScriptMock {
     List<String> allActualArgs = new LinkedList<>()
     List<String> actualEcho = new LinkedList<>()
 
+    LinkedHashMap<Object,Object> actualJUnitFlags = new LinkedHashMap<>()
+
     List<String> actualShMapArgs = new LinkedList<>()
 
     List<Map<String, String>> writeFileParams = new LinkedList<>()
@@ -54,9 +56,11 @@ class ScriptMock {
         return getReturnValueFor(args)
     }
 
-    String sh(Map<String, Object> args) {
-        def script = args.get('script')
+    void junit(LinkedHashMap<Object,Object> map = [:]) {
+        actualJUnitFlags = map
+    }
 
+    String sh(Map<String, Object> args) {
         actualShMapArgs.add(args.script.toString())
         allActualArgs.add(args.script.toString())
 
