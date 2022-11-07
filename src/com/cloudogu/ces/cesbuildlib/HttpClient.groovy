@@ -28,7 +28,10 @@ class HttpClient implements Serializable {
     }
 
     Map putFile(String url, String contentType = '', String filePath) {
-        def command = getUploadFileCurlCommand('PUT', url, contentType, filePath)
+        String command
+        executeWithCredentials {
+            command = getUploadFileCurlCommand('PUT', url, contentType, filePath)
+        }
         return httpRequest('PUT', url, contentType, filePath, command)
     }
     
