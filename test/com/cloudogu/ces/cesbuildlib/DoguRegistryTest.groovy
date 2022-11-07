@@ -80,15 +80,13 @@ class DoguRegistryTest extends GroovyTestCase {
     void testPushYaml() {
         // given
         String yamlPath = "path.yaml"
-        String yaml = "apiVersion: 1"
         String k8sName = "dogu-operator"
         String namespace = "testing"
         String version = "1.0.0"
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put("cat ${yamlPath}".toString(), yaml)
 
         def httpMock = mock(HttpClient.class)
-        when(httpMock.put('http://url.de/api/v1/k8s/testing/dogu-operator/1.0.0', 'application/yaml', yaml)).then({ invocation ->
+        when(httpMock.putFile('http://url.de/api/v1/k8s/testing/dogu-operator/1.0.0', 'application/yaml', yamlPath)).then({ invocation ->
             return [
                 "httpCode": '200',
                 "body"    : 'td'
@@ -103,22 +101,19 @@ class DoguRegistryTest extends GroovyTestCase {
 
         // then
         assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'", scriptMock.allActualArgs.get(0))
-        assertEquals("cat path.yaml", scriptMock.allActualArgs.get(1))
     }
 
     @Test
     void testExitOnHttpErrorYaml() {
         // given
         String yamlPath = "path.yaml"
-        String yaml = "apiVersion: 1"
         String k8sName = "dogu-operator"
         String namespace = "testing"
         String version = "1.0.0"
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put("cat ${yamlPath}".toString(), yaml)
 
         def httpMock = mock(HttpClient.class)
-        when(httpMock.put('http://url.de/api/v1/k8s/testing/dogu-operator/1.0.0', 'application/yaml', yaml)).then({ invocation ->
+        when(httpMock.putFile('http://url.de/api/v1/k8s/testing/dogu-operator/1.0.0', 'application/yaml', yamlPath)).then({ invocation ->
             return [
                 "httpCode": '491',
                 "body"    : 'body'
@@ -133,9 +128,8 @@ class DoguRegistryTest extends GroovyTestCase {
 
         // then
         assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'", scriptMock.allActualArgs.get(0))
-        assertEquals("cat path.yaml", scriptMock.allActualArgs.get(1))
-        assertEquals("echo 'Error pushing ${yamlPath}'", scriptMock.allActualArgs.get(2))
-        assertEquals("echo 'body'", scriptMock.allActualArgs.get(3))
-        assertEquals("exit 1", scriptMock.allActualArgs.get(4))
+        assertEquals("echo 'Error pushing ${yamlPath}'", scriptMock.allActualArgs.get(1))
+        assertEquals("echo 'body'", scriptMock.allActualArgs.get(2))
+        assertEquals("exit 1", scriptMock.allActualArgs.get(3))
     }
 }
