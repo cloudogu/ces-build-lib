@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.58.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.58.0) - 2022-11-07
+### Changed
+- Push k8s yaml content via file reference #87
+
 ## [1.57.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.57.0) - 2022-10-06
 ### Added
 - New class `Bats` providing methods to easily execute existing bats (Bash Automated Testing System) tests. #85
