@@ -47,6 +47,23 @@ class HttpClientTest {
     }
 
     @Test
+    void "request with file upload"() {
+        def expectedResponse = 'HTTP/1.1 203\n' +
+            'cache-control: no-cache\n' +
+            'content-type: output'
+        scriptMock.expectedDefaultShRetValue = expectedResponse
+
+        def actualResponse = http.putFile('http://some-url', 'input', "/path/to/file")
+
+        assertThat(actualResponse.httpCode).isEqualTo('203')
+        assertThat(actualResponse.headers['content-type']).isEqualTo('output')
+        assertThat(actualResponse.body).isEqualTo('')
+
+        assertThat(scriptMock.actualShMapArgs[0])
+            .isEqualTo('curl -i -X PUT -H \'Content-Type: input\' -T \'/path/to/file\' http://some-url' )
+    }
+
+    @Test
     void "response with body"() {
         String expectedBody1 = '{"some":"body"}\n'
         String expectedBody2 = 'second line'

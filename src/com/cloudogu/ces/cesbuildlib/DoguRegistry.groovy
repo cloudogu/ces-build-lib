@@ -57,9 +57,8 @@ class DoguRegistry {
     void pushK8sYaml(String pathToYaml, String k8sName, String k8sNamespace, String versionWithoutVPrefix) {
         script.sh "echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${k8sNamespace}\n-Version: ${versionWithoutVPrefix}'"
 
-        def k8sComponentYaml =  this.sh.returnStdOut("cat ${pathToYaml}")
         def trimmedUrl = trimSuffix(doguRegistryURL, '/')
-        def result = doguRegistryHttpClient.put("${trimmedUrl}/${K8S_POST_ENDPOINT}/${k8sNamespace}/${k8sName}/${versionWithoutVPrefix}", "application/yaml", k8sComponentYaml)
+        def result = doguRegistryHttpClient.putFile("${trimmedUrl}/${K8S_POST_ENDPOINT}/${k8sNamespace}/${k8sName}/${versionWithoutVPrefix}", "application/yaml", pathToYaml)
         checkStatus(result, pathToYaml)
     }
 

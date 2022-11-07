@@ -26,6 +26,11 @@ class HttpClient implements Serializable {
     Map put(String url, String contentType = '', def data = '') {
         return httpRequest('PUT', url, contentType, data)
     }
+
+    Map putFile(String url, String contentType = '', String filePath) {
+        def command = getUploadFileCurlCommand('PUT', url, contentType, filePath)
+        return httpRequest('PUT', url, contentType, filePath, command)
+    }
     
     Map post(String url, String contentType = '', def data = '') {
         return httpRequest('POST', url, contentType, data)
@@ -45,20 +50,36 @@ class HttpClient implements Serializable {
     protected String getCurlAuthParam() {
         "-u ${script.env.CURL_USER}:${script.env.CURL_PASSWORD}"
     }
+
+    private String getCurlCommand(String httpMethod, String url, String contentType, String data) {
+        return "curl -i -X ${httpMethod} " +
+            (credentials ? "${getCurlAuthParam()} " : '') +
+            (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
+            (data ? "-d '" + data + "' "  : '') +
+            "${url}"
+    }
+
+    private String getUploadFileCurlCommand(String httpMethod, String url, String contentType, String filePath) {
+        return "curl -i -X ${httpMethod} " +
+            (credentials ? "${getCurlAuthParam()} " : '') +
+            (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
+            (filePath ? "-T '" + filePath + "' "  : '') +
+            "${url}"
+    }
     
-    protected Map httpRequest(String httpMethod, String url, String contentType, def data) {
+    protected Map httpRequest(String httpMethod, String url, String contentType, def data, String customCommand = '') {
         String httpResponse
         def rawHeaders
         def body
         
         executeWithCredentials {
-            String dataStr = data.toString().replaceAll("'", "'\"'\"'")
-            String curlCommand =
-                "curl -i -X ${httpMethod} " +
-                    (credentials ? "${getCurlAuthParam()} " : '') +
-                    (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
-                    (data ? "-d '" + dataStr + "' "  : '') +
-                    "${url}"
+            String curlCommand
+            if (customCommand.isEmpty()) {
+                String dataStr = data.toString().replaceAll("'", "'\"'\"'")
+                curlCommand = getCurlCommand(httpMethod, url, contentType, dataStr)
+            } else {
+                curlCommand = customCommand
+            }
             
             // Command must be run inside this closure, otherwise the credentials will not be masked (using '*') in the console
             httpResponse = sh.returnStdOut curlCommand
@@ -82,7 +103,7 @@ class HttpClient implements Serializable {
         def headers = [:]
         for(String line: rawHeaders) {
             // e.g. cache-control: no-cache
-            def splitLine = line.split(':', 2);
+            def splitLine = line.split(':', 2)
             headers[splitLine[0].trim()] = splitLine[1].trim()
         }
         return [ httpCode: httpCode, headers: headers, body: body]
