@@ -459,5 +459,81 @@ data:
   "registryConfigEncrypted": {${config.registryConfigEncrypted}}
 }"""
     }
+
+
+    /**
+     * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
+     *
+     * The collected information are archived as zip files at the build.
+     */
+    void collectAndArchiveLogs() {
+        script.dir("currentLogs") {
+            script.deleteDir()
+        }
+        script.sh("rm -rf currentLogs.zip")
+
+        collectResourcesSummaries()
+        collectDoguDescriptions()
+        collectPodLogs()
+
+        script.zip(zipFile: 'currentLogs.zip', archive: false, dir: 'currentLogs')
+        script.archiveArtifacts(artifacts: "currentLogs.zip", allowEmptyArchive: true)
+    }
+
+    /**
+     * Collects all information about resources and their quantity and saves them as .yaml files.
+     */
+    void collectResourcesSummaries() {
+        def relevantResources = [
+            "persistentvolumeclaim",
+            "statefulset",
+            "replicaset",
+            "deployment",
+            "service",
+            "secret",
+            "pod",
+        ]
+
+        for(def resource : relevantResources) {
+            def resourceYaml = kubectl("get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true", true)
+            script.dir('currentLogs') {
+                script.writeFile(file: "${resource}.yaml", text: resourceYaml)
+            }
+        }
+    }
+
+    /**
+     * Collects all descriptions of dogus resources and saves them as .yaml files into the currentLogs directory.
+     */
+    void collectDoguDescriptions() {
+        def allDoguNames = kubectl("get dogu --ignore-not-found -o name || true", true)
+        def doguNames = allDoguNames.split("\n")
+        for(def doguName : doguNames) {
+            def doguFileName = doguName.split("/")[1]
+            def doguDescribe = kubectl("describe ${doguName} || true", true)
+            script.dir('currentLogs') {
+                script.dir('dogus') {
+                    script.writeFile(file: "${doguFileName}.txt", text: doguDescribe)
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects all pod logs and saves them into the currentLogs directory.
+     */
+    void collectPodLogs() {
+        def allPodNames = kubectl("get pods -o name || true", true)
+        def podNames = allPodNames.split("\n")
+        for(def podName : podNames) {
+            def podFileName = podName.split("/")[1]
+            def podLogs = kubectl("logs ${podName} || true", true)
+            script.dir('currentLogs') {
+                script.dir('pods') {
+                    script.writeFile(file: "${podFileName}", text: podLogs)
+                }
+            }
+        }
+    }
 }
 
