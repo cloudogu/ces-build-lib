@@ -350,7 +350,7 @@ spec:
         // then
         int i = 0
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("called deleteDir()")
-        assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf currentLogs.zip")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf k8sLogs.zip")
 
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get persistentvolumeclaim --show-kind --ignore-not-found -l app=ces -o yaml || true")
         assertThat(scriptMock.writeFileParams[0]).isEqualTo(["file": "persistentvolumeclaim.yaml", "text": "value for persistentvolumeclaim"])
@@ -384,9 +384,9 @@ spec:
         assertThat(scriptMock.writeFileParams[9]).isEqualTo(["file": "testpod2-1234.log", "text": "this is the log from testpod2"])
 
         assertThat(scriptMock.zipParams.size()).isEqualTo(1)
-        assertThat(scriptMock.zipParams[0]).isEqualTo(["archive":"false", "dir":"currentLogs", "zipFile":"currentLogs.zip"])
+        assertThat(scriptMock.zipParams[0]).isEqualTo(["archive":"false", "dir":"k8sLogs", "zipFile":"k8sLogs.zip"])
         assertThat(scriptMock.archivedArtifacts.size()).isEqualTo(1)
-        assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"currentLogs.zip"])
+        assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
 
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
         assertThat(scriptMock.writeFileParams.size()).isEqualTo(10)
