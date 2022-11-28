@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.59.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.59.0) - 2022-11-28
 ### Added
 - Function `collectAndArchiveLogs` to collect dogu and resource information to help debugging k3s Jenkins buils. #89 
 - Function `applyDoguResource(String doguName, String doguNamespace, String doguVersion)` to apply a custom dogu 
