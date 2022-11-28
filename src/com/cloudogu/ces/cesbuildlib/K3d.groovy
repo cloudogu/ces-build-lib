@@ -476,8 +476,8 @@ data:
         collectDoguDescriptions()
         collectPodLogs()
 
-        script.zip(zipFile: 'currentLogs.zip', archive: false, dir: 'currentLogs')
-        script.archiveArtifacts(artifacts: "currentLogs.zip", allowEmptyArchive: true)
+        script.zip(zipFile: 'currentLogs.zip', archive: "false", dir: 'currentLogs')
+        script.archiveArtifacts(artifacts: "currentLogs.zip", allowEmptyArchive: "true")
     }
 
     /**
@@ -497,7 +497,7 @@ data:
         for(def resource : relevantResources) {
             def resourceYaml = kubectl("get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true", true)
             script.dir('currentLogs') {
-                script.writeFile(file: "${resource}.yaml", text: resourceYaml)
+                script.writeFile(file: "${resource}.yaml".toString(), text: resourceYaml)
             }
         }
     }
@@ -513,7 +513,7 @@ data:
             def doguDescribe = kubectl("describe ${doguName} || true", true)
             script.dir('currentLogs') {
                 script.dir('dogus') {
-                    script.writeFile(file: "${doguFileName}.txt", text: doguDescribe)
+                    script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
                 }
             }
         }
@@ -530,7 +530,7 @@ data:
             def podLogs = kubectl("logs ${podName} || true", true)
             script.dir('currentLogs') {
                 script.dir('pods') {
-                    script.writeFile(file: "${podFileName}", text: podLogs)
+                    script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
                 }
             }
         }

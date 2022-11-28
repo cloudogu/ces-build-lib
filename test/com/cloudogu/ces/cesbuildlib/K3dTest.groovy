@@ -265,7 +265,6 @@ class K3dTest extends GroovyTestCase {
         K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
         String prefixedRegistryName = "k3d-${sut.getRegistryName()}"
         String port = "5000"
-        String imageUrl = "myIP:1234/test/myimage:0.1.2"
 
         scriptMock.expectedShRetValueForScript.put('whoami'.toString(), "itsme")
         scriptMock.expectedShRetValueForScript.put('cat /etc/passwd | grep itsme'.toString(), "test:x:900:1001::/home/test:/bin/sh")
@@ -323,5 +322,73 @@ spec:
         assertThat(scriptMock.allActualArgs[19].trim()).isEqualTo("echo 'test' | grep 'test'")
         assertThat(scriptMock.allActualArgs[20].trim()).startsWith("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl patch deployment 'test' -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"test\",\"image\":\"myIP:1234/test/myimage:0.1.2\"}]}}}}'")
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(21)
+    }
+
+
+    void testK3d_collectAndArchiveLogs() {
+        // given
+        def workspaceDir = "leWorkspace"
+        def k3dWorkspaceDir = "leK3dWorkSpace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
+
+        def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod"]
+        for(def resource : relevantResources) {
+            scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true".toString(), "value for ${resource}")
+        }
+
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get dogu --ignore-not-found -o name || true".toString(), "k8s.cloudogu.com/testdogu")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe k8s.cloudogu.com/testdogu || true".toString(), "this is the description of a dogu")
+
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pods -o name || true".toString(), "pod/testpod-1234\npod/testpod2-1234")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl logs pod/testpod-1234 || true".toString(), "this is the log from testpod")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl logs pod/testpod2-1234 || true".toString(), "this is the log from testpod2")
+
+        // when
+        sut.collectAndArchiveLogs()
+
+        // then
+        int i = 0
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("called deleteDir()")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf currentLogs.zip")
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get persistentvolumeclaim --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[0]).isEqualTo(["file": "persistentvolumeclaim.yaml", "text": "value for persistentvolumeclaim"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get statefulset --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[1]).isEqualTo(["file": "statefulset.yaml", "text": "value for statefulset"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get replicaset --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[2]).isEqualTo(["file": "replicaset.yaml", "text": "value for replicaset"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get deployment --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[3]).isEqualTo(["file": "deployment.yaml", "text": "value for deployment"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get service --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[4]).isEqualTo(["file": "service.yaml", "text": "value for service"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get secret --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[5]).isEqualTo(["file": "secret.yaml", "text": "value for secret"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pod --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[6]).isEqualTo(["file": "pod.yaml", "text": "value for pod"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get dogu --ignore-not-found -o name || true")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe k8s.cloudogu.com/testdogu || true")
+        assertThat(scriptMock.writeFileParams[7]).isEqualTo(["file": "testdogu.txt", "text": "this is the description of a dogu"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pods -o name || true")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl logs pod/testpod-1234 || true")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl logs pod/testpod2-1234 || true")
+        assertThat(scriptMock.writeFileParams[8]).isEqualTo(["file": "testpod-1234.log", "text": "this is the log from testpod"])
+        assertThat(scriptMock.writeFileParams[9]).isEqualTo(["file": "testpod2-1234.log", "text": "this is the log from testpod2"])
+
+        assertThat(scriptMock.zipParams.size()).isEqualTo(1)
+        assertThat(scriptMock.zipParams[0]).isEqualTo(["archive":"false", "dir":"currentLogs", "zipFile":"currentLogs.zip"])
+        assertThat(scriptMock.archivedArtifacts.size()).isEqualTo(1)
+        assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"currentLogs.zip"])
+
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
+        assertThat(scriptMock.writeFileParams.size()).isEqualTo(10)
     }
 }

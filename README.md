@@ -1079,7 +1079,10 @@ try {
 
         k3d.waitForDeploymentRollout("my-dogu-name", 300, 5)
     }
-    
+
+} catch (Exception ignored) {
+    // in case of a failed build collect dogus, resources and pod logs and archive them as log file on the build.
+    k3d.collectAndArchiveLogs()
 } finally {
     stage('Remove k3d cluster') {
         k3d.deleteK3d()

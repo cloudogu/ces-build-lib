@@ -30,6 +30,8 @@ class ScriptMock {
     List<String> actualShMapArgs = new LinkedList<>()
 
     List<Map<String, String>> writeFileParams = new LinkedList<>()
+    List<Map<String, String>> zipParams = new LinkedList<>()
+    List<Map<String, String>> archivedArtifacts = new LinkedList<>()
     Map actualFileArgs
     Map actualStringArgs
     Map files = new HashMap<String, String>()
@@ -58,6 +60,10 @@ class ScriptMock {
 
     void junit(LinkedHashMap<Object,Object> map = [:]) {
         actualJUnitFlags = map
+    }
+
+    void deleteDir() {
+        allActualArgs.add("called deleteDir()")
     }
 
     String sh(Map<String, Object> args) {
@@ -148,6 +154,14 @@ class ScriptMock {
 
     void writeFile(Map<String, String> params) {
         writeFileParams.add(params)
+    }
+
+    void zip(Map<String, String> params) {
+        zipParams.add(params)
+    }
+
+    void archiveArtifacts(Map<String, String> params) {
+        archivedArtifacts.add(params)
     }
 
     String readFile(String file) {
