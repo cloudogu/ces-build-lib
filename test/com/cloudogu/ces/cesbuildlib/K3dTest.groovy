@@ -391,4 +391,35 @@ spec:
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
         assertThat(scriptMock.writeFileParams.size()).isEqualTo(10)
     }
+
+    void testK3d_applyDoguResource() {
+        // given
+        def workspaceDir = "leWorkspace"
+        def k3dWorkspaceDir = "leK3dWorkSpace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
+
+        def filename = "target/make/k8s/testName.yaml"
+        def doguContentYaml = """
+apiVersion: k8s.cloudogu.com/v1
+kind: Dogu
+metadata:
+  name: testName
+  labels:
+    dogu: testName
+spec:
+  name: nyNamespace/testName
+  version: 14.1.1-1
+"""
+
+        // when
+        sut.applyDoguResource("testName", "nyNamespace", "14.1.1-1")
+
+        // then
+        assertThat(scriptMock.writeFileParams[0]).isEqualTo(["file": filename, "text": doguContentYaml])
+        assertThat(scriptMock.writeFileParams.size()).isEqualTo(1)
+
+        assertThat(scriptMock.allActualArgs[0].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl apply -f target/make/k8s/testName.yaml")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
+    }
 }

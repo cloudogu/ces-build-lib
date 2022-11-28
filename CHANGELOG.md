@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Function `collectAndArchiveLogs` to collect dogu and resource information to help debugging k3s Jenkins buils. #89 
+- Function `applyDoguResource(String doguName, String doguNamespace, String doguVersion)` to apply a custom dogu 
+  resource into the cluster. This effectively installs a dogu if it is available. #89 
 
 ## [1.58.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.58.0) - 2022-11-07
 ### Changed
