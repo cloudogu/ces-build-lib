@@ -1050,7 +1050,7 @@ if (response.status == '201' && response.content-type == 'application/json') {
 
 # K3d
 
-`K3d` provides functions to set up and administer a lokal k3s cluster in Docker
+`K3d` provides functions to set up and administer a lokal k3s cluster in Docker.
 
 Example:
 
@@ -1079,7 +1079,16 @@ try {
 
         k3d.waitForDeploymentRollout("my-dogu-name", 300, 5)
     }
-    
+
+    stage('install a dependent dogu by applying a dogu resource') {
+        k3d.applyDoguResource("my-dependency", "nyNamespace", "10.0.0-1")
+        k3d.waitForDeploymentRollout("my-dependency", 300, 5)
+    }
+
+} catch (Exception ignored) {
+    // in case of a failed build collect dogus, resources and pod logs and archive them as log file on the build.
+    k3d.collectAndArchiveLogs()
+    throw e
 } finally {
     stage('Remove k3d cluster') {
         k3d.deleteK3d()

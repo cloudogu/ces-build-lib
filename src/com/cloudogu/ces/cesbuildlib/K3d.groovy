@@ -11,6 +11,7 @@ class K3d {
      * The version of k3d to be installed
      */
     private static String K3D_VERSION = "4.4.7"
+    private static String K3D_LOG_FILENAME = "k8sLogs"
 
     private String clusterName
     private script
@@ -223,6 +224,33 @@ class K3d {
         // Remove .local from Images.
         patchDoguExecPod(dogu, image)
         patchDoguDeployment(dogu, image)
+    }
+
+    /**
+     * Applies the specified dogu resource into the k8s cluster. This should be used for dogus which are not build or
+     * locally installed in the build process. An example for the usage would be to install a dogu dependency before
+     * starting integration tests.
+     *
+     * @param doguName Name of the dogu, e.g., "nginx-ingress"
+     * @param doguNamespace Namespace of the dogu, e.g., "official"
+     * @param doguVersion Version of the dogu, e.g., "13.9.9-1"
+     */
+    void applyDoguResource(String doguName, String doguNamespace, String doguVersion) {
+        def filename = "target/make/k8s/${doguName}.yaml"
+        def doguContentYaml = """
+apiVersion: k8s.cloudogu.com/v1
+kind: Dogu
+metadata:
+  name: ${doguName}
+  labels:
+    dogu: ${doguName}
+spec:
+  name: ${doguNamespace}/${doguName}
+  version: ${doguVersion}
+"""
+
+        script.writeFile(file: filename.toString(), text: doguContentYaml.toString())
+        kubectl("apply -f ${filename}")
     }
 
     private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
@@ -458,6 +486,83 @@ data:
   "registryConfig": {${config.registryConfig}},
   "registryConfigEncrypted": {${config.registryConfigEncrypted}}
 }"""
+    }
+
+
+    /**
+     * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
+     *
+     * The collected information are archived as zip files at the build.
+     */
+    void collectAndArchiveLogs() {
+        script.dir(K3D_LOG_FILENAME) {
+            script.deleteDir()
+        }
+        script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
+
+        collectResourcesSummaries()
+        collectDoguDescriptions()
+        collectPodLogs()
+
+        String fileNameString = "${K3D_LOG_FILENAME}.zip".toString()
+        script.zip(zipFile: fileNameString, archive: "false", dir: "${K3D_LOG_FILENAME}".toString())
+        script.archiveArtifacts(artifacts: fileNameString, allowEmptyArchive: "true")
+    }
+
+    /**
+     * Collects all information about resources and their quantity and saves them as .yaml files.
+     */
+    void collectResourcesSummaries() {
+        def relevantResources = [
+            "persistentvolumeclaim",
+            "statefulset",
+            "replicaset",
+            "deployment",
+            "service",
+            "secret",
+            "pod",
+        ]
+
+        for (def resource : relevantResources) {
+            def resourceYaml = kubectl("get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true", true)
+            script.dir("${K3D_LOG_FILENAME}") {
+                script.writeFile(file: "${resource}.yaml".toString(), text: resourceYaml)
+            }
+        }
+    }
+
+    /**
+     * Collects all descriptions of dogus resources and saves them as .yaml files into the k8s logs directory.
+     */
+    void collectDoguDescriptions() {
+        def allDoguNames = kubectl("get dogu --ignore-not-found -o name || true", true)
+        def doguNames = allDoguNames.split("\n")
+        for (def doguName : doguNames) {
+            def doguFileName = doguName.split("/")[1]
+            def doguDescribe = kubectl("describe ${doguName} || true", true)
+            script.dir("${K3D_LOG_FILENAME}") {
+                script.dir('dogus') {
+                    script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects all pod logs and saves them into the k8s logs directory.
+     */
+    void collectPodLogs() {
+        def allPodNames = kubectl("get pods -o name || true", true)
+        def podNames = allPodNames.split("\n")
+        for (def podName : podNames) {
+            def podFileName = podName.split("/")[1]
+            def podLogs = kubectl("logs ${podName} || true", true)
+            script.dir("${K3D_LOG_FILENAME}") {
+                script.dir('pods') {
+                    script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
+                }
+            }
+        }
     }
 }
 
