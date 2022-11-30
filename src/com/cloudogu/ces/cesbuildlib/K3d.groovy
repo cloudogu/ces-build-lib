@@ -548,15 +548,19 @@ data:
      */
     void collectDoguDescriptions() {
         def allDoguNames = kubectl("get dogu --ignore-not-found -o name || true", true)
-        def doguNames = allDoguNames.split("\n")
-        for (def doguName : doguNames) {
-            def doguFileName = doguName.split("/")[1]
-            def doguDescribe = kubectl("describe ${doguName} || true", true)
-            script.dir("${K3D_LOG_FILENAME}") {
-                script.dir('dogus') {
-                    script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
+        try {
+            def doguNames = allDoguNames.split("\n")
+            for (def doguName : doguNames) {
+                def doguFileName = doguName.split("/")[1]
+                def doguDescribe = kubectl("describe ${doguName} || true", true)
+                script.dir("${K3D_LOG_FILENAME}") {
+                    script.dir('dogus') {
+                        script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
+                    }
                 }
             }
+        } catch (Exception ignored) {
+            script.echo "failed to process dogu descriptions: \n${allDoguNames}"
         }
     }
 
@@ -565,15 +569,19 @@ data:
      */
     void collectPodLogs() {
         def allPodNames = kubectl("get pods -o name || true", true)
-        def podNames = allPodNames.split("\n")
-        for (def podName : podNames) {
-            def podFileName = podName.split("/")[1]
-            def podLogs = kubectl("logs ${podName} || true", true)
-            script.dir("${K3D_LOG_FILENAME}") {
-                script.dir('pods') {
-                    script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
+        try {
+            def podNames = allPodNames.split("\n")
+            for (def podName : podNames) {
+                def podFileName = podName.split("/")[1]
+                def podLogs = kubectl("logs ${podName} || true", true)
+                script.dir("${K3D_LOG_FILENAME}") {
+                    script.dir('pods') {
+                        script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
+                    }
                 }
             }
+        } catch (Exception ignored) {
+            script.echo "failed to process dogu descriptions: \n${allDoguNames}"
         }
     }
 }
