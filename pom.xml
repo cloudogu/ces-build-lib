@@ -7,7 +7,7 @@
     <groupId>com.cloudogu.ces</groupId>
     <artifactId>ces-build-lib</artifactId>
     <name>ces-build-lib</name>
-    <version>1.59.0</version>
+    <version>1.60.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
