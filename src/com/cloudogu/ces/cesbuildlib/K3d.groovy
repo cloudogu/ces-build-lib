@@ -189,7 +189,7 @@ class K3d {
         kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
     }
 
-    void installAndTriggerSetup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+    void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
         String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
         setup = setup.replace("{{ .Namespace }}", "default")
