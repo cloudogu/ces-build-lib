@@ -560,7 +560,7 @@ data:
                 }
             }
         } catch (Exception ignored) {
-            script.echo "failed to process dogu descriptions: \n${allDoguNames}"
+            script.echo "Failed to collect dogu descriptions because of: \n${ignored.toString()}\nSkipping collection step."
         }
     }
 
@@ -581,7 +581,7 @@ data:
                 }
             }
         } catch (Exception ignored) {
-            script.echo "failed to process dogu descriptions: \n${allDoguNames}"
+            script.echo "Failed to collect pod logs because of: \n${ignored.toString()}\nSkipping collection step."
         }
     }
 }
