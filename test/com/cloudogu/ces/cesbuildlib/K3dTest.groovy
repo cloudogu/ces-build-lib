@@ -163,8 +163,9 @@ class K3dTest extends GroovyTestCase {
         sut.setup(tag, [:], 1, 1)
 
         // then
-        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("Installing setup...")
-        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("Wait for dogu-operator to be ready...")
+        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("configuring setup...")
+        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(2)).isEqualTo("Wait for dogu-operator to be ready...")
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml".trim())
@@ -198,7 +199,10 @@ class K3dTest extends GroovyTestCase {
         }
 
         // then
-        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("configuring setup...")
+        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(2)).isEqualTo("Wait for dogu-operator to be ready...")
+
         assertThat(scriptMock.actualShMapArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.actualShMapArgs[1].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml".trim())
         assertThat(scriptMock.writeFileParams.get(0)).isNotNull()
@@ -208,7 +212,6 @@ class K3dTest extends GroovyTestCase {
         assertThat(setupYaml).isNotNull()
         assertThat(setupYaml.contains("{{ .Namespace }}")).isFalse()
         assertThat(scriptMock.actualShMapArgs[4].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f setup.yaml".trim())
-        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("Wait for dogu-operator to be ready...")
         assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sleep 1s")
         assertThat(scriptMock.actualShMapArgs[5].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
     }

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.60.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.60.1) - 2022-12-01
+### Fixed
+- Incorrect usage of parameters makes currently used feature of installing and performing a setup unusable.
+
+## [1.60.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.60.0) - 2022-11-30
+### Changed
+- Split method to perform an update into a configuration and installation subpart, which can be called independently. #90
+
 ## [1.59.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.59.0) - 2022-11-28
 ### Added
 - Function `collectAndArchiveLogs` to collect dogu and resource information to help debugging k3s Jenkins buils. #89 

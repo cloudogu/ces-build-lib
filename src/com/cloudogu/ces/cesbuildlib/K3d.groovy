@@ -173,18 +173,13 @@ class K3d {
         return script.sh(script: "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}", returnStdout: returnStdout)
     }
 
-    /**
-     * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
-     * After that the method will wait until the dogu-operator is ready.
-     * @param tag Tag of the setup e. g. "v0.6.0"
-     * @param timout Timeout in seconds for the setup process e. g. 300
-     * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
-     */
-    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+    void assignExternalIP() {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
+    }
 
+    void configureSetup(String tag, config = [:]) {
+        script.echo "configuring setup..."
         // Config
-        script.echo "Installing setup..."
         kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
 
         // Merge default config with the one passed as parameter
@@ -192,7 +187,10 @@ class K3d {
         writeSetupJson(config)
 
         kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
+    }
 
+    void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
+        script.echo "Installing setup..."
         String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
         setup = setup.replace("{{ .Namespace }}", "default")
         script.writeFile file: 'setup.yaml', text: setup
@@ -203,15 +201,29 @@ class K3d {
     }
 
     /**
-     * Installs a given dogu. Before applying the dogu.yaml to the cluster the method creates a custom dogu
-     * descriptor with an .local ip. This is required for the crane library in the dogu operator. The .local forces it
-     * to use http. Afterwards the .local will be patched out from the dogu resources so that kubelet has no problem to
-     * pull the image-
-     *
-     * @param dogu Name of the dogu e. g. "nginx-ingress"
-     * @param image Name of the image e. g. "k3d-citest-d9753c5632bc:1234/k8s/nginx-ingress"
-     * @param doguYaml Name of the custom resources
+     * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
+     * After that the method will wait until the dogu-operator is ready.
+     * @param tag Tag of the setup e. g. "v0.6.0"
+     * @param timout Timeout in seconds for the setup process e. g. 300
+     * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
      */
+    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+        assignExternalIP()
+        configureSetup(tag, config)
+        installAndTriggerSetup(tag, timout, interval)
+    }
+
+
+/**
+ * Installs a given dogu. Before applying the dogu.yaml to the cluster the method creates a custom dogu
+ * descriptor with an .local ip. This is required for the crane library in the dogu operator. The .local forces it
+ * to use http. Afterwards the .local will be patched out from the dogu resources so that kubelet has no problem to
+ * pull the image-
+ *
+ * @param dogu Name of the dogu e. g. "nginx-ingress"
+ * @param image Name of the image e. g. "k3d-citest-d9753c5632bc:1234/k8s/nginx-ingress"
+ * @param doguYaml Name of the custom resources
+ */
     void installDogu(String dogu, String image, String doguYaml) {
         Docker docker = new Docker(script)
         String[] IpPort = getRegistryIpAndPort(docker)
@@ -536,15 +548,19 @@ data:
      */
     void collectDoguDescriptions() {
         def allDoguNames = kubectl("get dogu --ignore-not-found -o name || true", true)
-        def doguNames = allDoguNames.split("\n")
-        for (def doguName : doguNames) {
-            def doguFileName = doguName.split("/")[1]
-            def doguDescribe = kubectl("describe ${doguName} || true", true)
-            script.dir("${K3D_LOG_FILENAME}") {
-                script.dir('dogus') {
-                    script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
+        try {
+            def doguNames = allDoguNames.split("\n")
+            for (def doguName : doguNames) {
+                def doguFileName = doguName.split("/")[1]
+                def doguDescribe = kubectl("describe ${doguName} || true", true)
+                script.dir("${K3D_LOG_FILENAME}") {
+                    script.dir('dogus') {
+                        script.writeFile(file: "${doguFileName}.txt".toString(), text: doguDescribe)
+                    }
                 }
             }
+        } catch (Exception ignored) {
+            script.echo "Failed to collect dogu descriptions because of: \n${ignored.toString()}\nSkipping collection step."
         }
     }
 
@@ -553,16 +569,19 @@ data:
      */
     void collectPodLogs() {
         def allPodNames = kubectl("get pods -o name || true", true)
-        def podNames = allPodNames.split("\n")
-        for (def podName : podNames) {
-            def podFileName = podName.split("/")[1]
-            def podLogs = kubectl("logs ${podName} || true", true)
-            script.dir("${K3D_LOG_FILENAME}") {
-                script.dir('pods') {
-                    script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
+        try {
+            def podNames = allPodNames.split("\n")
+            for (def podName : podNames) {
+                def podFileName = podName.split("/")[1]
+                def podLogs = kubectl("logs ${podName} || true", true)
+                script.dir("${K3D_LOG_FILENAME}") {
+                    script.dir('pods') {
+                        script.writeFile(file: "${podFileName}.log".toString(), text: podLogs)
+                    }
                 }
             }
+        } catch (Exception ignored) {
+            script.echo "Failed to collect pod logs because of: \n${ignored.toString()}\nSkipping collection step."
         }
     }
 }
-
