@@ -172,7 +172,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl create configmap k8s-ces-setup-json --from-file=setup.json".trim())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml".trim())
         assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f setup.yaml".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sleep 5s")
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sleep 1s")
         assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
 
         assertThat(scriptMock.writeFileParams.get(0)).isNotNull()
@@ -212,7 +212,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(setupYaml).isNotNull()
         assertThat(setupYaml.contains("{{ .Namespace }}")).isFalse()
         assertThat(scriptMock.actualShMapArgs[4].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl apply -f setup.yaml".trim())
-        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sleep 5s")
+        assertThat(scriptMock.actualShStringArgs[0].trim()).isEqualTo("sleep 1s")
         assertThat(scriptMock.actualShMapArgs[5].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
     }
 
