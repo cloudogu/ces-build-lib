@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add output from `kubectl describe` in the summary of the k8s resources in k3d. #94
 
 ## [1.60.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.60.1) - 2022-12-01
 ### Fixed

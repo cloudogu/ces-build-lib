@@ -540,6 +540,10 @@ data:
             script.dir("${K3D_LOG_FILENAME}") {
                 script.writeFile(file: "${resource}.yaml".toString(), text: resourceYaml)
             }
+            def resourceDescription = kubectl("describe ${resource} -l app=ces || true", true)
+            script.dir("${K3D_LOG_FILENAME}") {
+                script.writeFile(file: "${resource}_description.yaml".toString(), text: resourceDescription)
+            }
         }
     }
 
