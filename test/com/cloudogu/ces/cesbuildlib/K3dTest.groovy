@@ -360,7 +360,7 @@ spec:
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get persistentvolumeclaim --show-kind --ignore-not-found -l app=ces -o yaml || true")
         assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "persistentvolumeclaim.yaml", "text": "value for persistentvolumeclaim"])
 
-        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe persistentvolumeclaim -l app=ces -o yaml || true")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe persistentvolumeclaim -l app=ces || true")
         assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "persistentvolumeclaim_description.yaml", "text": "value for persistentvolumeclaim"])
 
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get statefulset --show-kind --ignore-not-found -l app=ces -o yaml || true")
