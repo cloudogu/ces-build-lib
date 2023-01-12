@@ -335,7 +335,7 @@ spec:
         def scriptMock = new ScriptMock()
         K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
 
-        def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod"]
+        def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod","configmap","persistentvolume","replicaset","ingress","ingressclass"]
         for(def resource : relevantResources) {
             scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true".toString(), "value for ${resource}")
             scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe ${resource} -l app=ces || true".toString(), "value for ${resource}")
@@ -399,6 +399,36 @@ spec:
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe pod -l app=ces || true")
         assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "pod_description.yaml", "text": "value for pod"])
 
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get configmap --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "configmap.yaml", "text": "value for configmap"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe configmap -l app=ces || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "configmap_description.yaml", "text": "value for configmap"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get persistentvolume --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "persistentvolume.yaml", "text": "value for persistentvolume"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe persistentvolume -l app=ces || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "persistentvolume_description.yaml", "text": "value for persistentvolume"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get replicaset --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "replicaset.yaml", "text": "value for replicaset"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe replicaset -l app=ces || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "replicaset_description.yaml", "text": "value for replicaset"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ingress --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "ingress.yaml", "text": "value for ingress"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe ingress -l app=ces || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "ingress_description.yaml", "text": "value for ingress"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ingressclass --show-kind --ignore-not-found -l app=ces -o yaml || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "ingressclass.yaml", "text": "value for ingressclass"])
+
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe ingressclass -l app=ces || true")
+        assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "ingressclass_description.yaml", "text": "value for ingressclass"])
+
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get dogu --ignore-not-found -o name || true")
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe k8s.cloudogu.com/testdogu || true")
         assertThat(scriptMock.writeFileParams[fileCounter++]).isEqualTo(["file": "testdogu.txt", "text": "this is the description of a dogu"])
@@ -415,8 +445,8 @@ spec:
         assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
 
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
-        assertThat(scriptMock.writeFileParams.size()).isEqualTo(17)
-        assertThat(fileCounter).isEqualTo(17)
+        assertThat(scriptMock.writeFileParams.size()).isEqualTo(27)
+        assertThat(fileCounter).isEqualTo(27)
     }
 
     void testK3d_applyDoguResource() {

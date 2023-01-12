@@ -533,6 +533,11 @@ data:
             "service",
             "secret",
             "pod",
+            "configmap",
+            "persistentvolume",
+            "replicaset",
+            "ingress",
+            "ingressclass"
         ]
 
         for (def resource : relevantResources) {
