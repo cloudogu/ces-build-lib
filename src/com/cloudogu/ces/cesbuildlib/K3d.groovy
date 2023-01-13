@@ -533,12 +533,21 @@ data:
             "service",
             "secret",
             "pod",
+            "configmap",
+            "persistentvolume",
+            "replicaset",
+            "ingress",
+            "ingressclass"
         ]
 
         for (def resource : relevantResources) {
             def resourceYaml = kubectl("get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true", true)
             script.dir("${K3D_LOG_FILENAME}") {
                 script.writeFile(file: "${resource}.yaml".toString(), text: resourceYaml)
+            }
+            def resourceDescription = kubectl("describe ${resource} -l app=ces || true", true)
+            script.dir("${K3D_LOG_FILENAME}") {
+                script.writeFile(file: "${resource}_description.yaml".toString(), text: resourceDescription)
             }
         }
     }
