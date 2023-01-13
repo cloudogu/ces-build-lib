@@ -535,7 +535,6 @@ data:
             "pod",
             "configmap",
             "persistentvolume",
-            "replicaset",
             "ingress",
             "ingressclass"
         ]
