@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.61.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.61.0) - 2023-01-13
+### Added
+- Add output from `kubectl describe` in the summary of the k8s resources in k3d. #94
+  - these resources will be collected afterwards:
+    - configmap, deployment, ingress, ingressclass, persistentvolume, persistentvolumeclaim, pod, replicaset, secret, service, statefulset
+    
 ## [1.60.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.60.1) - 2022-12-01
 ### Fixed
 - Incorrect usage of parameters makes currently used feature of installing and performing a setup unusable.
