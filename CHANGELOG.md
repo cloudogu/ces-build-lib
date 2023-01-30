@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.62.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.62.0) - 2023-01-30
+## Added
+- Function lintDockerfile to lint docker files #96.
+- Function shellCheck to lint shell scripts #96.
+
 ## [1.61.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.61.0) - 2023-01-13
 ### Added
 - Add output from `kubectl describe` in the summary of the k8s resources in k3d. #94
@@ -23,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.59.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.59.0) - 2022-11-28
 ### Added
-- Function `collectAndArchiveLogs` to collect dogu and resource information to help debugging k3s Jenkins buils. #89 
+- Function `collectAndArchiveLogs` to collect dogu and resource information to help debugging k3s Jenkins builds. #89 
 - Function `applyDoguResource(String doguName, String doguNamespace, String doguVersion)` to apply a custom dogu 
   resource into the cluster. This effectively installs a dogu if it is available. #89 
 

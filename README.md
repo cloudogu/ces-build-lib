@@ -1140,7 +1140,7 @@ Example:
 
 # Markdown
 
-`Markdown` provides function regardig the `Markdown Files` from the projects docs directory  
+`Markdown` provides function regarding the `Markdown Files` from the projects docs directory  
 
 ```groovy
     Markdown markdown = new Markdown(this)
@@ -1150,6 +1150,23 @@ Example:
 `markdown.check` executes the function defined in `Markdown`
 running a container with the latest https://github.com/tcort/markdown-link-check image
 and verifies that the links in the defined project directory are alive
+
+### DockerLint
+
+```groovy
+lintDockerfile() // uses Dockerfile as default; optional parameter
+```
+
+See [lintDockerFile](vars/lintDockerfile.groovy)
+
+### ShellCheck
+
+```groovy
+shellCheck() // search for all .sh files in folder and runs shellcheck
+shellCheck(fileList) // fileList="a.sh b.sh" execute shellcheck on a custom list
+```
+
+See [shellCheck](vars/shellCheck.groovy)
 
 # Steps
 
