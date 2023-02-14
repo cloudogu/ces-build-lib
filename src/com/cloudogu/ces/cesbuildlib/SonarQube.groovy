@@ -9,10 +9,10 @@ package com.cloudogu.ces.cesbuildlib
 class SonarQube implements Serializable {
     protected script
 
-    // If enabled uses the branch plugin, available for developer edition and above
-    boolean isUsingBranchPlugin = false
     boolean isIgnoringBranches = false
     int timeoutInMinutes = 2
+    // If enabled uses the branch plugin, available for developer edition and above
+    protected boolean isUsingBranchPlugin = false
     protected Map config
 
     @Deprecated
