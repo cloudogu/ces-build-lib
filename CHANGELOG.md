@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.63.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.63.0) - 2023-02-16
+## Fixed
+- A bug with SonarCloud where an error was thrown because a private field was accessed (#99)
+
 ## [1.62.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.62.0) - 2023-01-30
 ## Added
 - Function lintDockerfile to lint docker files #96.
