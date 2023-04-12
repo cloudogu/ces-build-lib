@@ -51,7 +51,7 @@ class HttpClient implements Serializable {
     }
 
     protected String getCurlAuthParam() {
-        "-u ${script.env.CURL_USER}:${script.env.CURL_PASSWORD}"
+        "-u '${script.env.CURL_USER}:${script.env.CURL_PASSWORD}'"
     }
 
     private String getCurlCommand(String httpMethod, String url, String contentType, String data) {
