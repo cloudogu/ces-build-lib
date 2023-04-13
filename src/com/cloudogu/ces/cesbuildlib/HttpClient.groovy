@@ -59,7 +59,7 @@ class HttpClient implements Serializable {
             (credentials ? "${getCurlAuthParam()} " : '') +
             (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
             (data ? "-d '" + data + "' "  : '') +
-            "${url}"
+            "'${url}'"
     }
 
     private String getUploadFileCurlCommand(String httpMethod, String url, String contentType, String filePath) {
@@ -67,7 +67,7 @@ class HttpClient implements Serializable {
             (credentials ? "${getCurlAuthParam()} " : '') +
             (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
             (filePath ? "-T '" + filePath + "' "  : '') +
-            "${url}"
+            "'${url}'"
     }
     
     protected Map httpRequest(String httpMethod, String url, String contentType, def data, String customCommand = '') {

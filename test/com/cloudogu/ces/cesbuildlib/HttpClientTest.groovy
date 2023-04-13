@@ -21,7 +21,7 @@ class HttpClientTest {
         assertThat(actualResponse.httpCode).isEqualTo('201')
         assertThat(actualResponse.headers['location']).isEqualTo('https://some:/url')
         assertThat(actualResponse.body).isEqualTo('')
-        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo('curl -i -X GET http://url')
+        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo('curl -i -X GET \'http://url\'')
     }
 
     @Test
@@ -43,7 +43,7 @@ class HttpClientTest {
         assertThat(actualResponse.body).isEqualTo('')
 
         assertThat(scriptMock.actualShMapArgs[0])
-            .isEqualTo('curl -i -X POST -H \'Content-Type: input\' -d \'{"title":"t","description":"d"}\' http://some-url' )
+            .isEqualTo('curl -i -X POST -H \'Content-Type: input\' -d \'{"title":"t","description":"d"}\' \'http://some-url\'' )
     }
 
     @Test
@@ -60,7 +60,7 @@ class HttpClientTest {
         assertThat(actualResponse.body).isEqualTo('')
 
         assertThat(scriptMock.actualShMapArgs[0])
-            .isEqualTo('curl -i -X PUT -H \'Content-Type: input\' -T \'/path/to/file\' http://some-url' )
+            .isEqualTo('curl -i -X PUT -H \'Content-Type: input\' -T \'/path/to/file\' \'http://some-url\'' )
     }
 
     @Test
@@ -82,7 +82,7 @@ class HttpClientTest {
         assertThat(actualResponse.body).isEqualTo(expectedBody1 + expectedBody2)
 
         assertThat(scriptMock.actualShMapArgs[0])
-            .isEqualTo('curl -i -X POST http://some-url' )
+            .isEqualTo('curl -i -X POST \'http://some-url\'' )
     }
 
     @Test
@@ -97,7 +97,7 @@ class HttpClientTest {
         
         http.get('http://url')
 
-        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo("curl -i -X GET -u 'user:pw' http://url")
+        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo("curl -i -X GET -u 'user:pw' \'http://url\'")
     }
 }
 
