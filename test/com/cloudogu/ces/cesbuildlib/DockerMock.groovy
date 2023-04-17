@@ -21,7 +21,7 @@ class DockerMock {
         when(imageMock.mountJenkinsUser(anyBoolean())).thenReturn(imageMock)
         when(imageMock.mountDockerSocket()).thenReturn(imageMock)
         when(imageMock.mountDockerSocket(anyBoolean())).thenReturn(imageMock)
-        when(imageMock.inside(anyString(), any())).thenAnswer(new Answer<Object>() {
+        when(imageMock.inside(any(), any())).thenAnswer(new Answer<Object>() {
             @Override
             Object answer(InvocationOnMock invocation) throws Throwable {
                 Closure closure = invocation.getArgument(1)

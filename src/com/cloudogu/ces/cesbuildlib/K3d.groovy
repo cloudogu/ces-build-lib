@@ -1,7 +1,5 @@
 package com.cloudogu.ces.cesbuildlib
 
-import com.cloudbees.groovy.cps.NonCPS
-
 class K3d {
     /**
      * The image of the k3s version defining the targeted k8s version
@@ -70,7 +68,6 @@ class K3d {
      *
      * @return new randomized cluster name
      */
-    @NonCPS
     static String createClusterName() {
         String[] randomUUIDs = UUID.randomUUID().toString().split("-")
         String uuid_snippet = randomUUIDs[randomUUIDs.length - 1]

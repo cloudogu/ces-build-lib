@@ -97,7 +97,7 @@ class HttpClientTest {
         
         http.get('http://url')
 
-        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo("curl -i -X GET -u 'user:pw' \'http://url\'")
+        assertThat(scriptMock.actualShMapArgs[0]).isEqualTo("curl -i -X GET -u 'user:pw' 'http://url'")
     }
 }
 
