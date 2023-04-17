@@ -6,19 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-## Fixed
+
+## [1.64.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.64.0) - 2023-04-17
+### Fixed
 - HttpClient escapes now the credentials in curl command to support credentials with characters like `$`.
 
 ## [1.64.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.64.0) - 2023-04-11
-## Added
+### Added
 - Add parameter to configure version for markdown link checker #100.
 
 ## [1.63.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.63.0) - 2023-02-16
-## Fixed
+### Fixed
 - A bug with SonarCloud where an error was thrown because a private field was accessed (#99)
 
 ## [1.62.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.62.0) - 2023-01-30
-## Added
+### Added
 - Function lintDockerfile to lint docker files #96.
 - Function shellCheck to lint shell scripts #96.
 
