@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- Trivy Scanning -> Updated Trivy to 0.41.0 
+    - New schema, removed unnecessary code, updated readme to use .trivyignore file
+    - Breaking change if you use Trivy prior to 0.20.0, see [here](https://github.com/aquasecurity/trivy/discussions/1050)
+    - Removed tests for allowList
 
 ## [1.63.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.63.0) - 2023-02-16
 ## Fixed

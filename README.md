@@ -1229,10 +1229,9 @@ Returns a list of vulnerabilities or an empty list if there are no vulnerabiliti
 
 ```groovy
 trivyConfig = [ 
-    imageName: 'nginx', 
+    imageName: 'alpine:3.17.2', 
     severity: [ 'HIGH, CRITICAL' ], 
-    trivyVersion: '0.15.0', 
-    allowList: [ 'CVE-XXXX-XXX', 'CVE-XXXX-XXX' ]
+    trivyVersion: '0.41.0'
 ]
 ```
 
@@ -1242,42 +1241,149 @@ Here the only mandatory field is the imageName. If no imageName was passed the f
 - **severity** *(list of strings)*: If left blank all severities will be shown. If one or more are specified only these will be shown
   i.e. if 'HIGH' is passed then only vulnerabilities with the 'HIGH' score are shown
 - **trivyVersion** *(string)*: The version of the trivy image
-- **allowList** *(list of strings)*: A list of allowed vulnerabilities which will be ignored if there are matches. So if for example 2 vulnerabilities are originally found and
-  a VulnerabilityID is passed which matches one of the two found vulnerabilities only the one vulnerability will be returned which was not specified in the allowList 
+
+If you want to ignore / allow certain vulnerabilities please use a .trivyignore file
+Provide the file in your repo / directory where you run your job
+e.g.:
+```shell
+.gitignore
+Jenkinsfile
+.trivyignore
+```
+
+[Offical documentation](https://aquasecurity.github.io/trivy/v0.41/docs/configuration/filtering/#by-finding-ids)
+```ignorelang
+# Accept the risk
+CVE-2018-14618
+
+# Accept the risk until 2023-01-01
+CVE-2019-14697 exp:2023-01-01
+
+# No impact in our settings
+CVE-2019-1543
+
+# Ignore misconfigurations
+AVD-DS-0002
+
+# Ignore secrets
+generic-unwanted-rule
+aws-account-id
+
+```
 
 If there are vulnerabilities the output looks as follows.
 
 ```json
-[
-      {
-        "VulnerabilityID": "CVE-XXXX-XXX",
-        "PkgName": "",
-        "InstalledVersion": "",
-        "Layer": {
-          "Digest": "",
-          "DiffID": ""
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "alpine:3.17.2",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.17.2"
+    },
+    "ImageID": "sha256:b2aa39c304c27b96c1fef0c06bee651ac9241d49c4fe34381cab8453f9a89c7d",
+    "DiffIDs": [
+      "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+    ],
+    "RepoTags": [
+      "alpine:3.17.2"
+    ],
+    "RepoDigests": [
+      "alpine@sha256:ff6bdca1701f3a8a67e328815ff2346b0e4067d32ec36b7992c1fdc001dc8517"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "container": "4ad3f57821a165b2174de22a9710123f0d35e5884dca772295c6ebe85f74fe57",
+      "created": "2023-02-11T04:46:42.558343068Z",
+      "docker_version": "20.10.12",
+      "history": [
+        {
+          "created": "2023-02-11T04:46:42.449083344Z",
+          "created_by": "/bin/sh -c #(nop) ADD file:40887ab7c06977737e63c215c9bd297c0c74de8d12d16ebdf1c3d40ac392f62d in / "
         },
-        "SeveritySource": "",
-        "PrimaryURL": "",
-        "Description": "",
-        "Severity": "",
-        "CweIDs": [
-        ],
-        "CVSS": {
-          "nvd": {
-            "V2Vector": "",
-            "V3Vector": "",
-            "V2Score": x.x,
-            "V3Score": x.x
-          }
-        },
-        "References": [
-        ],
-        "PublishedDate": "",
-        "LastModifiedDate": ""
+        {
+          "created": "2023-02-11T04:46:42.558343068Z",
+          "created_by": "/bin/sh -c #(nop)  CMD [\"/bin/sh\"]",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+        ]
       },
-      {...}
-]
+      "config": {
+        "Cmd": [
+          "/bin/sh"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Image": "sha256:ba2beca50019d79fb31b12c08f3786c5a0621017a3e95a72f2f8b832f894a427"
+      }
+    }
+  },
+  "Results": [
+    {
+      "Target": "alpine:3.17.2 (alpine 3.17.2)",
+      "Class": "os-pkgs",
+      "Type": "alpine",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2023-0464",
+          "PkgID": "libcrypto3@3.0.8-r0",
+          "PkgName": "libcrypto3",
+          "InstalledVersion": "3.0.8-r0",
+          "FixedVersion": "3.0.8-r1",
+          "Layer": {
+            "DiffID": "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-0464",
+          "DataSource": {
+            "ID": "alpine",
+            "Name": "Alpine Secdb",
+            "URL": "https://secdb.alpinelinux.org/"
+          },
+          "Title": "Denial of service by excessive resource usage in verifying X509 policy constraints",
+          "Description": "A security vulnerability has been identified in all supported versions of OpenSSL related to the verification of X.509 certificate chains that include policy constraints. Attackers may be able to exploit this vulnerability by creating a malicious certificate chain that triggers exponential use of computational resources, leading to a denial-of-service (DoS) attack on affected systems. Policy processing is disabled by default but can be enabled by passing the `-policy' argument to the command line utilities or by calling the `X509_VERIFY_PARAM_set1_policies()' function.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-295"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2023-0464",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0464",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2017771e2db3e2b96f89bbe8766c3209f6a99545",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2dcd4f1e3115f38cefa43e3efbe9b801c27e642e",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=879f7080d7e141f415c79eaa3a8ac4a3dad0348b",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=959c59c7a0164117e7f8366466a32bb1f8d77ff1",
+            "https://nvd.nist.gov/vuln/detail/CVE-2023-0464",
+            "https://ubuntu.com/security/notices/USN-6039-1",
+            "https://www.cve.org/CVERecord?id=CVE-2023-0464",
+            "https://www.openssl.org/news/secadv/20230322.txt"
+          ],
+          "PublishedDate": "2023-03-22T17:15:00Z",
+          "LastModifiedDate": "2023-03-29T19:37:00Z"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 # Examples
