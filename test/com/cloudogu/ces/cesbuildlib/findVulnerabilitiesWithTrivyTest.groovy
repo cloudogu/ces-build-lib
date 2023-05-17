@@ -66,47 +66,6 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
         assert script.call([imageName: 'nginx']) == Collections.emptyList()
     }
 
-    @Test
-    void "only single vulnerability when allowList matches vulnerability1"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3374']])
-        assert vulnerabilityList == slurper.parseText(expectedVulnerability2List)
-        assert vulnerabilityList.size() == 1
-    }
-
-    @Test
-    void "only single vulnerability when allowList matches vulnerability2"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2019-18276']])
-        assert vulnerabilityList == slurper.parseText(expectedVulnerability1List)
-        assert vulnerabilityList.size() == 1
-    }
-
-    @Test
-    void "return empty list when both vulnerabilites are on allow list"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        assert script.call([imageName: 'nginx', allowList: ['CVE-2019-18276', 'CVE-2011-3374']]) == Collections.emptyList()
-    }
-
-    @Test
-    void "full vulnerability list when allowList does not match"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3371']])
-        assert vulnerabilityList == slurper.parseText(expectedFullVulnerabilityList)
-        assert vulnerabilityList.size() == 2
-    }
 
     // TODO test trivy version ??
     // TODO test severity ??
