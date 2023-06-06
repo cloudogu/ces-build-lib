@@ -20,6 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - if you parsed the result of `findVulnerabilitiesWithTrivy` make sure to migrate to new schema, 
       e.g. `VulnerabilityID` moved to `.Results[].Vulnerabilities[].VulnerabilityID`
 
+## [1.64.2](https://github.com/cloudogu/ces-build-lib/releases/tag/1.64.2) - 2023-04-24
+### Fixed
+- [#104] A missing `@NonCPS` annotation caused an error when calling the `K3d` constructor.
+
+## [1.64.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.64.1) - 2023-04-17
+### Fixed
+- HttpClient escapes now the credentials in curl command to support credentials with characters like `$`.
+
+## [1.64.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.64.0) - 2023-04-11
+### Added
+- Add parameter to configure version for markdown link checker #100.
+
 ## [1.63.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.63.0) - 2023-02-16
 ### Fixed
 - A bug with SonarCloud where an error was thrown because a private field was accessed (#99)

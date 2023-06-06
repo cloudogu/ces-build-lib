@@ -1147,9 +1147,17 @@ Example:
     markdown.check()
 ```
 
+
 `markdown.check` executes the function defined in `Markdown`
 running a container with the latest https://github.com/tcort/markdown-link-check image
 and verifies that the links in the defined project directory are alive
+
+Additionally, the markdown link checker can be used with a specific version (default: stable).
+
+```groovy
+    Markdown markdown = new Markdown(this, "3.11.0")
+    markdown.check()
+```
 
 ### DockerLint
 

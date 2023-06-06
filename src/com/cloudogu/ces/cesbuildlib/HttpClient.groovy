@@ -2,7 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 /**
  * An HTTP client that calls curl on the shell.
- * 
+ *
  * Returns a map of 
  * * httpCode (String)
  * * headers (Map)
@@ -22,7 +22,7 @@ class HttpClient implements Serializable {
     Map get(String url, String contentType = '', def data = '') {
         return httpRequest('GET', url, contentType, data)
     }
-    
+
     Map put(String url, String contentType = '', def data = '') {
         return httpRequest('PUT', url, contentType, data)
     }
@@ -34,7 +34,7 @@ class HttpClient implements Serializable {
         }
         return httpRequest('PUT', url, contentType, filePath, command)
     }
-    
+
     Map post(String url, String contentType = '', def data = '') {
         return httpRequest('POST', url, contentType, data)
     }
@@ -50,53 +50,56 @@ class HttpClient implements Serializable {
         }
     }
 
+    private static String escapeSingleQuotes(String toEscape) {
+        return toEscape.replaceAll("'", "'\"'\"'")
+    }
+
     protected String getCurlAuthParam() {
-        "-u ${script.env.CURL_USER}:${script.env.CURL_PASSWORD}"
+        "-u '" + escapeSingleQuotes(script.env.CURL_USER) + ":" + escapeSingleQuotes(script.env.CURL_PASSWORD) + "' "
     }
 
     private String getCurlCommand(String httpMethod, String url, String contentType, String data) {
-        return "curl -i -X ${httpMethod} " +
-            (credentials ? "${getCurlAuthParam()} " : '') +
-            (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
-            (data ? "-d '" + data + "' "  : '') +
-            "${url}"
+        return "curl -i -X '" + escapeSingleQuotes(httpMethod) + "' " +
+            (credentials ? getCurlAuthParam() : '') +
+            (contentType ? "-H 'Content-Type: " + escapeSingleQuotes(contentType) + "' " : '') +
+            (data ? "-d '" + escapeSingleQuotes(data) + "' " : '') +
+            "'" + escapeSingleQuotes(url) + "'"
     }
 
     private String getUploadFileCurlCommand(String httpMethod, String url, String contentType, String filePath) {
-        return "curl -i -X ${httpMethod} " +
-            (credentials ? "${getCurlAuthParam()} " : '') +
-            (contentType ? "-H 'Content-Type: ${contentType}' " : '') +
-            (filePath ? "-T '" + filePath + "' "  : '') +
-            "${url}"
+        return "curl -i -X '" + escapeSingleQuotes(httpMethod) + "' " +
+            (credentials ? getCurlAuthParam() : '') +
+            (contentType ? "-H 'Content-Type: " + escapeSingleQuotes(contentType) + "' " : '') +
+            (filePath ? "-T '" + escapeSingleQuotes(filePath) + "' " : '') +
+            "'" + escapeSingleQuotes(url) + "'"
     }
-    
+
     protected Map httpRequest(String httpMethod, String url, String contentType, def data, String customCommand = '') {
         String httpResponse
         def rawHeaders
         def body
-        
+
         executeWithCredentials {
             String curlCommand
             if (customCommand.isEmpty()) {
-                String dataStr = data.toString().replaceAll("'", "'\"'\"'")
-                curlCommand = getCurlCommand(httpMethod, url, contentType, dataStr)
+                curlCommand = getCurlCommand(httpMethod, url, contentType, data.toString())
             } else {
                 curlCommand = customCommand
             }
-            
+
             // Command must be run inside this closure, otherwise the credentials will not be masked (using '*') in the console
             httpResponse = sh.returnStdOut curlCommand
         }
 
         String[] responseLines = httpResponse.split("\n")
-        
+
         // e.g. HTTP/2 301
-        String httpCode =  responseLines[0].split(" ")[1]
+        String httpCode = responseLines[0].split(" ")[1]
         def separatingLine = responseLines.findIndexOf { it.trim().isEmpty() }
-        
+
         if (separatingLine > 0) {
-            rawHeaders = responseLines[1..(separatingLine -1)]
-            body = responseLines[separatingLine+1..-1].join('\n')
+            rawHeaders = responseLines[1..(separatingLine - 1)]
+            body = responseLines[separatingLine + 1..-1].join('\n')
         } else {
             // No body returned
             rawHeaders = responseLines[1..-1]
@@ -104,11 +107,11 @@ class HttpClient implements Serializable {
         }
 
         def headers = [:]
-        for(String line: rawHeaders) {
+        for (String line : rawHeaders) {
             // e.g. cache-control: no-cache
             def splitLine = line.split(':', 2)
             headers[splitLine[0].trim()] = splitLine[1].trim()
         }
-        return [ httpCode: httpCode, headers: headers, body: body]
+        return [httpCode: httpCode, headers: headers, body: body]
     }
 }
