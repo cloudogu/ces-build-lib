@@ -68,10 +68,11 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
 
     @Test
     void "error when args contain allowList"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithoutVulns)
+        def errorMessage
+        helper.registerAllowedMethod("error", [String.class], { arg ->
+            throw new RuntimeException(arg)
         })
-        def errorMessage;
+        
         try {
             script.call([imageName: 'alpine:3.18.0', allowList: ['CVE-2011-3374']])
         } catch(error) {

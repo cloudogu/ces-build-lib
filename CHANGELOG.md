@@ -6,17 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-- Trivy Scanning -> Updated Trivy to 0.41.0 
-    - New schema, removed unnecessary code, updated readme to use .trivyignore file
-    - Breaking change if you use Trivy prior to 0.20.0, see [here](https://github.com/aquasecurity/trivy/discussions/1050)
-    - Removed tests for allowList
+### Changed
+- `findVulnerabilitiesWithTrivy`
+  - Switch from using `allowlist` param to built-in `.trivyignore` file. Advantage: More declarative.  
+    Fewer things in Jenkinsfile. Local trivy scans pick up allowlist as well.
+  - Updated Trivy default to 0.41.0 from 0.15.0.
+    - Trivy 0.20.0 introduced a JSON schema (see [here](https://github.com/aquasecurity/trivy/discussions/1050))
+    - `findVulnerabilitiesWithTrivy` code can now only parse the new one
+    - `findVulnerabilitiesWithTrivy` returns the new schema 
+  - These are somewhat breaking changes, which will likely not affect anyone. So we dared to make them. Make sure to
+    - not use `allowlist`, if so migrate to `.trivyignore`
+    - not pin the `trivyVersion`, or update to trivy >= `0.20.0`
+    - if you parsed the result of `findVulnerabilitiesWithTrivy` make sure to migrate to new schema, 
+      e.g. `VulnerabilityID` moved to `.Results[].Vulnerabilities[].VulnerabilityID`
 
 ## [1.63.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.63.0) - 2023-02-16
-## Fixed
+### Fixed
 - A bug with SonarCloud where an error was thrown because a private field was accessed (#99)
 
 ## [1.62.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.62.0) - 2023-01-30
-## Added
+### Added
 - Function lintDockerfile to lint docker files #96.
 - Function shellCheck to lint shell scripts #96.
 

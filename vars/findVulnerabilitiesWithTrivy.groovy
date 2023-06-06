@@ -1,19 +1,13 @@
 package com.cloudogu.ces.cesbuildlib
-
-import java.util.function.BiConsumer
-import java.util.function.Consumer
-
 //findVulnerabilitiesWithTrivy([ imageName: 'nginx', severity=[ 'HIGH, CRITICAL' ], trivyVersion: '0.41.0' ])
 // Use a .trivyignore file for allowed CVEs
 // If no vulnerabilities are found or no imageName was passed an empty List is returned
 // Otherwise the list with all vulnerabilities (excluding the ones in the .trivyignore if one was passed)
 ArrayList call (Map args) {
 
-
-    //imageName is mandatory
     if(validateArgs(args)) {
         if(args.containsKey('allowList'))
-          throw new Exception("Arg allowList is deprecated, please use .trivyignore file")
+            error "Arg allowList is deprecated, please use .trivyignore file"
         def imageName = args.imageName
         def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.41.0'
         def severityFlag = args.severity ? "--severity=${args.severity.join(',')}" : ''
@@ -52,8 +46,6 @@ def runTrivyInDocker(String trivyVersion, severityFlag, imageName) {
                 sh "trivy image -f json -o .trivy/trivyOutput.json ${severityFlag} ${imageName}"
             }
 }
-
-
 
 static boolean validateArgs(Map args) {
     return !(args == null || args.imageName == null || args.imageName == '')

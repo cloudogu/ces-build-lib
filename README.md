@@ -1235,12 +1235,28 @@ trivyConfig = [
 ]
 ```
 
-Here the only mandatory field is the imageName. If no imageName was passed the function returns an empty list.
+Here the only mandatory field is `imageName`. If no imageName was passed the function returns an empty list.
 
 - **imageName** *(string)*: The name of the image to be scanned
 - **severity** *(list of strings)*: If left blank all severities will be shown. If one or more are specified only these will be shown
   i.e. if 'HIGH' is passed then only vulnerabilities with the 'HIGH' score are shown
 - **trivyVersion** *(string)*: The version of the trivy image
+
+### Simple examples
+
+```groovy
+node {
+    stage('Scan Vulns') {
+        def vulns = findVulnerabilitiesWithTrivy(imageName: 'alpine:3.17.2')
+        if (vulns.size() > 0) {
+            archiveArtifacts artifacts: '.trivy/trivyOutput.json'
+            unstable "Found  ${vulns.size()} vulnerabilities in image. See vulns.json"
+        }
+    }
+}
+```
+
+### Ignore / allowlist
 
 If you want to ignore / allow certain vulnerabilities please use a .trivyignore file
 Provide the file in your repo / directory where you run your job
