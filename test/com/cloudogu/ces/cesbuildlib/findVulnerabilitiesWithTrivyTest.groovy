@@ -32,7 +32,7 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
             return slurper.parseText(trivyOutputWithVulns)
         })
 
-        def vulnerabilityList = script.call([imageName: 'nginx'])
+        def vulnerabilityList = script.call([imageName: 'alpine:3.17.2'])
         assert vulnerabilityList == slurper.parseText(expectedFullVulnerabilityList)
         assert vulnerabilityList.size() == 2
     }
@@ -63,130 +63,127 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
             return slurper.parseText(trivyOutputWithoutVulns)
         })
 
-        assert script.call([imageName: 'nginx']) == Collections.emptyList()
+        assert script.call([imageName: 'alpine:3.18.0']) == Collections.emptyList()
     }
 
     @Test
-    void "only single vulnerability when allowList matches vulnerability1"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
+    void "error when args contain allowList"() {
+        def errorMessage
+        helper.registerAllowedMethod("error", [String.class], { arg ->
+            throw new RuntimeException(arg)
         })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3374']])
-        assert vulnerabilityList == slurper.parseText(expectedVulnerability2List)
-        assert vulnerabilityList.size() == 1
+        
+        try {
+            script.call([imageName: 'alpine:3.18.0', allowList: ['CVE-2011-3374']])
+        } catch(error) {
+            errorMessage = error.message;
+        }
+       assert errorMessage == 'Arg allowList is deprecated, please use .trivyignore file'
     }
 
-    @Test
-    void "only single vulnerability when allowList matches vulnerability2"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2019-18276']])
-        assert vulnerabilityList == slurper.parseText(expectedVulnerability1List)
-        assert vulnerabilityList.size() == 1
-    }
-
-    @Test
-    void "return empty list when both vulnerabilites are on allow list"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        assert script.call([imageName: 'nginx', allowList: ['CVE-2019-18276', 'CVE-2011-3374']]) == Collections.emptyList()
-    }
-
-    @Test
-    void "full vulnerability list when allowList does not match"() {
-        helper.registerAllowedMethod("readJSON", [Map.class], { map ->
-            return slurper.parseText(trivyOutputWithVulns)
-        })
-
-        def vulnerabilityList = script.call([imageName: 'nginx', allowList: ['CVE-2011-3371']])
-        assert vulnerabilityList == slurper.parseText(expectedFullVulnerabilityList)
-        assert vulnerabilityList.size() == 2
-    }
 
     // TODO test trivy version ??
     // TODO test severity ??
 
 
     String vulnerability1 = """
-      {
-        "VulnerabilityID": "CVE-2011-3374",
-        "PkgName": "apt",
-        "InstalledVersion": "1.8.2.2",
-        "Layer": {
-          "Digest": "sha256:a076a628af6f7dcabc536bee373c0d9b48d9f0516788e64080c4e841746e6ce6",
-          "DiffID": "sha256:cb42413394c4059335228c137fe884ff3ab8946a014014309676c25e3ac86864"
-        },
-        "SeveritySource": "debian",
-        "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2011-3374",
-        "Description": "It was found that apt-key in apt, all versions, do not correctly validate gpg keys with the master keyring, leading to a potential man-in-the-middle attack.",
-        "Severity": "LOW",
-        "CweIDs": [
-          "CWE-347"
-        ],
-        "CVSS": {
-          "nvd": {
-            "V2Vector": "AV:N/AC:M/Au:N/C:N/I:P/A:N",
-            "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
-            "V2Score": 4.3,
-            "V3Score": 3.7
-          }
-        },
-        "References": [
-          "https://access.redhat.com/security/cve/cve-2011-3374",
-          "https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=642480",
-          "https://people.canonical.com/~ubuntu-security/cve/2011/CVE-2011-3374.html",
-          "https://security-tracker.debian.org/tracker/CVE-2011-3374",
-          "https://snyk.io/vuln/SNYK-LINUX-APT-116518"
-        ],
-        "PublishedDate": "2019-11-26T00:15:00Z",
-        "LastModifiedDate": "2019-12-04T15:35:00Z"
-      }
+{
+          "VulnerabilityID": "CVE-2023-0464",
+          "PkgID": "libcrypto3@3.0.8-r0",
+          "PkgName": "libcrypto3",
+          "InstalledVersion": "3.0.8-r0",
+          "FixedVersion": "3.0.8-r1",
+          "Layer": {
+            "DiffID": "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+          },
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-0464",
+          "DataSource": {
+            "ID": "alpine",
+            "Name": "Alpine Secdb",
+            "URL": "https://secdb.alpinelinux.org/"
+          },
+          "Title": "Denial of service by excessive resource usage in verifying X509 policy constraints",
+          "Description": "A security vulnerability has been identified in all supported versions of OpenSSL related to the verification of X.509 certificate chains that include policy constraints. Attackers may be able to exploit this vulnerability by creating a malicious certificate chain that triggers exponential use of computational resources, leading to a denial-of-service (DoS) attack on affected systems. Policy processing is disabled by default but can be enabled by passing the `-policy' argument to the command line utilities or by calling the `X509_VERIFY_PARAM_set1_policies()' function.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-295"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2023-0464",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0464",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2017771e2db3e2b96f89bbe8766c3209f6a99545",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2dcd4f1e3115f38cefa43e3efbe9b801c27e642e",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=879f7080d7e141f415c79eaa3a8ac4a3dad0348b",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=959c59c7a0164117e7f8366466a32bb1f8d77ff1",
+            "https://nvd.nist.gov/vuln/detail/CVE-2023-0464",
+            "https://ubuntu.com/security/notices/USN-6039-1",
+            "https://www.cve.org/CVERecord?id=CVE-2023-0464",
+            "https://www.openssl.org/news/secadv/20230322.txt"
+          ],
+          "PublishedDate": "2023-03-22T17:15:00Z",
+          "LastModifiedDate": "2023-03-29T19:37:00Z"
+        }
 """
 
     String vulnerability2 = """
-      {
-        "VulnerabilityID": "CVE-2019-18276",
-        "PkgName": "bash",
-        "InstalledVersion": "5.0-4",
-        "Layer": {
-          "Digest": "sha256:a076a628af6f7dcabc536bee373c0d9b48d9f0516788e64080c4e841746e6ce6",
-          "DiffID": "sha256:cb42413394c4059335228c137fe884ff3ab8946a014014309676c25e3ac86864"
-        },
-        "SeveritySource": "debian",
-        "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2019-18276",
-        "Title": "bash: when effective UID is not equal to its real UID the saved UID is not dropped",
-        "Description": "An issue was discovered in disable_priv_mode in shell.c in GNU Bash through 5.0 patch 11. By default, if Bash is run with its effective UID not equal to its real UID, it will drop privileges by setting its effective UID to its real UID. However, it does so incorrectly. On Linux and other systems that support \\"saved UID\\" functionality, the saved UID is not dropped. An attacker with command execution in the shell can use \\"enable -f\\" for runtime loading of a new builtin, which can be a shared object that calls setuid() and therefore regains privileges. However, binaries running with an effective UID of 0 are unaffected.",
-        "Severity": "HIGH",
-        "CweIDs": [
-          "CWE-273"
-        ],
-        "CVSS": {
-          "nvd": {
-            "V2Vector": "AV:L/AC:L/Au:N/C:C/I:C/A:C",
-            "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
-            "V2Score": 7.2,
-            "V3Score": 7.8
+{
+          "VulnerabilityID": "CVE-2023-0464",
+          "PkgID": "libssl3@3.0.8-r0",
+          "PkgName": "libssl3",
+          "InstalledVersion": "3.0.8-r0",
+          "FixedVersion": "3.0.8-r1",
+          "Layer": {
+            "DiffID": "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
           },
-          "redhat": {
-            "V3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
-            "V3Score": 7.8
-          }
-        },
-        "References": [
-          "http://packetstormsecurity.com/files/155498/Bash-5.0-Patch-11-Privilege-Escalation.html",
-          "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-18276",
-          "https://github.com/bminor/bash/commit/951bdaad7a18cc0dc1036bba86b18b90874d39ff",
-          "https://security.netapp.com/advisory/ntap-20200430-0003/",
-          "https://www.youtube.com/watch?v=-wGtxJ8opa8"
-        ],
-        "PublishedDate": "2019-11-28T01:15:00Z",
-        "LastModifiedDate": "2020-04-30T19:15:00Z"
-      }
+          "SeveritySource": "nvd",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-0464",
+          "DataSource": {
+            "ID": "alpine",
+            "Name": "Alpine Secdb",
+            "URL": "https://secdb.alpinelinux.org/"
+          },
+          "Title": "Denial of service by excessive resource usage in verifying X509 policy constraints",
+          "Description": "A security vulnerability has been identified in all supported versions of OpenSSL related to the verification of X.509 certificate chains that include policy constraints. Attackers may be able to exploit this vulnerability by creating a malicious certificate chain that triggers exponential use of computational resources, leading to a denial-of-service (DoS) attack on affected systems. Policy processing is disabled by default but can be enabled by passing the `-policy' argument to the command line utilities or by calling the `X509_VERIFY_PARAM_set1_policies()' function.",
+          "Severity": "HIGH",
+          "CweIDs": [
+            "CWE-295"
+          ],
+          "CVSS": {
+            "nvd": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 7.5
+            },
+            "redhat": {
+              "V3Vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+              "V3Score": 5.9
+            }
+          },
+          "References": [
+            "https://access.redhat.com/security/cve/CVE-2023-0464",
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2023-0464",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2017771e2db3e2b96f89bbe8766c3209f6a99545",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=2dcd4f1e3115f38cefa43e3efbe9b801c27e642e",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=879f7080d7e141f415c79eaa3a8ac4a3dad0348b",
+            "https://git.openssl.org/gitweb/?p=openssl.git;a=commitdiff;h=959c59c7a0164117e7f8366466a32bb1f8d77ff1",
+            "https://nvd.nist.gov/vuln/detail/CVE-2023-0464",
+            "https://ubuntu.com/security/notices/USN-6039-1",
+            "https://www.cve.org/CVERecord?id=CVE-2023-0464",
+            "https://www.openssl.org/news/secadv/20230322.txt"
+          ],
+          "PublishedDate": "2023-03-22T17:15:00Z",
+          "LastModifiedDate": "2023-03-29T19:37:00Z"
+        }
 """
 
     String expectedFullVulnerabilityList = """
@@ -210,22 +207,131 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
 """
 
     String trivyOutputWithVulns = """
-[
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "alpine:3.17.2",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.17.2"
+    },
+    "ImageID": "sha256:b2aa39c304c27b96c1fef0c06bee651ac9241d49c4fe34381cab8453f9a89c7d",
+    "DiffIDs": [
+      "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+    ],
+    "RepoTags": [
+      "alpine:3.17.2"
+    ],
+    "RepoDigests": [
+      "alpine@sha256:ff6bdca1701f3a8a67e328815ff2346b0e4067d32ec36b7992c1fdc001dc8517"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "container": "4ad3f57821a165b2174de22a9710123f0d35e5884dca772295c6ebe85f74fe57",
+      "created": "2023-02-11T04:46:42.558343068Z",
+      "docker_version": "20.10.12",
+      "history": [
+        {
+          "created": "2023-02-11T04:46:42.449083344Z",
+          "created_by": "/bin/sh -c #(nop) ADD file:40887ab7c06977737e63c215c9bd297c0c74de8d12d16ebdf1c3d40ac392f62d in / "
+        },
+        {
+          "created": "2023-02-11T04:46:42.558343068Z",
+          "created_by": "/bin/sh -c #(nop)  CMD [\\"/bin/sh\\"]",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:7cd52847ad775a5ddc4b58326cf884beee34544296402c6292ed76474c686d39"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "/bin/sh"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Image": "sha256:ba2beca50019d79fb31b12c08f3786c5a0621017a3e95a72f2f8b832f894a427"
+      }
+    }
+  },
+  "Results": [
   {
-    "Target": "nginx (debian 10.7)",
-    "Type": "debian",
-    "Vulnerabilities": ${expectedFullVulnerabilityList}
+      "Target": "alpine:3.17.2 (alpine 3.17.2)",
+      "Class": "os-pkgs",
+      "Type": "alpine",
+      "Vulnerabilities":  ${expectedFullVulnerabilityList}
   }
 ]
+}
 """
 
     String trivyOutputWithoutVulns = """
-[
-  {
-    "Target": "nginx (debian 10.7)",
-    "Type": "debian",
-    "Vulnerabilities": null
-  }
-]
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "alpine:3.18.0",
+  "ArtifactType": "container_image",
+  "Metadata": {
+    "OS": {
+      "Family": "alpine",
+      "Name": "3.18.0"
+    },
+    "ImageID": "sha256:5e2b554c1c45d22c9d1aa836828828e320a26011b76c08631ac896cbc3625e3e",
+    "DiffIDs": [
+      "sha256:bb01bd7e32b58b6694c8c3622c230171f1cec24001a82068a8d30d338f420d6c"
+    ],
+    "RepoTags": [
+      "alpine:3.18.0"
+    ],
+    "RepoDigests": [
+      "alpine@sha256:02bb6f428431fbc2809c5d1b41eab5a68350194fb508869a33cb1af4444c9b11"
+    ],
+    "ImageConfig": {
+      "architecture": "amd64",
+      "container": "0aa41c99f485b1dbe59101f2bb8e6922d9bf7cc1745f1c768f988b1bd724f11a",
+      "created": "2023-05-09T23:11:10.132147526Z",
+      "docker_version": "20.10.23",
+      "history": [
+        {
+          "created": "2023-05-09T23:11:10.007217553Z",
+          "created_by": "/bin/sh -c #(nop) ADD file:7625ddfd589fb824ee39f1b1eb387b98f3676420ff52f26eb9d975151e889667 in / "
+        },
+        {
+          "created": "2023-05-09T23:11:10.132147526Z",
+          "created_by": "/bin/sh -c #(nop)  CMD [\\"/bin/sh\\"]",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "type": "layers",
+        "diff_ids": [
+          "sha256:bb01bd7e32b58b6694c8c3622c230171f1cec24001a82068a8d30d338f420d6c"
+        ]
+      },
+      "config": {
+        "Cmd": [
+          "/bin/sh"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Image": "sha256:fa9de512065d701938f44d4776827d838440ed00f1f51b1fff5f97f7378acf08"
+      }
+    }
+  },
+  "Results": [
+    {
+      "Target": "alpine:3.18.0 (alpine 3.18.0)",
+      "Class": "os-pkgs",
+      "Type": "alpine"
+    }
+  ]
+}
 """
 }
