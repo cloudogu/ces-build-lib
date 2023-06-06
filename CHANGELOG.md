@@ -6,8 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.65.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.65.0) - 2023-06-06
+
 ### Changed
-- `findVulnerabilitiesWithTrivy`
+- `findVulnerabilitiesWithTrivy` #107
   - Switch from using `allowlist` param to built-in `.trivyignore` file. Advantage: More declarative.  
     Fewer things in Jenkinsfile. Local trivy scans pick up allowlist as well.
   - Updated Trivy default to 0.41.0 from 0.15.0.
