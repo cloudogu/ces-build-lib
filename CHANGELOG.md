@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `findVulnerabilitiesWithTrivy` schema bug fix
+  - The trivy output scheme is now interpreted correctly
+  - Added `additionalFlags` as parameter e.g. '--ingore-unfixed' can be used now
+
 ## [1.65.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.65.0) - 2023-06-06
 
 ### Changed
