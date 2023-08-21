@@ -19,6 +19,7 @@ class K3d {
     private String k3dDir
     private String k3dBinaryDir
     private String backendCredentialsID
+    private String harborCredentialsID
     private String externalIP
     private Sh sh
     private K3dRegistry registry
@@ -53,7 +54,7 @@ class K3d {
      * @param envPath The PATH environment variable; in Jenkins use "env.PATH" for example
      * @param backendCredentialsID Identifier of credentials used to log into the backend. Default: cesmarvin-setup
      */
-    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID = "cesmarvin-setup") {
+    K3d(script, String workspace, String envWorkspace, String envPath, String backendCredentialsID = "cesmarvin-setup", harborCredentialsID = "harborhelmchartpush") {
         this.clusterName = createClusterName()
         this.registryName = clusterName
         this.script = script
@@ -62,6 +63,7 @@ class K3d {
         this.k3dDir = "${envWorkspace}/.k3d"
         this.k3dBinaryDir = "${k3dDir}/bin"
         this.backendCredentialsID = backendCredentialsID
+        this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
     }
 
@@ -107,6 +109,20 @@ class K3d {
             //create secret for the backend registry
             kubectl("create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"${script.env.TOKEN_ID}\" --from-literal=password=\"${script.env.TOKEN_SECRET}\"")
             kubectl("create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"${script.env.TOKEN_ID}\" --docker-email=\"a@b.c\" --docker-password=\"${script.env.TOKEN_SECRET}\"")
+        }
+
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
+            script.sh "echo \"Using credentials: ${harborCredentialsID}\""
+
+            // delete old helm-repo-config if available
+            kubectl("delete configmap component-operator-helm-repository || true")
+            kubectl("delete secret component-operator-helm-registry || true")
+
+            // create helm-repo-config
+            kubectl("create configmap component-operator-helm-repository --from-literal=endpoint=\"https://registry.cloudogu.com\"")
+
+            String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true, )
+            kubectlHideCommand("create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"https://registry.cloudogu.com\": {\"auth\": \"${auth?.trim()}\"}}}'", false)
         }
     }
 
@@ -172,6 +188,11 @@ class K3d {
     String kubectl(command, returnStdout) {
         return script.sh(script: "sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}", returnStdout: returnStdout)
     }
+
+    String kubectlHideCommand(command, returnStdout) {
+        return script.sh(script: "set +x; sudo KUBECONFIG=${k3dDir}/.kube/config kubectl ${command}", returnStdout: returnStdout)
+    }
+
 
     void assignExternalIP() {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
