@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+## [1.66.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.66.0) - 2023-08-21
+### Added
+- Add helm-repo-config to k3d-cluster #109.
+
+## [1.65.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.65.1) - 2023-08-17
+
+- `findVulnerabilitiesWithTrivy` schema bug fix
+  - The trivy output scheme is now interpreted correctly
+  - Added `additionalFlags` as parameter e.g. '--ingore-unfixed' can be used now
 
 ## [1.65.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.65.0) - 2023-06-06
 

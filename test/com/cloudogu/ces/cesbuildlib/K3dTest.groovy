@@ -35,9 +35,9 @@ class K3dTest extends GroovyTestCase {
         sut.deleteK3d()
 
         // then
-        assertThat(scriptMock.allActualArgs[14].trim()).contains("k3d registry delete citest-")
-        assertThat(scriptMock.allActualArgs[15].trim()).contains("k3d cluster delete citest-")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(16)
+        assertThat(scriptMock.allActualArgs[20].trim()).contains("k3d registry delete citest-")
+        assertThat(scriptMock.allActualArgs[21].trim()).contains("k3d cluster delete citest-")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(22)
     }
 
     void testKubectl() {
@@ -80,7 +80,13 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
         assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(14)
+        assertThat(scriptMock.allActualArgs[14].trim()).startsWith("echo \"Using credentials: harborhelmchartpush\"")
+        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
+        assertThat(scriptMock.allActualArgs[16].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
+        assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"https://registry.cloudogu.com\"")
+        assertThat(scriptMock.allActualArgs[18].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
+        assertThat(scriptMock.allActualArgs[19].trim()).startsWith("set +x; sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"https://registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(20)
     }
 
     void testStartK3dWithCustomCredentials() {
@@ -91,7 +97,7 @@ class K3dTest extends GroovyTestCase {
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
 
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "", "myBackendCredentialsID")
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "", "myBackendCredentialsID", "myHarborCredentials")
 
         sut.startK3d()
 
@@ -109,7 +115,13 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
         assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(14)
+        assertThat(scriptMock.allActualArgs[14].trim()).startsWith("echo \"Using credentials: myHarborCredentials\"")
+        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
+        assertThat(scriptMock.allActualArgs[16].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
+        assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"https://registry.cloudogu.com\"")
+        assertThat(scriptMock.allActualArgs[18].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
+        assertThat(scriptMock.allActualArgs[19].trim()).startsWith("set +x; sudo KUBECONFIG=path/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"https://registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(20)
     }
 
     void testBuildAndPush() {
@@ -144,8 +156,8 @@ class K3dTest extends GroovyTestCase {
         sut.buildAndPushToLocalRegistry(imageName, imageTag)
 
         // then
-        assertThat(scriptMock.allActualArgs[14].trim()).isEqualTo("image pushed".toString())
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(15)
+        assertThat(scriptMock.allActualArgs[20].trim()).isEqualTo("image pushed".toString())
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(21)
     }
 
     void testSetup() {

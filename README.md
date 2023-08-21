@@ -1239,7 +1239,8 @@ Returns a list of vulnerabilities or an empty list if there are no vulnerabiliti
 trivyConfig = [ 
     imageName: 'alpine:3.17.2', 
     severity: [ 'HIGH, CRITICAL' ], 
-    trivyVersion: '0.41.0'
+    trivyVersion: '0.41.0',
+    additionalFlags: '--ignore-unfixed'
 ]
 ```
 
@@ -1249,6 +1250,7 @@ Here the only mandatory field is `imageName`. If no imageName was passed the fun
 - **severity** *(list of strings)*: If left blank all severities will be shown. If one or more are specified only these will be shown
   i.e. if 'HIGH' is passed then only vulnerabilities with the 'HIGH' score are shown
 - **trivyVersion** *(string)*: The version of the trivy image
+- **additionalFlags** *(string)*: Additional flags for trivy, e.g. `--ignore-unfixed`
 
 ### Simple examples
 
