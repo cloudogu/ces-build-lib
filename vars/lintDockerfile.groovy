@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+@Deprecated
 def call(String dockerfile = "Dockerfile") {
     docker.image('hadolint/hadolint:latest-debian').inside(){
         sh "hadolint --no-color -t error " +
