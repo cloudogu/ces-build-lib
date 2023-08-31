@@ -47,6 +47,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Additional features provided by the `Docker` class](#additional-features-provided-by-the-docker-class)
   - [`Docker.Image` methods provided by the docker plugin](#dockerimage-methods-provided-by-the-docker-plugin)
   - [Additional features provided by the `Docker.Image` class](#additional-features-provided-by-the-dockerimage-class)
+- [Dockerfile](#dockerfile)
 - [SonarQube](#sonarqube)
   - [Constructors](#constructors)
   - [A complete example](#a-complete-example)
@@ -712,6 +713,22 @@ new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
     }
 ```
 
+# Dockerfile
+
+The `Dockerfile` class provides functions to lint Dockerfiles. For example:
+
+```groovy
+stage('Lint') {
+    Dockerfile dockerfile = new Dockerfile(this)
+    dockerfile.lintDefault() // Lint with default parameters. Fails only on errors.
+    dockerfile.lint() // Use your own hadolint configuration with a .hadolint.yaml configuration file
+}
+```
+
+The tool [hadolint](https://github.com/hadolint/hadolint) is used for linting. It has a lot of configuration parameters
+which can be set by creating a `.hadolint.yaml` file in your working directory.
+See https://github.com/hadolint/hadolint#configure
+
 # SonarQube
 
 When analyzing code with SonarQube there are a couple of challenges that are solved using ces-build-lib's 
@@ -1159,7 +1176,10 @@ Additionally, the markdown link checker can be used with a specific version (def
     markdown.check()
 ```
 
-### DockerLint
+### DockerLint (Deprecated)
+
+Use Dockerfile.lintDefault() instead of lintDockerfile()!
+See [Dockerfile](#dockerfile)
 
 ```groovy
 lintDockerfile() // uses Dockerfile as default; optional parameter
