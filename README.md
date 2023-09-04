@@ -1178,7 +1178,7 @@ Additionally, the markdown link checker can be used with a specific version (def
 
 ### DockerLint (Deprecated)
 
-Use Dockerfile.lintDefault() instead of lintDockerfile()!
+Use Dockerfile.lint() instead of lintDockerfile()!
 See [Dockerfile](#dockerfile)
 
 ```groovy
