@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+## [1.67.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.67.0) - 2023-09-04
 ### Changed
 - Switch to hadolint Dockerfile linter; #111
 
