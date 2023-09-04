@@ -1,8 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
 
+@Deprecated
 def call(String dockerfile = "Dockerfile") {
-    // only latest version available
-    docker.image('projectatomic/dockerfile-lint:latest').inside({
-        sh "dockerfile_lint -p -f ${dockerfile}"
-    })
+    docker.image('hadolint/hadolint:latest-debian').inside(){
+        sh "hadolint --no-color -t error " +
+            "--trusted-registry docker.io --trusted-registry gcr.io --trusted-registry registry.cloudogu.com " +
+            "${WORKSPACE}/${dockerfile}"
+    }
 }
