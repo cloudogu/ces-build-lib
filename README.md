@@ -47,6 +47,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [Additional features provided by the `Docker` class](#additional-features-provided-by-the-docker-class)
   - [`Docker.Image` methods provided by the docker plugin](#dockerimage-methods-provided-by-the-docker-plugin)
   - [Additional features provided by the `Docker.Image` class](#additional-features-provided-by-the-dockerimage-class)
+- [Dockerfile](#dockerfile)
 - [SonarQube](#sonarqube)
   - [Constructors](#constructors)
   - [A complete example](#a-complete-example)
@@ -79,10 +80,10 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 * Install [Pipeline: GitHub Groovy Libraries](https://wiki.jenkins.io/display/JENKINS/Pipeline+GitHub+Library+Plugin)
 * Use the Library in any Jenkinsfile like so
 ```
-@Library('github.com/cloudogu/ces-build-lib@6cd41e0')
+@Library('github.com/cloudogu/ces-build-lib@1.67.0')
 import com.cloudogu.ces.cesbuildlib.*
 ```
-* Best practice: Use a defined version (e.g. a git commit hash or a git tag, such as `6cd41e0` or `1.49.0` in the example above) and not a branch such as `develop`. Otherwise, your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
+* Best practice: Use a defined version (e.g. a git commit hash or a git tag, such as `6cd41e0` or `1.67.0` in the example above) and not a branch such as `develop`. Otherwise, your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
 * When build executors are docker containers and you intend to use their Docker host in the Pipeline: Please see [#8](https://github.com/cloudogu/ces-build-lib/issues/8#issuecomment-353584252).
 
 # Syntax completion
@@ -712,6 +713,22 @@ new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
     }
 ```
 
+# Dockerfile
+
+The `Dockerfile` class provides functions to lint Dockerfiles. For example:
+
+```groovy
+stage('Lint') {
+    Dockerfile dockerfile = new Dockerfile(this)
+    dockerfile.lint() // Lint with default configuration
+    dockerfile.lintWithConfig() // Use your own hadolint configuration with a .hadolint.yaml configuration file
+}
+```
+
+The tool [hadolint](https://github.com/hadolint/hadolint) is used for linting. It has a lot of configuration parameters
+which can be set by creating a `.hadolint.yaml` file in your working directory.
+See https://github.com/hadolint/hadolint#configure
+
 # SonarQube
 
 When analyzing code with SonarQube there are a couple of challenges that are solved using ces-build-lib's 
@@ -1159,7 +1176,10 @@ Additionally, the markdown link checker can be used with a specific version (def
     markdown.check()
 ```
 
-### DockerLint
+### DockerLint (Deprecated)
+
+Use Dockerfile.lint() instead of lintDockerfile()!
+See [Dockerfile](#dockerfile)
 
 ```groovy
 lintDockerfile() // uses Dockerfile as default; optional parameter
