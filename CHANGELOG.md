@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 - `lintDockerfile()` function should be replaced by the Dockerfile `lint()` function
 
+## [1.66.1](https://github.com/cloudogu/ces-build-lib/releases/tag/1.66.1) - 2023-09-04
+### Fixed
+- Split helm-repo-config in separate values #113
+
 ## [1.66.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.66.0) - 2023-08-21
 ### Added
 - Add helm-repo-config to k3d-cluster #109.
