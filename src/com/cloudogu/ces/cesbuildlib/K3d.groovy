@@ -119,10 +119,10 @@ class K3d {
             kubectl("delete secret component-operator-helm-registry || true")
 
             // create helm-repo-config
-            kubectl("create configmap component-operator-helm-repository --from-literal=endpoint=\"https://registry.cloudogu.com\"")
+            kubectl("create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
 
             String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true, )
-            kubectlHideCommand("create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"https://registry.cloudogu.com\": {\"auth\": \"${auth?.trim()}\"}}}'", false)
+            kubectlHideCommand("create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"${auth?.trim()}\"}}}'", false)
         }
     }
 
