@@ -720,8 +720,8 @@ The `Dockerfile` class provides functions to lint Dockerfiles. For example:
 ```groovy
 stage('Lint') {
     Dockerfile dockerfile = new Dockerfile(this)
-    dockerfile.lintDefault() // Lint with default parameters. Fails only on errors.
-    dockerfile.lint() // Use your own hadolint configuration with a .hadolint.yaml configuration file
+    dockerfile.lint() // Lint with default configuration
+    dockerfile.lintWithConfig() // Use your own hadolint configuration with a .hadolint.yaml configuration file
 }
 ```
 

@@ -8,14 +8,17 @@ class Dockerfile {
     }
 
     /**
-     * Lints the Dockerfile with the latest version of hadolint
+     * Lints the Dockerfile with hadolint using a configuration file
      *
      * To configure hadelint, add a ".hadolint.yaml" file to your working directory
      * See https://github.com/hadolint/hadolint#configure
+     *
+     * @param dockerfile Path to the Dockerfile that should be linted
+     * @param configuration Path to the hadolint configuration file
      */
-    void lint(String dockerfile = "Dockerfile"){
+    void lintWithConfig(String dockerfile = "Dockerfile", String configuration = ".hadolint.yaml"){
         script.docker.image('hadolint/hadolint:latest-debian').inside(){
-            script.sh "hadolint ${dockerfile}"
+            script.sh "hadolint --no-color -c ${configuration} ${dockerfile}"
         }
     }
 
@@ -24,7 +27,7 @@ class Dockerfile {
      * Only fails on errors, ignores warnings etc.
      * Trusts registries docker.io, gcr.io and registry.cloudogu.com
      */
-    void lintDefault(String dockerfile = "Dockerfile"){
+    void lint(String dockerfile = "Dockerfile"){
         script.docker.image('hadolint/hadolint:latest-debian').inside(){
             script.sh "hadolint -t error --no-color --trusted-registry docker.io --trusted-registry gcr.io --trusted-registry registry.cloudogu.com ${dockerfile}"
         }

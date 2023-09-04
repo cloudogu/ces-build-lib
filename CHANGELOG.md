@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Switch to hadolint Dockerfile linter; #111
 
+### Added
+- Add Dockerfile class with new linting functions; #111
+  - `lint()` lints with default hadolint config parameters. Only fails on errors
+  - `lintWithConfig()` lets you specify the hadolint configuration
+
+### Deprecated
+- `lintDockerfile()` function should be replaced by the Dockerfile `lint()` function
+
 ## [1.66.0](https://github.com/cloudogu/ces-build-lib/releases/tag/1.66.0) - 2023-08-21
 ### Added
 - Add helm-repo-config to k3d-cluster #109.
