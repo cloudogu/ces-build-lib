@@ -53,6 +53,36 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get nodes".trim())
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
     }
+    void testHelm() {
+        // given
+        String workspaceDir = "leWorkspace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, "leK3dWorkSpace", "path")
+
+        // when
+        sut.helm("apply path/to/chart/")
+
+        // then
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm apply path/to/chart/".trim())
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
+    }
+
+    // we cannot test lazy-installation because the mock is incapable of mocking the right types, the right values
+    // and thus repeated calls to the same script with different results.
+    void testInstallHelm_initially() {
+        // given
+        String workspaceDir = "leWorkspace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, "leK3dWorkSpace", "path")
+
+        // when
+        sut.installHelm()
+
+        // then
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(2)
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("snap list helm".trim())
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("sudo snap install helm --classic".trim())
+    }
 
     void testStartK3d() {
         def workspaceDir = "leWorkspace"
