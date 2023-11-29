@@ -1077,13 +1077,12 @@ K3d k3d = new K3d(this, env.WORKSPACE, env.PATH)
 try {
     stage('Set up k3d cluster') {
         k3d.startK3d()
-        k3d.installHelm() // Helm may be installed additionally
     }
 
     stage('Do something with your cluster') {
         k3d.kubectl("get nodes")
     }
-    stage('Apply your Helm chart') { // requires previously called installHelm()
+    stage('Apply your Helm chart') {
         k3d.helm("install path/to/your/chart")
     }
 

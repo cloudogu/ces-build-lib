@@ -91,6 +91,7 @@ class K3d {
             installLocalRegistry()
             initializeCluster()
             installKubectl()
+            installHelm()
             loginBackend()
         }
     }
@@ -387,9 +388,7 @@ spec:
         }
 
         script.echo "Installing helm..."
-        script.withEnv(["HOME=${k3dDir}", "PATH=${k3dBinaryDir}:${path}"]) {
-            script.sh script: "sudo snap install helm --classic"
-        }
+        script.sh script: "sudo snap install helm --classic"
     }
 
     private String getExecPodName(String dogu, Integer timeout, Integer interval) {
