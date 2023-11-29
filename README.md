@@ -1084,7 +1084,7 @@ try {
         k3d.kubectl("get nodes")
     }
     stage('Apply your Helm chart') { // requires previously called installHelm()
-        k3d.helm("apply path/to/your/chart")
+        k3d.helm("install path/to/your/chart")
     }
 
     stage('build and push development artefact') {

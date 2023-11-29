@@ -60,10 +60,10 @@ class K3dTest extends GroovyTestCase {
         K3d sut = new K3d(scriptMock, workspaceDir, "leK3dWorkSpace", "path")
 
         // when
-        sut.helm("apply path/to/chart/")
+        sut.helm("install path/to/chart/")
 
         // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm apply path/to/chart/".trim())
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm install path/to/chart/".trim())
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
     }
 
