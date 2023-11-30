@@ -1067,7 +1067,7 @@ if (response.status == '201' && response.content-type == 'application/json') {
 
 # K3d
 
-`K3d` provides functions to set up and administer a lokal k3s cluster in Docker.
+`K3d` provides functions to set up and administer a local k3s cluster in Docker.
 
 Example:
 
@@ -1081,6 +1081,9 @@ try {
 
     stage('Do something with your cluster') {
         k3d.kubectl("get nodes")
+    }
+    stage('Apply your Helm chart') {
+        k3d.helm("install path/to/your/chart")
     }
 
     stage('build and push development artefact') {
