@@ -260,8 +260,12 @@ class K3d {
     }
 
     void configureSetupImage(String image) {
-        String imageKey = ".k8s_ces_setup_image"
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, imageKey, image)
+        String repositoryKey = ".setup.image.repository"
+        String tagKey = ".setup.image.tag"
+        def i = image.lastIndexOf(":")
+
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, repositoryKey, image.substring(0, i))
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, tagKey, image.substring(i + 1, image.length()))
     }
 
     void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
