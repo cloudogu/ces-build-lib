@@ -12,6 +12,8 @@ class K3d {
      */
     private static String K3D_VERSION = "4.4.7"
     private static String K3D_LOG_FILENAME = "k8sLogs"
+    private static String HELM_SETUP_CONFIGURATION_FILE = "values.yaml"
+    private static String YQ_VERSION = "4.40.4"
 
     private String clusterName
     private script
@@ -122,7 +124,7 @@ class K3d {
             // create helm-repo-config
             kubectl("create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
 
-            String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true, )
+            String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true,)
             kubectlHideCommand("create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"${auth?.trim()}\"}}}'", false)
         }
     }
@@ -216,24 +218,60 @@ class K3d {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
     }
 
-    void configureSetup(String tag, config = [:]) {
-        script.echo "configuring setup..."
-        // Config
-        kubectl("apply -f https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup-config.yaml")
-
-        // Merge default config with the one passed as parameter
-        config = defaultSetupConfig << config
-        writeSetupJson(config)
-
-        kubectl('create configmap k8s-ces-setup-json --from-file=setup.json')
+    void appendToValuesYaml(String file, String key, String value) {
+        createEmptySetupValuesYamlIfItDoesNotExists()
+        docker.image("mikefarah/yq:${YQ_VERSION}")
+            .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
+            script.sh("yq -i \"${key} = \"${value}\"\" ${file}")
+        }
     }
 
+    void configureSetupJson(String config = [:]) {
+        String setupJsonConfigKey = "setup_json"
+
+        script.echo "configuring setup..."
+        // Merge default config with the one passed as parameter
+        config = defaultSetupConfig << config
+
+        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, setupJsonConfigKey, getSetupJson(config))
+    }
+
+    void configureSetupImage(String image) {
+        String imageKey = "k8s_ces_setup_image"
+        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, imageKey, image)
+    }
+
+    void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
+        String componentOpKey = "component_operator_chart"
+        String componentCRDKey = "component_operator_crd_chart"
+
+
+        def builder = new StringBuilder(namespace)
+        String operatorValue = builder.append("k8s-component-operator").append(operatorVersion).toString()
+        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, componentOpKey, operatorValue)
+        builder.setLength(0)
+        String crdValue = builder.append(namespace).append("k8s-component-operator-crd:").append(crdVersion).toString()
+        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, componentCRDKey, crdValue)
+    }
+
+    void createEmptySetupValuesYamlIfItDoesNotExists() {
+        if (!new File(HELM_SETUP_CONFIGURATION_FILE).exists()) {
+            script.echo "create values.yaml for setup deployment"
+            script.writeFile file: HELM_SETUP_CONFIGURATION_FILE, text: ""
+        }
+    }
+
+    // TODO Additional separate configureSetup Methods for component-op, components, log_level, etcd-client-image, key_provider and resource_patches
     void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
-        String setup = this.sh.returnStdOut("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml")
-        setup = setup.replace("{{ .Namespace }}", "default")
-        script.writeFile file: 'setup.yaml', text: setup
-        kubectl('apply -f setup.yaml')
+        String registryUrl = "registry.cloudogu.com"
+        String registryNamespace = "k8s"
+        this.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'harborhelmchartpush', usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
+            helm("registry login ${registryUrl} --username '${HARBOR_USERNAME}' --password '${HARBOR_PASSWORD}'")
+        }
+
+        helm("install k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
+        helm("registry logout ${registryUrl}")
 
         script.echo "Wait for dogu-operator to be ready..."
         waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timout, interval)
@@ -248,7 +286,7 @@ class K3d {
      */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
-        configureSetup(tag, config)
+        configureSetupJson(config)
         installAndTriggerSetup(tag, timout, interval)
     }
 
@@ -307,7 +345,7 @@ spec:
     private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
         String imageDev
         String doguJsonDevFile = "${this.workspace}/target/dogu.json"
-        docker.image('mikefarah/yq:4.22.1')
+        docker.image("mikefarah/yq:${YQ_VERSION}")
             .mountJenkinsUser()
             .inside("--volume ${this.workspace}:/workdir -w /workdir") {
                 imageDev = this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
@@ -482,7 +520,7 @@ data:
         String registryPortProtocol
         String prefixedRegistryName = "k3d-${this.registryName}"
         String dockerInspect = script.sh(script: "docker inspect ${prefixedRegistryName}", returnStdout: true)
-        docker.image('mikefarah/yq:4.22.1')
+        docker.image("mikefarah/yq:${YQ_VERSION}")
             .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
             registryIp = script.sh(script: "echo '${dockerInspect}' | yq '.[].NetworkSettings.Networks.${prefixedRegistryName}.IPAddress'", returnStdout: true).trim()
             registryPortProtocol = script.sh(script: "echo '${dockerInspect}' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", returnStdout: true).trim()
@@ -506,11 +544,11 @@ data:
         return formatted
     }
 
-    private void writeSetupJson(config) {
+    private String getSetupJson(config) {
         List<String> deps = config.dependencies + config.additionalDependencies
         String formattedDeps = formatDependencies(deps)
 
-        script.writeFile file: 'setup.json', text: """
+        return """
 {
   "naming":{
     "fqdn":"${externalIP}",
