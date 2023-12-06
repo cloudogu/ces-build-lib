@@ -12,7 +12,8 @@ class K3d {
      */
     private static String K3D_VERSION = "4.4.7"
     private static String K3D_LOG_FILENAME = "k8sLogs"
-    private static String HELM_SETUP_CONFIGURATION_FILE = "values.yaml"
+    private static String K3D_SETUP_JSON_FILE = "k3d_setup.json"
+    private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String YQ_VERSION = "4.40.4"
 
     private String clusterName
@@ -221,9 +222,9 @@ class K3d {
     }
 
     void createEmptySetupValuesYamlIfItDoesNotExists() {
-        if (!script.fileExists(HELM_SETUP_CONFIGURATION_FILE)) {
+        if (!script.fileExists(K3D_VALUES_YAML_FILE)) {
             script.echo "create values.yaml for setup deployment"
-            script.writeFile file: HELM_SETUP_CONFIGURATION_FILE, text: ""
+            script.writeFile file: K3D_VALUES_YAML_FILE, text: ""
         }
     }
 
@@ -244,7 +245,7 @@ class K3d {
     void doInYQContainer(Closure closure) {
         docker.image("mikefarah/yq:${YQ_VERSION}")
             .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
-                closure.call()
+            closure.call()
         }
     }
 
@@ -256,7 +257,7 @@ class K3d {
         config = defaultSetupConfig << config
         writeSetupJson(config)
 
-        appendFileToYamlFile(HELM_SETUP_CONFIGURATION_FILE, setupJsonConfigKey, "setup.json")
+        appendFileToYamlFile(K3D_VALUES_YAML_FILE, setupJsonConfigKey, K3D_SETUP_JSON_FILE)
     }
 
     void configureSetupImage(String image) {
@@ -264,8 +265,8 @@ class K3d {
         String tagKey = ".setup.image.tag"
         def i = image.lastIndexOf(":")
 
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, repositoryKey, image.substring(0, i))
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, tagKey, image.substring(i + 1, image.length()))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(0, i))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(i + 1, image.length()))
     }
 
     void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
@@ -274,21 +275,24 @@ class K3d {
 
 
         def builder = new StringBuilder(namespace)
-        String operatorValue = builder.append("k8s-component-operator").append(operatorVersion).toString()
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, componentOpKey, operatorValue)
+        String operatorValue = builder.append("/k8s-component-operator:").append(operatorVersion).toString()
+        appendToYamlFile(K3D_VALUES_YAML_FILE, componentOpKey, operatorValue)
         builder.setLength(0)
-        String crdValue = builder.append(namespace).append("k8s-component-operator-crd:").append(crdVersion).toString()
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, componentCRDKey, crdValue)
+        String crdValue = builder.append(namespace).append("/k8s-component-operator-crd:").append(crdVersion).toString()
+        appendToYamlFile(K3D_VALUES_YAML_FILE, componentCRDKey, crdValue)
     }
 
     void configureComponents(components = [:]) {
-        def componentsFileName = "components.yaml"
-        writeYaml file: componentsFileName, data: components
-        appendFileToYamlFile(HELM_SETUP_CONFIGURATION_FILE, ".components", componentsFileName)
+        // TODO better solution
+        components.each { i ->
+            i.value.each { j ->
+                appendToYamlFile(K3D_VALUES_YAML_FILE, new StringBuilder(".components.").append(i.key as String).append(".").append(j.key as String).toString(), j.value as String)
+            }
+        }
     }
 
     void configureLogLevel(String loglevel) {
-        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, ".logLevel", loglevel)
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".logLevel", loglevel)
     }
 
     void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
@@ -306,13 +310,13 @@ class K3d {
         waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timout, interval)
     }
 
-    /**
-     * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
-     * After that the method will wait until the dogu-operator is ready.
-     * @param tag Tag of the setup e. g. "v0.6.0"
-     * @param timout Timeout in seconds for the setup process e. g. 300
-     * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
-     */
+/**
+ * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
+ * After that the method will wait until the dogu-operator is ready.
+ * @param tag Tag of the setup e. g. "v0.6.0"
+ * @param timout Timeout in seconds for the setup process e. g. 300
+ * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
+ */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
         configureSetupJson(config)
@@ -343,15 +347,15 @@ class K3d {
         patchDoguDeployment(dogu, image)
     }
 
-    /**
-     * Applies the specified dogu resource into the k8s cluster. This should be used for dogus which are not build or
-     * locally installed in the build process. An example for the usage would be to install a dogu dependency before
-     * starting integration tests.
-     *
-     * @param doguName Name of the dogu, e.g., "nginx-ingress"
-     * @param doguNamespace Namespace of the dogu, e.g., "official"
-     * @param doguVersion Version of the dogu, e.g., "13.9.9-1"
-     */
+/**
+ * Applies the specified dogu resource into the k8s cluster. This should be used for dogus which are not build or
+ * locally installed in the build process. An example for the usage would be to install a dogu dependency before
+ * starting integration tests.
+ *
+ * @param doguName Name of the dogu, e.g., "nginx-ingress"
+ * @param doguNamespace Namespace of the dogu, e.g., "official"
+ * @param doguVersion Version of the dogu, e.g., "13.9.9-1"
+ */
     void applyDoguResource(String doguName, String doguNamespace, String doguVersion) {
         def filename = "target/make/k8s/${doguName}.yaml"
         def doguContentYaml = """
@@ -395,19 +399,19 @@ spec:
         kubectl("patch deployment '${dogu}' -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"${dogu}\",\"image\":\"${image}\"}]}}}}'")
     }
 
-    /**
-     * returns a free, unprivileged TCP port
-     *
-     * @return new free, unprivileged TCP port
-     */
+/**
+ * returns a free, unprivileged TCP port
+ *
+ * @return new free, unprivileged TCP port
+ */
     private String findFreeTcpPort() {
         String port = this.sh.returnStdOut('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');')
         return port
     }
 
-    /**
-     * installs a local image registry to k3d
-     */
+/**
+ * installs a local image registry to k3d
+ */
     private void installLocalRegistry() {
         def registryPort = findFreeTcpPort()
         def registryName = clusterName
@@ -415,9 +419,9 @@ spec:
         this.registry.installLocalRegistry()
     }
 
-    /**
-     * Installs k3d
-     */
+/**
+ * Installs k3d
+ */
     private void installK3d() {
         script.sh "rm -rf ${k3dDir}"
         script.sh "mkdir -p ${k3dBinaryDir}"
@@ -430,9 +434,9 @@ spec:
         script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
     }
 
-    /**
-     * Installs kubectl
-     */
+/**
+ * Installs kubectl
+ */
     private void installKubectl() {
         def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
         if (kubectlStatusCode == 0) {
@@ -443,9 +447,9 @@ spec:
         script.echo "Installing kubectl..."
         script.sh script: "sudo snap install kubectl --classic"
     }
-    /**
-     * Installs helm
-     */
+/**
+ * Installs helm
+ */
     void installHelm() {
         def helmStatusCode = script.sh script: "snap list helm", returnStatus: true
         if (helmStatusCode == 0 || helmStatusCode.equals("0")) {
@@ -576,7 +580,7 @@ data:
         List<String> deps = config.dependencies + config.additionalDependencies
         String formattedDeps = formatDependencies(deps)
 
-        script.writeFile file: 'setup.json', text: """
+        script.writeFile file: K3D_SETUP_JSON_FILE, text: """
 {
   "naming":{
     "fqdn":"${externalIP}",
@@ -619,16 +623,18 @@ data:
     }
 
 
-    /**
-     * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
-     *
-     * The collected information are archived as zip files at the build.
-     */
+/**
+ * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
+ *
+ * The collected information are archived as zip files at the build.
+ */
     void collectAndArchiveLogs() {
         script.dir(K3D_LOG_FILENAME) {
             script.deleteDir()
         }
         script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
+        script.sh("rm -rf ${K3D_SETUP_JSON_FILE}".toString())
+        script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
 
         collectResourcesSummaries()
         collectDoguDescriptions()
@@ -639,9 +645,9 @@ data:
         script.archiveArtifacts(artifacts: fileNameString, allowEmptyArchive: "true")
     }
 
-    /**
-     * Collects all information about resources and their quantity and saves them as .yaml files.
-     */
+/**
+ * Collects all information about resources and their quantity and saves them as .yaml files.
+ */
     void collectResourcesSummaries() {
         def relevantResources = [
             "persistentvolumeclaim",
@@ -669,9 +675,9 @@ data:
         }
     }
 
-    /**
-     * Collects all descriptions of dogus resources and saves them as .yaml files into the k8s logs directory.
-     */
+/**
+ * Collects all descriptions of dogus resources and saves them as .yaml files into the k8s logs directory.
+ */
     void collectDoguDescriptions() {
         def allDoguNames = kubectl("get dogu --ignore-not-found -o name || true", true)
         try {
@@ -690,9 +696,9 @@ data:
         }
     }
 
-    /**
-     * Collects all pod logs and saves them into the k8s logs directory.
-     */
+/**
+ * Collects all pod logs and saves them into the k8s logs directory.
+ */
     void collectPodLogs() {
         def allPodNames = kubectl("get pods -o name || true", true)
         try {
@@ -710,4 +716,5 @@ data:
             script.echo "Failed to collect pod logs because of: \n${ignored.toString()}\nSkipping collection step."
         }
     }
+
 }
