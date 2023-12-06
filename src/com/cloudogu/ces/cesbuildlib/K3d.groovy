@@ -38,7 +38,7 @@ class K3d {
                                   "k8s/nginx-ingress",
                                   "official/postfix",
                                   "official/usermgt"],
-        defaultDogu            : "cockpit",
+        defaultDogu            : "",
         additionalDependencies : [],
         registryConfig         : "",
         registryConfigEncrypted: ""
