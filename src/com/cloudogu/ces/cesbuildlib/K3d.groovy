@@ -27,6 +27,7 @@ class K3d {
     private K3dRegistry registry
     private String registryName
     private String workspace
+    private Docker docker
 
     def defaultSetupConfig = [
         adminUsername          : "ces-admin",
@@ -67,6 +68,7 @@ class K3d {
         this.backendCredentialsID = backendCredentialsID
         this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
+        this.docker = new Docker(script)
     }
 
     /**
@@ -218,44 +220,58 @@ class K3d {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
     }
 
-    void appendToValuesYaml(String file, String key, String value) {
+    void appendToYamlFile(String file, String key, String value) {
         createEmptySetupValuesYamlIfItDoesNotExists()
-        docker.image("mikefarah/yq:${YQ_VERSION}")
-            .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
-            script.sh("yq -i \"${key} = \"${value}\"\" ${file}")
+        doInYQContainer {
+            script.sh("yq -i \"${key} = \\\"${value}\\\"\" ${file}")
         }
     }
 
-    void configureSetupJson(String config = [:]) {
-        String setupJsonConfigKey = "setup_json"
+    void appendFileToYamlFile(String file, String key, String fileName) {
+        createEmptySetupValuesYamlIfItDoesNotExists()
+        doInYQContainer {
+            script.sh("yq -i '${key} = load_str(\"${fileName}\")' ${file}")
+        }
+    }
+
+    void doInYQContainer(Closure closure) {
+        docker.image("mikefarah/yq:${YQ_VERSION}")
+            .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir") {
+                closure.call()
+        }
+    }
+
+    void configureSetupJson(config = [:]) {
+        String setupJsonConfigKey = ".setup_json"
 
         script.echo "configuring setup..."
         // Merge default config with the one passed as parameter
         config = defaultSetupConfig << config
+        writeSetupJson(config)
 
-        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, setupJsonConfigKey, getSetupJson(config))
+        appendFileToYamlFile(HELM_SETUP_CONFIGURATION_FILE, setupJsonConfigKey, "setup.json")
     }
 
     void configureSetupImage(String image) {
-        String imageKey = "k8s_ces_setup_image"
-        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, imageKey, image)
+        String imageKey = ".k8s_ces_setup_image"
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, imageKey, image)
     }
 
     void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
-        String componentOpKey = "component_operator_chart"
-        String componentCRDKey = "component_operator_crd_chart"
+        String componentOpKey = ".component_operator_chart"
+        String componentCRDKey = ".component_operator_crd_chart"
 
 
         def builder = new StringBuilder(namespace)
         String operatorValue = builder.append("k8s-component-operator").append(operatorVersion).toString()
-        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, componentOpKey, operatorValue)
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, componentOpKey, operatorValue)
         builder.setLength(0)
         String crdValue = builder.append(namespace).append("k8s-component-operator-crd:").append(crdVersion).toString()
-        appendToValuesYaml(HELM_SETUP_CONFIGURATION_FILE, componentCRDKey, crdValue)
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, componentCRDKey, crdValue)
     }
 
     void createEmptySetupValuesYamlIfItDoesNotExists() {
-        if (!new File(HELM_SETUP_CONFIGURATION_FILE).exists()) {
+        if (!script.fileExists(HELM_SETUP_CONFIGURATION_FILE)) {
             script.echo "create values.yaml for setup deployment"
             script.writeFile file: HELM_SETUP_CONFIGURATION_FILE, text: ""
         }
@@ -302,12 +318,11 @@ class K3d {
  * @param doguYaml Name of the custom resources
  */
     void installDogu(String dogu, String image, String doguYaml) {
-        Docker docker = new Docker(script)
-        String[] IpPort = getRegistryIpAndPort(docker)
+        String[] IpPort = getRegistryIpAndPort()
         String imageUrl = image.split(":")[0]
         patchCoreDNS(IpPort[0], imageUrl)
 
-        applyDevDoguDescriptor(docker, dogu, imageUrl, IpPort[1])
+        applyDevDoguDescriptor(dogu, imageUrl, IpPort[1])
         kubectl("apply -f ${doguYaml}")
 
         // Remove .local from Images.
@@ -342,7 +357,7 @@ spec:
         kubectl("apply -f ${filename}")
     }
 
-    private void applyDevDoguDescriptor(Docker docker, String dogu, String imageUrl, String port) {
+    private void applyDevDoguDescriptor(String dogu, String imageUrl, String port) {
         String imageDev
         String doguJsonDevFile = "${this.workspace}/target/dogu.json"
         docker.image("mikefarah/yq:${YQ_VERSION}")
@@ -515,7 +530,7 @@ data:
         kubectl("rollout restart -n kube-system deployment/coredns")
     }
 
-    private String[] getRegistryIpAndPort(Docker docker) {
+    private String[] getRegistryIpAndPort() {
         String registryIp
         String registryPortProtocol
         String prefixedRegistryName = "k3d-${this.registryName}"
@@ -544,11 +559,11 @@ data:
         return formatted
     }
 
-    private String getSetupJson(config) {
+    private void writeSetupJson(config) {
         List<String> deps = config.dependencies + config.additionalDependencies
         String formattedDeps = formatDependencies(deps)
 
-        return """
+        script.writeFile file: 'setup.json', text: """
 {
   "naming":{
     "fqdn":"${externalIP}",
