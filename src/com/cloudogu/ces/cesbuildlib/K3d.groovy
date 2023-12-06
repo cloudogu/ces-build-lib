@@ -220,6 +220,13 @@ class K3d {
         this.externalIP = this.sh.returnStdOut("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
     }
 
+    void createEmptySetupValuesYamlIfItDoesNotExists() {
+        if (!script.fileExists(HELM_SETUP_CONFIGURATION_FILE)) {
+            script.echo "create values.yaml for setup deployment"
+            script.writeFile file: HELM_SETUP_CONFIGURATION_FILE, text: ""
+        }
+    }
+
     void appendToYamlFile(String file, String key, String value) {
         createEmptySetupValuesYamlIfItDoesNotExists()
         doInYQContainer {
@@ -270,14 +277,16 @@ class K3d {
         appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, componentCRDKey, crdValue)
     }
 
-    void createEmptySetupValuesYamlIfItDoesNotExists() {
-        if (!script.fileExists(HELM_SETUP_CONFIGURATION_FILE)) {
-            script.echo "create values.yaml for setup deployment"
-            script.writeFile file: HELM_SETUP_CONFIGURATION_FILE, text: ""
-        }
+    void configureComponents(components = [:]) {
+        def componentsFileName = "components.yaml"
+        writeYaml file: componentsFileName, data: components
+        appendFileToYamlFile(HELM_SETUP_CONFIGURATION_FILE, ".components", componentsFileName)
     }
 
-    // TODO Additional separate configureSetup Methods for component-op, components, log_level, etcd-client-image, key_provider and resource_patches
+    void configureLogLevel(String loglevel) {
+        appendToYamlFile(HELM_SETUP_CONFIGURATION_FILE, ".logLevel", loglevel)
+    }
+
     void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
         String registryUrl = "registry.cloudogu.com"
