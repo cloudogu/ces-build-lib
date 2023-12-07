@@ -284,9 +284,9 @@ class K3d {
 
     void configureComponents(components = [:]) {
         // TODO better solution
-        components.each { i ->
-            i.value.each { j ->
-                appendToYamlFile(K3D_VALUES_YAML_FILE, new StringBuilder(".components.").append(i.key as String).append(".").append(j.key as String).toString(), j.value as String)
+        components.each { componentName, componentConfig ->
+            componentConfig.each { configKey, configValue ->
+                appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.${componentName}.${configKey}", configValue as String)
             }
         }
     }
@@ -299,8 +299,8 @@ class K3d {
         script.echo "Installing setup..."
         String registryUrl = "registry.cloudogu.com"
         String registryNamespace = "k8s"
-        this.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'harborhelmchartpush', usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
-            helm("registry login ${registryUrl} --username '${HARBOR_USERNAME}' --password '${HARBOR_PASSWORD}'")
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'harborhelmchartpush', usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
+            helm("registry login ${registryUrl} --username '${script.env.HARBOR_USERNAME}' --password '${script.env.HARBOR_PASSWORD}'")
         }
 
         helm("install k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
