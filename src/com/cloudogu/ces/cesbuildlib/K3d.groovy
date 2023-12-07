@@ -228,11 +228,15 @@ class K3d {
         }
     }
 
-    void appendToYamlFile(String file, String key, String value) {
+    void yqEvalYamlFile(String file, String eval) {
         createEmptySetupValuesYamlIfItDoesNotExists()
         doInYQContainer {
-            script.sh("yq -i \"${key} = \\\"${value}\\\"\" ${file}")
+            script.sh("yq -i \"${eval}\" ${file}")
         }
+    }
+
+    void appendToYamlFile(String file, String key, String value) {
+        yqEvalYamlFile(file, "${key} = \\\"${value}\\\"")
     }
 
     void appendFileToYamlFile(String file, String key, String fileName) {
@@ -283,11 +287,15 @@ class K3d {
     }
 
     void configureComponents(components = [:]) {
-        // TODO better solution
+        def evals = []
         components.each { componentName, componentConfig ->
             componentConfig.each { configKey, configValue ->
-                appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.${componentName}.${configKey}", configValue as String)
+                evals << ".components.${componentName}.${configKey} = \\\"${configValue}\\\""
             }
+        }
+
+        if (evals.size() > 0) {
+            yqEvalYamlFile(K3D_VALUES_YAML_FILE, evals.join(" | "))
         }
     }
 

@@ -610,15 +610,6 @@ spec:
         // then
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".components.k8s-etcd.version = \\\"latest\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".components.k8s-etcd.helmRepositoryNamespace = \\\"k8s\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".components.k8s-promtail.version = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("yq -i \".components.k8s-promtail.helmRepositoryNamespace = \\\"test_ns\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".components.k8s-etcd.version = \\\"latest\\\" | .components.k8s-etcd.helmRepositoryNamespace = \\\"k8s\\\" | .components.k8s-promtail.version = \\\"1.2.3\\\" | .components.k8s-promtail.helmRepositoryNamespace = \\\"test_ns\\\"\" k3d_values.yaml".trim())
     }
 }
