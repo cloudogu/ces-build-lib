@@ -37,6 +37,7 @@ class K3d {
         dependencies           : ["official/ldap",
                                   "official/cas",
                                   "k8s/nginx-ingress",
+                                  "k8s/nginx-static",
                                   "official/postfix",
                                   "official/usermgt"],
         defaultDogu            : "",
