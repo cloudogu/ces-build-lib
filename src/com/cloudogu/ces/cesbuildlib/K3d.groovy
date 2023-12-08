@@ -311,7 +311,7 @@ class K3d {
             helm("registry login ${registryUrl} --username '${script.env.HARBOR_USERNAME}' --password '${script.env.HARBOR_PASSWORD}'")
         }
 
-        helm("install k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
+        helm("install -f ${K3D_VALUES_YAML_FILE} k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
         helm("registry logout ${registryUrl}")
 
         script.echo "Wait for dogu-operator to be ready..."

@@ -222,7 +222,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("yq -i '.setup_json = load_str(\"k3d_setup.json\")' k3d_values.yaml".trim())
         assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm registry login registry.cloudogu.com --username 'null' --password 'null'".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm install k8s-ces-setup oci://registry.cloudogu.com/k8s/k8s-ces-setup --version v0.6.0 --namespace default".trim())
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm install -f k3d_values.yaml k8s-ces-setup oci://registry.cloudogu.com/k8s/k8s-ces-setup --version v0.6.0 --namespace default".trim())
         assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm registry logout registry.cloudogu.com".trim())
         assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("sleep 1s")
         assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
