@@ -319,7 +319,7 @@ class K3d {
     }
 
 /**
- * Installs the setup to the cluster. Creates an example setup.json with plantuml as dogu and executes the setup.
+ * Installs the setup to the cluster. Creates an example setup.json with usermgt as dogu and executes the setup.
  * After that the method will wait until the dogu-operator is ready.
  * @param tag Tag of the setup e. g. "v0.6.0"
  * @param timout Timeout in seconds for the setup process e. g. 300
