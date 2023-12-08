@@ -168,6 +168,10 @@ class ScriptMock {
         return files.get(file)
     }
 
+    boolean fileExists(String file) {
+        return files.containsKey(file)
+    }
+
     Object readJSON(Map<String, Object> args) {
         String text = args.get('text')
         if (text != null) {
