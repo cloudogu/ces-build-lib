@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.0.1](https://github.com/cloudogu/ces-build-lib/releases/tag/2.0.1) - 2023-12-11
 ### Fixed
 - Add missing values.yaml as argument to helm install of k8s-ces-setup
+- Add missing nginx-static to default setup.json
 
 ## [2.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.0.0) - 2023-12-08
 ### Changed
