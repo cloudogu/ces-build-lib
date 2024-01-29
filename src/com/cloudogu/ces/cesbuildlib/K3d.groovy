@@ -389,8 +389,8 @@ spec:
         docker.image("mikefarah/yq:${YQ_VERSION}")
             .mountJenkinsUser()
             .inside("--volume ${this.workspace}:/workdir -w /workdir") {
-                imageDev = this.sh.returnStdOut("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
-                script.sh "yq '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
+                imageDev = this.sh.returnStdOut("yq -oy -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
+                script.sh "yq -oj '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
             }
         kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
     }
