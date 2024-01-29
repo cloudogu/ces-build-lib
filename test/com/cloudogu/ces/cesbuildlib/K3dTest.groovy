@@ -87,7 +87,7 @@ class K3dTest extends GroovyTestCase {
     void testStartK3d() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
-        def k3dVer = "4.4.7"
+        def expectedK3dVer = "5.6.0"
 
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
@@ -98,7 +98,7 @@ class K3dTest extends GroovyTestCase {
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("rm -rf ${k3dWorkspaceDir}/.k3d".toString())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mkdir -p ${k3dWorkspaceDir}/.k3d/bin".toString())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo -n \$(python3 -c 'import socket; s=socket.socket(); s.bind((\"\", 0)); print(s.getsockname()[1]); s.close()');")
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
@@ -124,7 +124,7 @@ class K3dTest extends GroovyTestCase {
     void testStartK3dWithCustomCredentials() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "path"
-        def k3dVer = "4.4.7"
+        def expectedK3dVer = "5.6.0"
 
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
@@ -135,7 +135,7 @@ class K3dTest extends GroovyTestCase {
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("rm -rf ${k3dWorkspaceDir}/.k3d".toString())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mkdir -p ${k3dWorkspaceDir}/.k3d/bin".toString())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${k3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo -n \$(python3 -c 'import socket; s=socket.socket(); s.bind((\"\", 0)); print(s.getsockname()[1]); s.close()');")
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
@@ -319,7 +319,7 @@ class K3dTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("docker inspect " + prefixedRegistryName, exampleDockerInspect)
         scriptMock.expectedShRetValueForScript.put("echo '" + exampleDockerInspect + "' | yq '.[].NetworkSettings.Networks." + prefixedRegistryName + ".IPAddress'", "192.168.32.2")
         scriptMock.expectedShRetValueForScript.put("echo '" + exampleDockerInspect + "' | yq '.[].Config.Labels.\"k3s.registry.port.internal\"'", port)
-        scriptMock.expectedShRetValueForScript.put("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|" + "myIP" + ".local:" + port + "\\1|g'", "myIP.local:5000/test/myimage:0.1.2")
+        scriptMock.expectedShRetValueForScript.put("yq -oy -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|" + "myIP" + ".local:" + port + "\\1|g'", "myIP.local:5000/test/myimage:0.1.2")
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pod --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", "test-execpod")
         scriptMock.expectedShRetValueForScript.put("echo 'test-execpod' | grep 'test-execpod'", "test-execpod")
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get deployment --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", "test")
@@ -348,8 +348,8 @@ spec:
         assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl rollout restart -n kube-system deployment/coredns")
         assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("whoami")
         assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("cat /etc/passwd | grep itsme")
-        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("yq -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|myIP.local:5000\\1|g'")
-        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("yq '.Image=\"myIP.local:5000/test/myimage:0.1.2\"' dogu.json > leWorkspace/target/dogu.json")
+        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("yq -oy -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|myIP.local:5000\\1|g'")
+        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("yq -oj '.Image=\"myIP.local:5000/test/myimage:0.1.2\"' dogu.json > leWorkspace/target/dogu.json")
         assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl create configmap test-descriptor --from-file=leWorkspace/target/dogu.json")
         assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl apply -f \n" +
             "apiVersion: k8s.cloudogu.com/v1\n" +
