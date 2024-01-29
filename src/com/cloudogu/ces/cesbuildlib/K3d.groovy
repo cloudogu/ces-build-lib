@@ -6,15 +6,15 @@ class K3d {
     /**
      * The image of the k3s version defining the targeted k8s version
      */
-    private static String K8S_IMAGE = "rancher/k3s:v1.21.2-k3s1"
+    private static String K8S_IMAGE = "rancher/k3s:v1.29.0-k3s1"
     /**
      * The version of k3d to be installed
      */
-    private static String K3D_VERSION = "4.4.7"
+    private static String K3D_VERSION = "5.6.0"
     private static String K3D_LOG_FILENAME = "k8sLogs"
     private static String K3D_SETUP_JSON_FILE = "k3d_setup.json"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
-    private static String YQ_VERSION = "4.40.4"
+    private static String YQ_VERSION = "4.40.5"
 
     private String clusterName
     private script
@@ -139,17 +139,17 @@ class K3d {
     private void initializeCluster() {
         script.sh "k3d cluster create ${clusterName} " +
             // Allow services to bind to ports < 30000
-            " --k3s-server-arg=--kube-apiserver-arg=service-node-port-range=8010-32767 " +
+            " --k3s-arg=--kube-apiserver-arg=service-node-port-range=8010-32767@all:* " +
             // Used by Jenkins Agents pods
-            " -v /var/run/docker.sock:/var/run/docker.sock@server[0] " +
+            " -v /var/run/docker.sock:/var/run/docker.sock@server:0 " +
             // Allows for finding out the GID of the docker group in order to allow the Jenkins agents pod to access docker socket
-            " -v /etc/group:/etc/group@server[0] " +
+            " -v /etc/group:/etc/group@server:0 " +
             // Persists the cache of Jenkins agents pods for faster builds
-            " -v /tmp:/tmp@server[0] " +
+            " -v /tmp:/tmp@server:0 " +
             // Disable traefik (no ingresses used so far)
-            " --k3s-server-arg=--disable=traefik " +
+            " --k3s-arg=--disable=traefik@all:* " +
             // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
-            " --k3s-server-arg=--disable=servicelb " +
+            " --k3s-arg=--disable=servicelb@all:* " +
             // Pin k8s version to 1.21.2
             " --image=${K8S_IMAGE} " +
             // Use our k3d registry
