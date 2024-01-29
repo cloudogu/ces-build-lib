@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.1.0) - 2024-01-29
 ### Fixed
 - [#120] K3d cluster is now able to run system calls used in go 1.21;
-  see https://github.com/docker-library/golang/issues/467
+  - See https://github.com/docker-library/golang/issues/467
+
 ### Changed
 - [#120] Updated k3d to `5.6.0`
 - [#120] Updated k3s image to `rancher/k3s:v1.28.5-k3s1`
