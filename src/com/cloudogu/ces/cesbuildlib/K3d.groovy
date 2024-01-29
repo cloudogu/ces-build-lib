@@ -6,7 +6,7 @@ class K3d {
     /**
      * The image of the k3s version defining the targeted k8s version
      */
-    private static String K8S_IMAGE = "rancher/k3s:v1.29.0-k3s1"
+    private static String K8S_IMAGE = "rancher/k3s:v1.28.5-k3s1"
     /**
      * The version of k3d to be installed
      */
