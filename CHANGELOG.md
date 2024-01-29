@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- [#120] outdated k3d cluster forbid unknown newer system call
+- [#120] K3d cluster is now able to run system calls used in go 1.21;
+  see https://github.com/docker-library/golang/issues/467
 ### Changed
 - [#120] Updated k3d to `5.6.0`
 - [#120] Updated k3s image to `rancher/k3s:v1.28.5-k3s1`
