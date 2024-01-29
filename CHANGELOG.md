@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [#120] outdated k3d cluster forbid unknown newer system call
+### Changed
+- [#120] Updated k3d to `5.6.0`
+- [#120] Updated k3s image to `rancher/k3s:v1.29.0-k3s1`
+- Updated yq to `4.40.5`
 
 ## [2.0.1](https://github.com/cloudogu/ces-build-lib/releases/tag/2.0.1) - 2023-12-11
 ### Fixed
