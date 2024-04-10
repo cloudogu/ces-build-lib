@@ -9,6 +9,7 @@ abstract class Maven implements Serializable {
     // Private vars lead to exceptions when accessing them from methods of this class. So, don't make them private...
     Repository deploymentRepository = null
     List<Repository> repositories = []
+    List<Mirror> mirrors = []
 
     SignatureCredentials signatureCredentials = null
 
@@ -65,7 +66,7 @@ abstract class Maven implements Serializable {
         // --> Only used when not returning to stdout! See sh()
 
         String commandLineArgs = "--batch-mode -U -e -Dsurefire.useFile=false ${args + " " + additionalArgs} "
-        if (!repositories.isEmpty()) {
+        if (settingsXmlPath) {
             commandLineArgs += "-s \"${settingsXmlPath}\" " // Not needed for MavenInDocker (but does no harm) but for MavenLocal
         }
 
@@ -112,6 +113,16 @@ abstract class Maven implements Serializable {
         useRepositoryCredentials(config)
     }
 
+    void useMirrors(Map<String, String>... configs) {
+
+        for (int i=0; i<configs.size(); i++) {
+            def mirror = new Mirror(configs[i].name, configs[i].mirrorOf, configs[i].url)
+            mirrors.add(mirror)
+        }
+
+        writeSettingsXml()
+    }
+    
     void useRepositoryCredentials(Map... configs) {
 
         for (int i=0; i<configs.size(); i++) {
@@ -321,26 +332,35 @@ abstract class Maven implements Serializable {
 
         // Maven does not provide an option of passing server credentials via command line
         // So, create settings.xml that contains custom properties that can be set via command line (property
-        // interpolation) - https://stackoverflow.com/a/28074776/1845976
+        // interpolation) - https://stackoverflow.com/a/28074776/
 
-        settingsXmlPath = "${script.pwd()}/.m2/settings.xml"
-        script.echo "Writing $settingsXmlPath"
-
-
-        script.writeFile file: settingsXmlPath, text: """
+        String settingsXml = """
 <settings>
-    <servers>
-${String ret="" 
+${if (repositories.size() == 0) return ''
+String ret="  <servers>\n" 
 for (int i = 0; i < repositories.size(); i++) {
     def serverId = repositories[i].id
     def serverUsername = "\${env.${usernameProperty}_${i}}"
     def serverPassword = "\${env.${passwordProperty}_${i}}"
     ret +="          <server><id>${serverId}</id><username>${serverUsername}</username><password>${serverPassword}</password></server>\n"
 }
-ret
+ret + '  </servers>\n'
 }
-    </servers>
+${if (mirrors.size() == 0) return ''
+String ret="  <mirrors>\n" 
+for (int i = 0; i < mirrors.size(); i++) {
+    String name = mirrors[i].name
+    String mirrorOf = mirrors[i].mirrorOf
+    String url = mirrors[i].url
+    ret +="          <mirror><name>${name}</name><mirrorOf>${mirrorOf}</mirrorOf><url>${url}</url></mirror>\n"
+}
+ret + '  </mirrors>\n'
+}
 </settings>"""
+        
+        settingsXmlPath = "${script.pwd()}/.m2/settings.xml"
+        script.echo "Writing $settingsXmlPath"
+        script.writeFile file: settingsXmlPath, text: settingsXml
     }
 
     List createRepositoryCredentials(List<Repository> allRepositories) {
@@ -384,6 +404,18 @@ ret
                 }
             }
             return ""
+        }
+    }
+
+    static class Mirror implements Serializable {
+        String name
+        String mirrorOf
+        String url
+
+        Mirror(String name, String mirrorOf, String url) {
+            this.name = name
+            this.mirrorOf = mirrorOf
+            this.url = url
         }
     }
 
