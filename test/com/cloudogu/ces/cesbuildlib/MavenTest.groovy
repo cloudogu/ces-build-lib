@@ -36,11 +36,20 @@ class MavenTest {
         def result = mvn "test"
         assertEquals("test", result)
     }
+    
+    @Test
+    void testWithoutSettingsXml() throws Exception {
+        def result = mvn "test"
+        assert !(mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
+        assertEquals("test", result)
+    }
 
     @Test
     void testCallWithMirrors() throws Exception {
         mvn.useMirrors([name: 'n1', mirrorOf: 'm1', url: 'u1'], 
                        [name: 'n2', mirrorOf: 'm2', url: 'u2'])
+
+        assert (mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
         
         def result = mvn "test"
         
@@ -58,7 +67,7 @@ class MavenTest {
             assert actualSettingsXml.contains(expectedXml)
         }
     }
-    
+
     @Test
     void testCallWithCredentials() throws Exception {
         mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
@@ -310,6 +319,8 @@ class MavenTest {
 
         mvn.useRepositoryCredentials(repos.toArray(new Map[0]))
         methodUnderTest.call()
+        
+        assert (mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
 
         def repoIds = []
         for (int i = 0; i < repos.size(); i++) {
