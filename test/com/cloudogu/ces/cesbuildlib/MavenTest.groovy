@@ -38,6 +38,28 @@ class MavenTest {
     }
 
     @Test
+    void testCallWithMirrors() throws Exception {
+        mvn.useMirrors([name: 'n1', mirrorOf: 'm1', url: 'u1'], 
+                       [name: 'n2', mirrorOf: 'm2', url: 'u2'])
+        
+        def result = mvn "test"
+        
+        assertEquals("test", result)
+
+        assert scriptMock.writeFileParams.size() == 1
+        def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
+
+        for (int mirrorNumber = 1; mirrorNumber <= 2; mirrorNumber++) {
+
+            def expectedXml = "<mirror><name>n${mirrorNumber}</name>" +
+                "<mirrorOf>m${mirrorNumber}</mirrorOf>" +
+                "<url>u${mirrorNumber}</url>" +
+                '</mirror>'
+            assert actualSettingsXml.contains(expectedXml)
+        }
+    }
+    
+    @Test
     void testCallWithCredentials() throws Exception {
         mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds'])
         def result = mvn "test"
@@ -47,7 +69,7 @@ class MavenTest {
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
         assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
 
-        assertSettingsXml('id')
+        assertSettingsXmlRepos('id')
     }
 
     @Test
@@ -65,7 +87,7 @@ class MavenTest {
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD_1" == scriptMock.actualUsernamePasswordArgs[1]['passwordVariable']
         assert "NEXUS_REPO_CREDENTIALS_USERNAME_1" == scriptMock.actualUsernamePasswordArgs[1]['usernameVariable']
 
-        assertSettingsXml('number0', 'number1')
+        assertSettingsXmlRepos('number0', 'number1')
     }
 
     @Test
@@ -299,7 +321,7 @@ class MavenTest {
             repoIds + repo.id
         }
 
-        assertSettingsXml(repoIds.toArray(new String[0]))
+        assertSettingsXmlRepos(repoIds.toArray(new String[0]))
 
         assert mvnArgs.startsWith('-DskipTests ')
         if (expectedUrl) {
@@ -313,9 +335,10 @@ class MavenTest {
         assert mvnArgs.endsWith("$beforeAdditionalArgs $actualAdditionalArgs $expectedDeploymentGoal")
     }
 
-    private void assertSettingsXml(String... deploymentRepoIds) {
+    private void assertSettingsXmlRepos(String... deploymentRepoIds) {
         assert scriptMock.writeFileParams.size() == 1
         def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
+        
         for (int i = 0; i < deploymentRepoIds.size(); i++) {
             def deploymentRepoId = deploymentRepoIds[i]
 

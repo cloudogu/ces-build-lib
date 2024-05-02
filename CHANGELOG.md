@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- `Maven.useMirrors([name: 'maven-proxy', mirrorOf: 'central', url: 'https://maven.example.org'])`
 
 ## [2.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.1.0) - 2024-01-29
 ### Fixed

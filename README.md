@@ -278,12 +278,22 @@ mvn {
 }
 ```
 
+## Mirrors
+
+You can define maven mirrors as follows:
+
+```groovy
+Maven.useMirrors([name: 'maven-proxy', mirrorOf: 'central', url: 'https://maven.example.org'],
+                 [name: 'google-maven', mirrorOf: 'central', url: 'https://maven-central.storage.googleapis.com/maven2/'],
+)
+````
+
 ## Repository Credentials
 
 If you specified one or more `<repository>` in your `pom.xml` that requires authentication, you can pass these 
 credentials to your ces-build-lib `Maven` instance like so:
 
-```bash
+```groovy
 mvn.useRepositoryCredentials([id: 'ces', credentialsId: 'nexusSystemUserCredential'],
                              [id: 'another', credentialsId: 'nexusSystemUserCredential'])
 ```
