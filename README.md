@@ -80,7 +80,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 * Install [Pipeline: GitHub Groovy Libraries](https://wiki.jenkins.io/display/JENKINS/Pipeline+GitHub+Library+Plugin)
 * Use the Library in any Jenkinsfile like so
 ```
-@Library('github.com/cloudogu/ces-build-lib@2.1.0')
+@Library('github.com/cloudogu/ces-build-lib@2.2.0')
 import com.cloudogu.ces.cesbuildlib.*
 ```
 * Best practice: Use a defined version (e.g. a git commit hash or a git tag, such as `6cd41e0` or `1.67.0` in the example above) and not a branch such as `develop`. Otherwise, your build might change when the there is a new commit on the branch. Using branches is like using snapshots!
