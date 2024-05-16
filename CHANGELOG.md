@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.2.1](https://github.com/cloudogu/ces-build-lib/releases/tag/2.2.1) - 2024-05-16
 ### Fixed
 - [#125] K3d setup waits now until all dogus are rolled out and the setup is really done.
 
