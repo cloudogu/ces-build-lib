@@ -304,7 +304,7 @@ class K3d {
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".logLevel", loglevel)
     }
 
-    void installAndTriggerSetup(String tag, Integer timout = 300, Integer interval = 5) {
+    void installAndTriggerSetup(String tag, Integer timeout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
         String registryUrl = "registry.cloudogu.com"
         String registryNamespace = "k8s"
@@ -316,7 +316,34 @@ class K3d {
         helm("registry logout ${registryUrl}")
 
         script.echo "Wait for dogu-operator to be ready..."
-        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timout, interval)
+        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timeout, interval)
+
+        script.echo "Wait for setup-finisher to be executed..."
+        waitForSetupToFinish(timeout, interval)
+
+        script.echo "Wait for dogus to be ready..."
+        waitForDogusToBeRolledOut(timeout, interval)
+    }
+
+    void waitForDogusToBeRolledOut(Integer timeout, Integer interval) {
+        String dogus = kubectl("get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+        String[] doguList = dogus.split("\n")
+        for (String dogu : doguList) {
+            script.echo "Wait for $dogu to be rolled out..."
+            waitForDeploymentRollout(dogu, timeout, interval)
+        }
+    }
+
+    void waitForSetupToFinish(Integer timeout, Integer interval) {
+        for (int i = 0; i < timeout / interval; i++) {
+            script.sh("sleep ${interval}s")
+            String deploys = kubectl("get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
+            if (!deploys.contains("k8s-ces-setup")) {
+                return
+            }
+        }
+
+        this.script.error "failed to wait for setup to finish: timeout"
     }
 
 /**

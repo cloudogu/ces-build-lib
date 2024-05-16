@@ -205,6 +205,11 @@ class K3dTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml".toString(), "fake setup yaml with {{ .Namespace }}")
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".toString(), "successfully rolled out")
         scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'".toString(), "k8s-dogu-operator\nk8s-service-discovery")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'".toString(), "cas\nnginx-ingress")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/cas".toString(), "successfully rolled out")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/nginx-ingress".toString(), "successfully rolled out")
+
 
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
@@ -216,6 +221,10 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.actualEcho.get(1)).isEqualTo("create values.yaml for setup deployment")
         assertThat(scriptMock.actualEcho.get(2)).isEqualTo("Installing setup...")
         assertThat(scriptMock.actualEcho.get(3)).isEqualTo("Wait for dogu-operator to be ready...")
+        assertThat(scriptMock.actualEcho.get(4)).isEqualTo("Wait for setup-finisher to be executed...")
+        assertThat(scriptMock.actualEcho.get(5)).isEqualTo("Wait for dogus to be ready...")
+        assertThat(scriptMock.actualEcho.get(6)).isEqualTo("Wait for cas to be rolled out...")
+        assertThat(scriptMock.actualEcho.get(7)).isEqualTo("Wait for nginx-ingress to be rolled out...")
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
@@ -226,6 +235,13 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm registry logout registry.cloudogu.com".trim())
         assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("sleep 1s")
         assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
+        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("sleep 1s")
+        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'")
+        assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'")
+        assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sleep 1s")
+        assertThat(scriptMock.allActualArgs[13].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/cas")
+        assertThat(scriptMock.allActualArgs[14].trim()).isEqualTo("sleep 1s")
+        assertThat(scriptMock.allActualArgs[15].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/nginx-ingress")
 
         assertThat(scriptMock.writeFileParams.get(0)).isNotNull()
         String setupYaml = scriptMock.writeFileParams.get(1)
@@ -235,7 +251,6 @@ class K3dTest extends GroovyTestCase {
 
     void testSetupShouldThrowExceptionOnDoguOperatorRollout() {
         // given
-        def workspaceEnvDir = "leK3dWorkSpace"
         String tag = "v0.6.0"
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
