@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.3.0) - 2024-09-11
 ### Changed
 - change `k3d.configureComponents` so that `null` values disable single components so they won't be installed.
 This is useful if default components like the blueprint-operator have to be disabled.
