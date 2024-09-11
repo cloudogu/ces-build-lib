@@ -1102,6 +1102,15 @@ try {
         // your image name may look like this: k3d-citest-123456/your/image:yourTag-1.2.3-dev
         // the image name can be applied to your cluster as usual, f. i. with k3d.kubectl() with a customized K8s resource 
     }
+
+    stage('configure components'){
+        // add additional components
+        k3d.configureComponents(["k8s-minio"             : ["version": "latest", "helmRepositoryNamespace": "k8s"],
+                                 "k8s-loki"              : ["version": "latest", "helmRepositoryNamespace": "k8s"],
+                                 "k8s-promtail"          : ["version": "latest", "helmRepositoryNamespace": "k8s"],
+                                 "k8s-blueprint-operator": null, // null values will delete components from the config
+        ])
+    }
     
     stage('execute k8s-ces-setup') {
         k3d.setup('0.20.0')

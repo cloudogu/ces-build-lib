@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.3.0) - 2024-09-11
+### Changed
+- change `k3d.configureComponents` so that `null` values disable single components so they won't be installed.
+This is useful if default components like the blueprint-operator have to be disabled.
+  - Example:
+`k3d.configureComponents(["k8s-minio": ["version": "latest", "helmRepositoryNamespace": "k8s"], "k8s-blueprint-operator": null])`
+
+
 ## [2.2.1](https://github.com/cloudogu/ces-build-lib/releases/tag/2.2.1) - 2024-05-16
 ### Fixed
 - [#125] K3d setup waits now until all dogus are rolled out and the setup is really done.
