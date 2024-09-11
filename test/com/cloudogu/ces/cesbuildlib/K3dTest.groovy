@@ -617,14 +617,16 @@ spec:
         scriptMock.expectedShRetValueForScript.put("yq -i \".components.k8s-etcd.helmRepositoryNamespace = \\\"k8s\\\"\" k3d_values.yaml", "foo")
         scriptMock.expectedShRetValueForScript.put("yq -i \".components.k8s-promtail.version = \\\"1.2.3\\\"\" k3d_values.yaml", "foo")
         scriptMock.expectedShRetValueForScript.put("yq -i \".components.k8s-promtail.helmRepositoryNamespace = \\\"test_ns\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("yq -i \".components.k8s-blueprint-operator = null\" k3d_values.yaml", "foo")
 
         // when
         sut.configureComponents(["k8s-etcd"    : ["version": "latest", "helmRepositoryNamespace": "k8s"],
-                                 "k8s-promtail": ["version": "1.2.3", "helmRepositoryNamespace": "test_ns"]])
+                                 "k8s-promtail": ["version": "1.2.3", "helmRepositoryNamespace": "test_ns"],
+                                 "k8s-blueprint-operator": null])
 
         // then
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".components.k8s-etcd.version = \\\"latest\\\" | .components.k8s-etcd.helmRepositoryNamespace = \\\"k8s\\\" | .components.k8s-promtail.version = \\\"1.2.3\\\" | .components.k8s-promtail.helmRepositoryNamespace = \\\"test_ns\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".components.k8s-etcd.version = \\\"latest\\\" | .components.k8s-etcd.helmRepositoryNamespace = \\\"k8s\\\" | .components.k8s-promtail.version = \\\"1.2.3\\\" | .components.k8s-promtail.helmRepositoryNamespace = \\\"test_ns\\\" | .components.k8s-blueprint-operator = null\" k3d_values.yaml".trim())
     }
 }

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- change `k3d.configureComponents` so that `null` values will delete the components from the config.
+This is useful if a default component like the blueprint-operator have to be disabled.
+  - Example:
+`k3d.configureComponents(["k8s-minio": ["version": "latest", "helmRepositoryNamespace": "k8s"], "k8s-blueprint-operator": null])`
+
 
 ## [2.2.1](https://github.com/cloudogu/ces-build-lib/releases/tag/2.2.1) - 2024-05-16
 ### Fixed

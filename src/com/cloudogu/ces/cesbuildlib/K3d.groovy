@@ -290,8 +290,12 @@ class K3d {
     void configureComponents(components = [:]) {
         def evals = []
         components.each { componentName, componentConfig ->
-            componentConfig.each { configKey, configValue ->
-                evals << ".components.${componentName}.${configKey} = \\\"${configValue}\\\""
+            if (componentConfig == null) {
+                evals << ".components.${componentName} = null"
+            } else {
+                componentConfig.each { configKey, configValue ->
+                    evals << ".components.${componentName}.${configKey} = \\\"${configValue}\\\""
+                }
             }
         }
 
