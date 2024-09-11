@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- change `k3d.configureComponents` so that `null` values will delete the components from the config.
+- change `k3d.configureComponents` so that `null` values disable single components so they won't be installed.
 This is useful if default components like the blueprint-operator have to be disabled.
   - Example:
 `k3d.configureComponents(["k8s-minio": ["version": "latest", "helmRepositoryNamespace": "k8s"], "k8s-blueprint-operator": null])`
