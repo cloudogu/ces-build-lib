@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Custom maven image support
+- Registry credentials for maven and gradle
+- Additional Docker run args 
+
 ### Changed
 - `Git.pull()` uses rebase strategy to avoid error `fatal: Need to specify how to reconcile divergent branches.`
 - Updated Trivy version
