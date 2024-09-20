@@ -6,6 +6,7 @@ abstract class GradleInDockerBase extends Gradle {
 
     /** Setting this to {@code true} allows the Gradle build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
+    String credentialsId = null
 
     Docker docker
 
@@ -16,19 +17,32 @@ abstract class GradleInDockerBase extends Gradle {
 
     @Override
     def gradle(String args, boolean printStdOut = true) {
-        call ({ args }, printStdOut)
+        call({ args }, printStdOut)
     }
 
     abstract def call(Closure closure, boolean printStdOut);
 
     protected void inDocker(String imageId, Closure closure) {
-        docker.image(imageId)
-        // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
+        if (!this.credentialsId) {
+            docker.image(imageId)
+            // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
                 .mountJenkinsUser(true)
                 .mountDockerSocket(enableDockerHost)
                 .inside("") {
                     closure.call()
                 }
+        } else {
+            def imageInfos = Docker.parseRegistryImageNameAndTagFromString(imageId)
+            docker.withRegistry("https://${imageInfos.registry}", this.credentialsId) {
+                docker.image("${imageInfos.imageName}:${imageInfos.tag}")
+                // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
+                    .mountJenkinsUser(true)
+                    .mountDockerSocket(enableDockerHost)
+                    .inside("") {
+                        closure.call()
+                    }
+            }
+        }
     }
 
 }
