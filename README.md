@@ -254,11 +254,21 @@ mvn.useLocalRepoFromJenkins = true
 This speed speeds up the first build and uses less memory.
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
+##### Set image and set credentials for custom registry
+Its possible to set credentials for a registry login by setting a credentialsId and custom image with registry prefix.
+```groovy
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8") // uses image: maven:3.5.0-jdk-8 from DockerHub
+Maven mvn1 = new MavenInDocker(this, "mirror.gcr.io/maven:latest") // uses image: maven:latest from Google
+Maven mvn2 = new MavenInDocker(this, "3.5.0-jdk-8" , credentialsId) // loads the username and password credentials from jenkins for a private registry
+```
+
 ##### Maven without Docker
 
 The default is the default maven behavior `/home/jenkins/.m2` is used.
 If you want to use a separate maven repo per Workspace (e.g. in order to avoid concurrent builds overwriting 
 dependencies of multi module projects building the same version (e.g. a SNAPSHOT) the following will work:
+
+##### Maven 
 
 ```groovy
 mvn.additionalArgs += " -Dmaven.repo.local=${env.WORKSPACE}/.m2"
@@ -479,6 +489,8 @@ stage('Build') {
 Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image
 registries, where `adoptopenjdk` is just one option. The choice is yours.
 
+See [Maven in Docker](#set-image-and-set-credentials-for-custom-registry) how to set a custom image for gradle or use a private registry.
+
 # Git
 
 An extension to the `git` step, that provides an API for some commonly used git commands and utilities.
@@ -653,7 +665,7 @@ Example from Jenkinsfile:
 * `push(String tagName = image().parsedId.tag, boolean force = true)`: Pushes an image to the registry after tagging it 
   as with the tag method. For example, you can use `image().push 'latest'` to publish it as the latest version in its 
   repository.
-
+  
 ## Additional features provided by the `Docker.Image` class
 
 * `repoDigests()`: Returns the repo digests, a content addressable unique digest of an image that was pushed 
@@ -686,8 +698,7 @@ Example from Jenkinsfile:
    On this, however, [other people say](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/), you 
    should not do this at all. So lets stick to mounting the socket, which seems to cause less problems.
    
-   This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
-   
+   This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy) 
 * `installDockerClient(String version)`: Installs the docker client with the specified version inside the container.
    If no version parameter is passed, the lib tries to query the server version by calling `docker version`.  
    This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.  
@@ -722,6 +733,9 @@ new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
         sh 'docker run hello-world' // Would fail without mountDockerSocket = true & installDockerClient()
     }
 ```
+* If you should need to add addition arguments to `docker run` you can do so globally by setting
+`ADDITIONAL_DOCKER_RUN_ARGS` as global properties at `https://your-jenkins/manage/configure#global-properties`.  
+This can be used to globally fix certain bugs in Jenkins agents or their docker config.
 
 # Dockerfile
 
