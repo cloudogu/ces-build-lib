@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - 2024-09-26
+- Updated Trivy version
+
 ## [2.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.4.0) - 2024-09-18
 ### Changed
 - Relicense to AGPL-3.0-only
