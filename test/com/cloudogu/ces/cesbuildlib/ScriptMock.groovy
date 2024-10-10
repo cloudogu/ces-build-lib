@@ -66,7 +66,7 @@ class ScriptMock {
         allActualArgs.add("called deleteDir()")
     }
 
-    String sh(Map<String, Object> args) {
+    String sh(Map args) {
         actualShMapArgs.add(args.script.toString())
         allActualArgs.add(args.script.toString())
 

@@ -1,10 +1,13 @@
 package com.cloudogu.ces.cesbuildlib
 
+import org.junit.Before
 import org.junit.Test
 
-import static junit.framework.TestCase.assertEquals
-import static org.mockito.ArgumentMatchers.anyBoolean
-import static org.mockito.Mockito.*
+import static org.assertj.core.api.Assertions.assertThat
+import static org.junit.Assert.assertEquals
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.eq
+import static org.mockito.Mockito.verify 
 
 class MavenInDockerBaseTest {
 
@@ -19,9 +22,15 @@ class MavenInDockerBaseTest {
     static final IMAGE_ID = 'maven:3.5.0-jdk8'
 
     def scriptMock = new MavenInDockerScriptMock()
+    DockerMock docker = new DockerMock(IMAGE_ID)
 
     def mvn = new MavenInDockerTest(scriptMock)
 
+    @Before
+    void setup() {
+        mvn.docker = docker.mock
+    }
+    
     @Test
     void testCreateDockerRunArgsDefault() {
         assertEquals("", mvn.createDockerRunArgs())
@@ -30,17 +39,11 @@ class MavenInDockerBaseTest {
     @Test
     void testDockerHostEnabled() {
         mvn.enableDockerHost = true
-        Docker dockerMock = mock(Docker.class)
-        Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.image(IMAGE_ID)).thenReturn(imageMock)
-        when(imageMock.mountJenkinsUser(anyBoolean())).thenReturn(imageMock)
-        when(imageMock.mountDockerSocket(anyBoolean())).thenReturn(imageMock)
-        mvn.docker = dockerMock
 
         mvn 'test'
 
-        verify(imageMock).mountDockerSocket(true)
-        verify(imageMock).mountJenkinsUser(true)
+        verify(docker.imageMock).mountDockerSocket(true)
+        verify(docker.imageMock).mountJenkinsUser(true)
     }
 
     @Test
@@ -55,13 +58,27 @@ class MavenInDockerBaseTest {
         assert scriptMock.actualShMapArgs.get(0) == 'mkdir -p $HOME/.m2'
     }
 
+    @Test
+    void inDockerWithRegistry() {
+
+        mvn.credentialsId = 'myCreds'
+        boolean closureCalled = false
+        
+        mvn.inDocker(IMAGE_ID, {
+            closureCalled = true
+        })
+        
+        assertThat(closureCalled).isTrue()
+        verify(docker.mock).withRegistry(eq("https://$IMAGE_ID".toString()), eq('myCreds'), any())
+    }
+
     class MavenInDockerScriptMock extends ScriptMock {
         MavenInDockerScriptMock() {
             expectedPwd = EXPECTED_PWD
         }
 
         @Override
-        String sh(Map<String, String> params) {
+        String sh(Map params) {
             super.sh(params)
             // Add some whitespaces
             String script = params.get("script")
