@@ -9,9 +9,10 @@ class GradleWrapperInDocker extends GradleInDockerBase {
     private String imageId
 
     @SuppressWarnings("GrDeprecatedAPIUsage") // GradleWrapper will become protected constructor that is no longer deprecated
-    GradleWrapperInDocker(script, String imageId) {
+    GradleWrapperInDocker(script, String imageId, String credentialsId = null) {
         super(script)
         this.imageId = imageId
+        this.credentialsId = credentialsId
     }
 
     @Override
@@ -20,4 +21,5 @@ class GradleWrapperInDocker extends GradleInDockerBase {
             gradlew(closure.call(), printStdOut)
         }
     }
+
 }
