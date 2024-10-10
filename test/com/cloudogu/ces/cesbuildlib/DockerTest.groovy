@@ -504,7 +504,9 @@ class DockerTest {
                 },
                 pwd: { return expectedHome },
                 writeFile: { Map<String, String> args -> actualWriteFileArgs.put(args['file'], args['text']) },
-                error: { String arg -> throw new RuntimeException(arg) }
+                error: { String arg -> throw new RuntimeException(arg) 
+                },
+                env: []
         ]
 
         return new Docker(mockedScript)

@@ -325,7 +325,7 @@ class Docker implements Serializable {
         private extendArgs(String args) {
             String extendedArgs = args
 
-            if (script.env?.ADDITIONAL_DOCKER_RUN_ARGS) {
+            if (script.env.ADDITIONAL_DOCKER_RUN_ARGS) {
                 extendedArgs += " ${script.env.ADDITIONAL_DOCKER_RUN_ARGS} "
             }
 
