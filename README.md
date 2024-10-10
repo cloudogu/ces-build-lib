@@ -8,7 +8,6 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Usage](#usage)
 - [Syntax completion](#syntax-completion)
 - [Maven](#maven)
@@ -22,9 +21,12 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Advanced Maven in Docker features](#advanced-maven-in-docker-features)
       - [Maven starts new containers](#maven-starts-new-containers)
       - [Local repo](#local-repo)
-        - [Containers](#containers)
-        - [Without Containers](#without-containers)
+        - [Maven in Docker](#maven-in-docker-1)
+        - [Set image and set credentials for custom registry](#set-image-and-set-credentials-for-custom-registry)
+        - [Maven without Docker](#maven-without-docker)
+        - [Maven](#maven-1)
       - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
+  - [Mirrors](#mirrors)
   - [Repository Credentials](#repository-credentials)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
     - [Deploying artifacts](#deploying-artifacts)
@@ -64,6 +66,10 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [K3d](#k3d)
 - [DoguRegistry](#doguregistry)
 - [Bats](#bats)
+- [Makefile](#makefile)
+- [Markdown](#markdown)
+    - [DockerLint (Deprecated)](#dockerlint-deprecated)
+    - [ShellCheck](#shellcheck)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -71,6 +77,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [findHostName](#findhostname)
   - [isBuildSuccessful](#isbuildsuccessful)
   - [findVulnerabilitiesWithTrivy](#findvulnerabilitieswithtrivy)
+    - [Simple examples](#simple-examples)
+    - [Ignore / allowlist](#ignore--allowlist)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -254,21 +262,19 @@ mvn.useLocalRepoFromJenkins = true
 This speed speeds up the first build and uses less memory.
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
-##### Set image and set credentials for custom registry
-Its possible to set credentials for a registry login by setting a credentialsId and custom image with registry prefix.
+##### Set image and credentials
+It is possible to set credentials for a registry login by setting a credentialsId and custom image with registry prefix.
 ```groovy
 Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8") // uses image: maven:3.5.0-jdk-8 from DockerHub
 Maven mvn1 = new MavenInDocker(this, "mirror.gcr.io/maven:latest") // uses image: maven:latest from Google
-Maven mvn2 = new MavenInDocker(this, "3.5.0-jdk-8" , credentialsId) // loads the username and password credentials from jenkins for a private registry
+Maven mvn2 = new MavenInDocker(this, "3.5.0-jdk-8" , credentialsId) // loads the username and password credentials from jenkins
 ```
 
 ##### Maven without Docker
 
 The default is the default maven behavior `/home/jenkins/.m2` is used.
-If you want to use a separate maven repo per Workspace (e.g. in order to avoid concurrent builds overwriting 
+If you want to use a separate maven repo per Workspace (e.g. to avoid concurrent builds overwriting 
 dependencies of multi module projects building the same version (e.g. a SNAPSHOT) the following will work:
-
-##### Maven 
 
 ```groovy
 mvn.additionalArgs += " -Dmaven.repo.local=${env.WORKSPACE}/.m2"
@@ -489,7 +495,7 @@ stage('Build') {
 Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image
 registries, where `adoptopenjdk` is just one option. The choice is yours.
 
-See [Maven in Docker](#set-image-and-set-credentials-for-custom-registry) how to set a custom image for gradle or use a private registry.
+See [Maven in Docker](#set-image-and-credentials) for passing credentials to the registry.
 
 # Git
 
