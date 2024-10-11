@@ -365,7 +365,7 @@ class Git implements Serializable {
     }
 
     /**
-     * Pulls to local from remote repo.
+     * Pulls to local from remote repo, using the rebase strategy.
      *
      * @param refSpec branch or tag name
      * @param authorName
@@ -373,7 +373,7 @@ class Git implements Serializable {
      */
     void pull(String refSpec = '', String authorName = commitAuthorName, String authorEmail = commitAuthorEmail) {
         withAuthorAndEmail(authorName, authorEmail) {
-            executeGitWithCredentials "pull ${refSpec}"
+            executeGitWithCredentials "pull --rebase ${refSpec}"
         }
     }
     
