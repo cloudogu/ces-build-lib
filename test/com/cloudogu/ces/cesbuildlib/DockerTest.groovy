@@ -205,6 +205,24 @@ class DockerTest {
         assertEquals('expectedClosure', args[1].call())
     }
 
+   @Test
+    void imageInsideWithAdditionalRunArgs() {
+
+        Docker docker = createWithImage(mockedImageMethodInside())
+
+        docker.script += [
+            env:  [
+                ADDITIONAL_DOCKER_RUN_ARGS: '-u 0:0'
+            ]
+        ]
+
+        def args = docker.image(expectedImage).inside('') { return 'expectedClosure' }
+
+        assert args[0].contains('-u 0:0')
+        assertEquals('expectedClosure', args[1].call())
+    }
+
+
     @Test
     void imageInsideWithEntrypoint() {
         Docker docker = createWithImage(mockedImageMethodInside())
@@ -504,7 +522,9 @@ class DockerTest {
                 },
                 pwd: { return expectedHome },
                 writeFile: { Map<String, String> args -> actualWriteFileArgs.put(args['file'], args['text']) },
-                error: { String arg -> throw new RuntimeException(arg) }
+                error: { String arg -> throw new RuntimeException(arg) 
+                },
+                env: []
         ]
 
         return new Docker(mockedScript)

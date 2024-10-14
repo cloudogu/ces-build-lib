@@ -3,19 +3,23 @@ package com.cloudogu.ces.cesbuildlib
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
-import static org.mockito.ArgumentMatchers.*
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.anyBoolean
+import static org.mockito.ArgumentMatchers.anyString
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
 class DockerMock {
-
-    static Docker create(String imageTag = "") {
-        Docker dockerMock = mock(Docker.class)
-        Docker.Image imageMock = mock(Docker.Image.class)
+    Docker mock
+    Docker.Image imageMock
+    
+    DockerMock(String imageTag = "") {
+        mock = mock(Docker.class)
+        imageMock = mock(Docker.Image.class)
         if (imageTag == "") {
-            when(dockerMock.image(anyString())).thenReturn(imageMock)
+            when(mock.image(anyString())).thenReturn(imageMock)
         } else {
-            when(dockerMock.image(imageTag)).thenReturn(imageMock)
+            when(mock.image(imageTag)).thenReturn(imageMock)
         }
         when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
         when(imageMock.mountJenkinsUser(anyBoolean())).thenReturn(imageMock)
@@ -28,6 +32,16 @@ class DockerMock {
                 closure.call()
             }
         })
-        return dockerMock
+        when(mock.withRegistry(any(), any(), any())).thenAnswer(new Answer<Object>() {
+            @Override
+            Object answer(InvocationOnMock invocation) throws Throwable {
+                Closure closure = invocation.getArgument(2)
+                closure.call()
+            }
+        })
+    }
+
+    static Docker create(String imageTag = "") {
+        return new DockerMock(imageTag).mock
     }
 }

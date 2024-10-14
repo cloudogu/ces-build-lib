@@ -13,21 +13,27 @@ package com.cloudogu.ces.cesbuildlib
 class MavenInDocker extends MavenInDockerBase {
 
     /** The version of the maven docker image to use, e.g. {@code maven:3.5.0-jdk-8} **/
-    String dockerBaseImageVersion
+    String mavenImage
 
     /**
      * @param script the Jenkinsfile instance ({@code this} in Jenkinsfile)
-     * @param dockerBaseImageVersion the version of the maven docker image to use, e.g. {@code 3.5.0-jdk-8}
+     * @param mavenImage the version of the maven docker image to use, e.g. {@code 3.5.0-jdk-8}
      */
-    MavenInDocker(script, String dockerBaseImageVersion) {
+    MavenInDocker(script, String mavenImage, String credentialsId = null) {
         super(script)
-        this.dockerBaseImageVersion = dockerBaseImageVersion
+        this.mavenImage = mavenImage
+        this.credentialsId = credentialsId
     }
 
     @Override
     def call(Closure closure, boolean printStdOut) {
-        inDocker("maven:$dockerBaseImageVersion") {
+        inDocker(getMavenImage()) {
             sh("mvn ${createCommandLineArgs(closure.call())}", printStdOut)
         }
+    }
+
+    //allowing downward compatibility for the old workflow only specifying the tag
+    def getMavenImage() {
+        return mavenImage.contains(':') ? mavenImage : "maven:${mavenImage}"
     }
 }
