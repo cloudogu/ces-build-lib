@@ -10,7 +10,7 @@ ArrayList call (Map args) {
         if(args.containsKey('allowList'))
             error "Arg allowList is deprecated, please use .trivyignore file"
         def imageName = args.imageName
-        def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.41.0'
+        def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.55.2'
         def severityFlag = args.severity ? "--severity=${args.severity.join(',')}" : ''
         def additionalFlags = args.additionalFlags ? args.additionalFlags : ''
         println(severityFlag)

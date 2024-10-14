@@ -1,15 +1,18 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Before
 import org.junit.Test
 
 import static org.assertj.core.api.Assertions.assertThat
-import static org.junit.Assert.assertEquals
 import static org.mockito.ArgumentMatchers.any
 import static org.mockito.ArgumentMatchers.eq
-import static org.mockito.Mockito.verify 
+import static org.mockito.Mockito.verify
 
-class MavenInDockerBaseTest {
+class GradleInDockerBaseTest {
+
+
+    static final IMAGE_ID = 'adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine'
+    def scriptMock = new GradleWrapperInDockerBaseScriptMock()
+    DockerMock docker = new DockerMock(IMAGE_ID)
 
     static final ORIGINAL_USER_HOME = "/home/jenkins"
     static final String EXPECTED_JENKINS_USER_FROM_ETC_PASSWD =
@@ -19,61 +22,25 @@ class MavenInDockerBaseTest {
     // Expected output of pwd, print working directory
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     static final SOME_WHITESPACES = "  \n  "
-    static final IMAGE_ID = 'maven:3.5.0-jdk8'
-
-    def scriptMock = new MavenInDockerScriptMock()
-    DockerMock docker = new DockerMock(IMAGE_ID)
-
-    def mvn = new MavenInDockerForTest(scriptMock)
-
-    @Before
-    void setup() {
-        mvn.docker = docker.mock
-    }
-    
-    @Test
-    void testCreateDockerRunArgsDefault() {
-        assertEquals("", mvn.createDockerRunArgs())
-    }
-
-    @Test
-    void testDockerHostEnabled() {
-        mvn.enableDockerHost = true
-
-        mvn 'test'
-
-        verify(docker.imageMock).mountDockerSocket(true)
-        verify(docker.imageMock).mountJenkinsUser(true)
-    }
-
-    @Test
-    void testCreateDockerRunArgsUseLocalRepoFromJenkins() {
-        scriptMock.env.HOME = "/home/jenkins"
-        mvn.useLocalRepoFromJenkins = true
-
-        def expectedMavenRunArgs = " -v /home/jenkins/.m2:$EXPECTED_PWD/.m2"
-
-        assert mvn.createDockerRunArgs().contains(expectedMavenRunArgs)
-        assert scriptMock.actualShMapArgs.size() == 1
-        assert scriptMock.actualShMapArgs.get(0) == 'mkdir -p $HOME/.m2'
-    }
 
     @Test
     void inDockerWithRegistry() {
-
-        mvn.credentialsId = 'myCreds'
+        def gradle = new GradleInDockerBaseForTest(scriptMock)
+        gradle.docker = docker.mock
+        scriptMock.expectedDefaultShRetValue = ''
+        gradle.credentialsId = 'myCreds'
         boolean closureCalled = false
-        
-        mvn.inDocker(IMAGE_ID, {
+
+        gradle.inDocker(IMAGE_ID, {
             closureCalled = true
         })
-        
+
         assertThat(closureCalled).isTrue()
         verify(docker.mock).withRegistry(eq("https://$IMAGE_ID".toString()), eq('myCreds'), any())
     }
 
-    class MavenInDockerScriptMock extends ScriptMock {
-        MavenInDockerScriptMock() {
+    class GradleWrapperInDockerBaseScriptMock extends ScriptMock {
+        GradleWrapperInDockerBaseScriptMock() {
             expectedPwd = EXPECTED_PWD
         }
 
@@ -93,9 +60,9 @@ class MavenInDockerBaseTest {
         }
     }
 
-    class MavenInDockerForTest extends MavenInDockerBase {
+    class GradleInDockerBaseForTest extends GradleInDockerBase {
 
-        MavenInDockerForTest(Object script) {
+        GradleInDockerBaseForTest(script) {
             super(script)
         }
 
@@ -105,4 +72,5 @@ class MavenInDockerBaseTest {
             }
         }
     }
+
 }

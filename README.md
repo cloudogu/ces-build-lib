@@ -7,7 +7,6 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-
 - [Usage](#usage)
 - [Syntax completion](#syntax-completion)
 - [Maven](#maven)
@@ -21,9 +20,11 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
     - [Advanced Maven in Docker features](#advanced-maven-in-docker-features)
       - [Maven starts new containers](#maven-starts-new-containers)
       - [Local repo](#local-repo)
-        - [Containers](#containers)
-        - [Without Containers](#without-containers)
+        - [Maven in Docker](#maven-in-docker-1)
+        - [Set image and credentials](#set-image-and-credentials)
+        - [Maven without Docker](#maven-without-docker)
       - [Lazy evaluation / execute more steps inside container](#lazy-evaluation--execute-more-steps-inside-container)
+  - [Mirrors](#mirrors)
   - [Repository Credentials](#repository-credentials)
   - [Deploying to Nexus repository](#deploying-to-nexus-repository)
     - [Deploying artifacts](#deploying-artifacts)
@@ -63,6 +64,10 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [K3d](#k3d)
 - [DoguRegistry](#doguregistry)
 - [Bats](#bats)
+- [Makefile](#makefile)
+- [Markdown](#markdown)
+    - [DockerLint (Deprecated)](#dockerlint-deprecated)
+    - [ShellCheck](#shellcheck)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -70,6 +75,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [findHostName](#findhostname)
   - [isBuildSuccessful](#isbuildsuccessful)
   - [findVulnerabilitiesWithTrivy](#findvulnerabilitieswithtrivy)
+    - [Simple examples](#simple-examples)
+    - [Ignore / allowlist](#ignore--allowlist)
 - [Examples](#examples)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -253,10 +260,18 @@ mvn.useLocalRepoFromJenkins = true
 This speed speeds up the first build and uses less memory.
 However, concurrent builds of multi module projects building the same version (e.g. a SNAPSHOT), might overwrite their dependencies, causing non-deterministic build failures.
 
+##### Set image and credentials
+It is possible to set credentials for a registry login by setting a credentialsId and custom image with registry prefix.
+```groovy
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8") // uses image: maven:3.5.0-jdk-8 from DockerHub
+Maven mvn1 = new MavenInDocker(this, "mirror.gcr.io/maven:latest") // uses image: maven:latest from Google
+Maven mvn2 = new MavenInDocker(this, "3.5.0-jdk-8" , credentialsId) // loads the username and password credentials from jenkins
+```
+
 ##### Maven without Docker
 
 The default is the default maven behavior `/home/jenkins/.m2` is used.
-If you want to use a separate maven repo per Workspace (e.g. in order to avoid concurrent builds overwriting 
+If you want to use a separate maven repo per Workspace (e.g. to avoid concurrent builds overwriting 
 dependencies of multi module projects building the same version (e.g. a SNAPSHOT) the following will work:
 
 ```groovy
@@ -478,6 +493,8 @@ stage('Build') {
 Since Oracle's announcement of shorter free JDK support, plenty of JDK images have appeared on public container image
 registries, where `adoptopenjdk` is just one option. The choice is yours.
 
+See [Maven in Docker](#set-image-and-credentials) for passing credentials to the registry.
+
 # Git
 
 An extension to the `git` step, that provides an API for some commonly used git commands and utilities.
@@ -652,7 +669,7 @@ Example from Jenkinsfile:
 * `push(String tagName = image().parsedId.tag, boolean force = true)`: Pushes an image to the registry after tagging it 
   as with the tag method. For example, you can use `image().push 'latest'` to publish it as the latest version in its 
   repository.
-
+  
 ## Additional features provided by the `Docker.Image` class
 
 * `repoDigests()`: Returns the repo digests, a content addressable unique digest of an image that was pushed 
@@ -685,8 +702,7 @@ Example from Jenkinsfile:
    On this, however, [other people say](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/), you 
    should not do this at all. So lets stick to mounting the socket, which seems to cause less problems.
    
-   This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
-   
+   This is also used by [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy) 
 * `installDockerClient(String version)`: Installs the docker client with the specified version inside the container.
    If no version parameter is passed, the lib tries to query the server version by calling `docker version`.  
    This can be called in addition to mountDockerSocket(), when the "docker" CLI is required on the PATH.  
@@ -721,6 +737,9 @@ new Docker(this).image('kkarczmarczyk/node-yarn:8.0-wheezy')
         sh 'docker run hello-world' // Would fail without mountDockerSocket = true & installDockerClient()
     }
 ```
+* If you should need to add addition arguments to `docker run` you can do so globally by setting
+`ADDITIONAL_DOCKER_RUN_ARGS` as global properties at `https://your-jenkins/manage/configure#global-properties`.  
+This can be used to globally fix certain bugs in Jenkins agents or their docker config.
 
 # Dockerfile
 

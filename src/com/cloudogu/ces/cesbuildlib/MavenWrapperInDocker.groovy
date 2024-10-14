@@ -12,9 +12,10 @@ class MavenWrapperInDocker extends MavenInDockerBase {
     private String imageId
 
     @SuppressWarnings("GrDeprecatedAPIUsage") // MavenWrapper will become protected constructor that is no longer deprecated
-    MavenWrapperInDocker(script, String imageId) {
+    MavenWrapperInDocker(script, String imageId, String credentialsId = null ) {
         super(script)
         this.imageId = imageId
+        this.credentialsId = credentialsId
     }
 
     @Override

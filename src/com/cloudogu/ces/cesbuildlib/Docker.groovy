@@ -21,7 +21,7 @@ class Docker implements Serializable {
     String findIp(container) {
         sh.returnStdOut "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${container.id}"
     }
-    
+
     /**
      * @return the IP address in the current context: the docker host ip (when outside of a container) or the ip of the
      * container this is running in
@@ -238,11 +238,11 @@ class Docker implements Serializable {
         void tag(String tagName, boolean force) {
             image().tag(tagName, force)
         }
-        
+
         void tag(String tagName) {
             image().tag(tagName)
         }
-        
+
         void tag() {
             image().tag()
         }
@@ -254,11 +254,11 @@ class Docker implements Serializable {
         void push(String tagName, boolean force) {
             image().push(tagName, force)
         }
-        
+
         void push(String tagName) {
             image().push(tagName)
         }
-        
+
         void push() {
             image().push()
         }
@@ -309,21 +309,26 @@ class Docker implements Serializable {
         /**
          * Returns the repo digests, a content addressable unique digest of an image that was pushed  to or pulled from
          * a repository.  
-         *    
+         *
          * @return If the image was built locally and not pushed, returns an empty list.
          *  If the image was pulled from or pushed to a repo, returns a list containing one item.
          *  If the image was pulled from or pushed to multiple repos, might also contain more than one digest.
          */
         List repoDigests() {
             def split = sh.returnStdOut(
-                    "docker image inspect ${imageIdString} -f '{{range .RepoDigests}}{{printf \"%s\\n\" .}}{{end}}'")
-                    .split('\n')
+                "docker image inspect ${imageIdString} -f '{{range .RepoDigests}}{{printf \"%s\\n\" .}}{{end}}'")
+                .split('\n')
             // Remove empty lines, e.g. the superflous last linebreak
-            return  split - ''
+            return split - ''
         }
 
         private extendArgs(String args) {
             String extendedArgs = args
+
+            if (script.env.ADDITIONAL_DOCKER_RUN_ARGS) {
+                extendedArgs += " ${script.env.ADDITIONAL_DOCKER_RUN_ARGS} "
+            }
+
             if (mountJenkinsUser) {
                 String passwdPath = writePasswd()
                 extendedArgs += " -v ${script.pwd()}/${passwdPath}:/etc/passwd:ro "
@@ -331,15 +336,17 @@ class Docker implements Serializable {
             if (mountDockerSocket) {
                 String groupPath = writeGroup()
                 extendedArgs +=
-                        // Mount the docker socket
-                        " -v /var/run/docker.sock:/var/run/docker.sock " +
-                                // Mount the docker group
-                                "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
+                    // Mount the docker socket
+                    " -v /var/run/docker.sock:/var/run/docker.sock " +
+                        // Mount the docker group
+                        "-v ${script.pwd()}/${groupPath}:/etc/group:ro --group-add ${readDockerGroupId()} "
             }
             if (!dockerClientVersionToInstall.isEmpty()) {
                 doInstallDockerClient()
                 extendedArgs += " -v ${script.pwd()}/${DOCKER_CLIENT_PATH}/docker:/usr/bin/docker"
             }
+
+
             extendedArgs = workAroundEntrypointIssues(extendedArgs)
             return extendedArgs
         }
@@ -418,14 +425,15 @@ class Docker implements Serializable {
         private void doInstallDockerClient() {
             // Installs statically linked docker binary
             String url = "https://download.docker.com/linux/static/stable/x86_64/docker-${dockerClientVersionToInstall}.tgz"
-            
+
             // Keep compatibility with old URLs
             if (dockerClientVersionToInstall.matches('^(17|18.03|18.06).*') &&
-                    !dockerClientVersionToInstall.endsWith('-ce')) {
+                !dockerClientVersionToInstall.endsWith('-ce')) {
                 url = url.replace('.tgz', '-ce.tgz')
             }
 
             script.sh "cd ${script.pwd()}/.jenkins && wget -qc ${url} -O - | tar -xz"
         }
+
     }
 }

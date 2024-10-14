@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.5.0) - 2024-10-14
+
+### Added
+- Custom maven image support
+- Registry credentials for maven and gradle
+- Additional Docker run args 
+
+### Changed
+- `Git.pull()` uses rebase strategy to avoid error `fatal: Need to specify how to reconcile divergent branches.`
+- Updated Trivy version
+
 ## [2.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/2.4.0) - 2024-09-18
 ### Changed
 - Relicense to AGPL-3.0-only
