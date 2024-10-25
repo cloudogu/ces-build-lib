@@ -266,12 +266,15 @@ class K3d {
     }
 
     void configureSetupImage(String image) {
+        String hostKey = ".setup.image.registry"
         String repositoryKey = ".setup.image.repository"
         String tagKey = ".setup.image.tag"
-        def i = image.lastIndexOf(":")
+        def repositorySeparatorIndex = image.indexOf("/")
+        def tagSeparatorIndex = image.lastIndexOf(":")
 
-        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(0, i))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(i + 1, image.length()))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, hostKey, image.substring(0, repositorySeparatorIndex))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(repositorySeparatorIndex + 1, tagSeparatorIndex))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(tagSeparatorIndex + 1, image.length()))
     }
 
     void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {

@@ -545,7 +545,8 @@ spec:
 
         scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
         scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"docker.io/foo/image\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml", "foo")
         scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml", "foo")
 
         // when
@@ -554,10 +555,13 @@ spec:
         // then
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"docker.io/foo/image\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml".trim())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("whoami".trim())
+        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
+        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
     }
 
     void testK3d_configureComponentOperatorVersion() {
