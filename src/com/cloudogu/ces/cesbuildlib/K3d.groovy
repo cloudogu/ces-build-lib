@@ -111,11 +111,11 @@ class K3d {
 
             // delete old secrets if available
             kubectl("delete secret k8s-dogu-operator-dogu-registry || true")
-            kubectl("delete secret k8s-dogu-operator-docker-registry || true")
+            kubectl("delete secret ces-container-registries || true")
 
             //create secret for the backend registry
             kubectl("create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"${script.env.TOKEN_ID}\" --from-literal=password=\"${script.env.TOKEN_SECRET}\"")
-            kubectl("create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"${script.env.TOKEN_ID}\" --docker-email=\"a@b.c\" --docker-password=\"${script.env.TOKEN_SECRET}\"")
+            kubectl("create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"${script.env.TOKEN_ID}\" --docker-email=\"a@b.c\" --docker-password=\"${script.env.TOKEN_SECRET}\"")
         }
 
         script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
@@ -266,12 +266,15 @@ class K3d {
     }
 
     void configureSetupImage(String image) {
+        String hostKey = ".setup.image.registry"
         String repositoryKey = ".setup.image.repository"
         String tagKey = ".setup.image.tag"
-        def i = image.lastIndexOf(":")
+        def repositorySeparatorIndex = image.indexOf("/")
+        def tagSeparatorIndex = image.lastIndexOf(":")
 
-        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(0, i))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(i + 1, image.length()))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, hostKey, image.substring(0, repositorySeparatorIndex))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(repositorySeparatorIndex + 1, tagSeparatorIndex))
+        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(tagSeparatorIndex + 1, image.length()))
     }
 
     void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {

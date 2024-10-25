@@ -109,9 +109,9 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm --classic")
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: cesmarvin-setup\"")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
-        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
+        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
         assertThat(scriptMock.allActualArgs[14].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
         assertThat(scriptMock.allActualArgs[16].trim()).startsWith("echo \"Using credentials: harborhelmchartpush\"")
         assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
         assertThat(scriptMock.allActualArgs[18].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
@@ -146,9 +146,9 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm")
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: myBackendCredentialsID\"")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
-        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-docker-registry || true")
+        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
         assertThat(scriptMock.allActualArgs[14].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry k8s-dogu-operator-docker-registry --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
         assertThat(scriptMock.allActualArgs[16].trim()).startsWith("echo \"Using credentials: myHarborCredentials\"")
         assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
         assertThat(scriptMock.allActualArgs[18].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
@@ -545,7 +545,8 @@ spec:
 
         scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
         scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"docker.io/foo/image\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml", "foo")
         scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml", "foo")
 
         // when
@@ -554,10 +555,13 @@ spec:
         // then
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"docker.io/foo/image\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml".trim())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
         assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("whoami".trim())
+        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
+        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
     }
 
     void testK3d_configureComponentOperatorVersion() {
