@@ -40,7 +40,7 @@ node('docker') {
         }
 
         stage('Unit Test') {
-            mvn 'test -Dmaven.test.failure.ignore=true'
+            mvn 'test'
             // Archive Unit and integration test results, if any
             junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
         }
