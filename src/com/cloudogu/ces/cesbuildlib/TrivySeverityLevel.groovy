@@ -3,7 +3,7 @@ package com.cloudogu.ces.cesbuildlib
 /**
  * Defines aggregated vulnerability levels
  */
-class TrivyScanLevel {
+class TrivySeverityLevel {
     /**
      * Only critical vulnerabilities.
      */
@@ -20,7 +20,7 @@ class TrivyScanLevel {
     static String MEDIUM = "CRITICAL,HIGH,MEDIUM"
 
     /**
-     * All vunlerabilities.
+     * All vulnerabilities.
      */
     static String ALL = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
 }
