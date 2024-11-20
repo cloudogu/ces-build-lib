@@ -16,7 +16,7 @@ class TrivyTest extends GroovyTestCase {
         when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
         when(imageMock.mountDockerSocket()).thenReturn(imageMock)
         when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenReturn(null)
-        Trivy trivy = new Trivy(scriptMock, "/.trivy/trivyReport.json", dockerMock)
+        Trivy trivy = new Trivy(scriptMock, dockerMock)
 
         trivy.scanImage("nginx")
         // TODO: check that the build is not marked as unstable
@@ -31,7 +31,7 @@ class TrivyTest extends GroovyTestCase {
         when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
         when(imageMock.mountDockerSocket()).thenReturn(imageMock)
         when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenThrow(new RuntimeException("Trivy scan had errors: "))
-        Trivy trivy = new Trivy(scriptMock, "/.trivy/trivyReport.json", dockerMock)
+        Trivy trivy = new Trivy(scriptMock, dockerMock)
 
         def exception = shouldFail {
             trivy.scanImage("inval!d:::///1.1...1.1.")
