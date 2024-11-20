@@ -1,12 +1,11 @@
 package com.cloudogu.ces.cesbuildlib
 
 class Trivy implements Serializable {
-    private static final String DEFAULT_TRIVY_VERSION = "0.57.1"
+    static final String DEFAULT_TRIVY_VERSION = "0.57.1"
     private script
     private Docker docker
     private String trivyVersion
     private String trivyDirectory = ".trivy"
-    private String trivyReportFilenameWithoutExtension = "/"+trivyDirectory+"/trivyReport"
 
     Trivy(script, Docker docker = new Docker(script), String trivyVersion = DEFAULT_TRIVY_VERSION) {
         this.script = script
@@ -28,16 +27,22 @@ class Trivy implements Serializable {
      * @param strategy The strategy to follow after the scan. Should the build become unstable or failed? Or Should any vulnerability be ignored? (@see TrivyScanStrategy)
      * @return Returns true if the scan was ok (no vulnerability found); returns false if any vulnerability was found
      */
-    boolean scanImage(String imageName, String trivyReportFilename = "${script.env.WORKSPACE}/.trivy/trivyReport.json", String additionalFlags = "", String severityLevel = TrivySeverityLevel.CRITICAL, String strategy = TrivyScanStrategy.FAIL) {
+    boolean scanImage(
+        String imageName,
+        String trivyReportFilename = "${this.script.env.WORKSPACE}/.trivy/trivyReport.json",
+        String additionalFlags = "",
+        String severityLevel = TrivySeverityLevel.CRITICAL,
+        String strategy = TrivyScanStrategy.FAIL
+    ) {
         int exitCode
-        docker.image("aquasec/trivy:${trivyVersion}")
+        this.docker.image("aquasec/trivy:${trivyVersion}")
             .mountJenkinsUser()
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 // Write result to $trivyReportFilename in json format (--format json), which can be converted in the saveFormattedTrivyReport function
                 // Exit with exit code 1 if vulnerabilities are found
                 script.sh("mkdir -p " + trivyDirectory)
-                exitCode = script.sh(script: "trivy image --exit-code 1 --format " + TrivyScanFormat.JSON + " -o ${trivyReportFilename} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
+                exitCode = script.sh(script: "trivy image --exit-code 1 exit-on-eol 1 --format ${TrivyScanFormat.JSON} -o ${trivyReportFilename} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
         switch (exitCode) {
             case 0:
@@ -53,11 +58,11 @@ class Trivy implements Serializable {
         // TODO: Include .trivyignore file, if existent. Do not fail if .trivyignore file does not exist.
     }
 
-   /**
-    * Save the Trivy scan results as a file with a specific format
-    *
-    * @param format The format of the output file (@see TrivyScanFormat)
-    */
+    /**
+     * Save the Trivy scan results as a file with a specific format
+     *
+     * @param format The format of the output file (@see TrivyScanFormat)
+     */
     void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML) {
         // TODO: DO NOT scan again! Take the trivyReportFile and convert its content
         // See https://aquasecurity.github.io/trivy/v0.52/docs/references/configuration/cli/trivy_convert/
