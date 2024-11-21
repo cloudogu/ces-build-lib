@@ -5,7 +5,7 @@ class Trivy implements Serializable {
     private script
     private Docker docker
     private String trivyVersion
-    private String trivyDirectory = ".trivy"
+    private String trivyDirectory = "trivy"
     private String trivyReportFilenameWithoutExtension = trivyDirectory+"/trivyReport"
 
     Trivy(script, Docker docker = new Docker(script), String trivyVersion = "0.57.1") {
@@ -30,7 +30,7 @@ class Trivy implements Serializable {
      */
     boolean scanImage(
         String imageName,
-        String trivyReportFilename = "${this.script.env.WORKSPACE}/.trivy/trivyReport.json",
+        String trivyReportFilename = "${this.script.env.WORKSPACE}/trivy/trivyReport.json",
         String additionalFlags = "",
         String severityLevel = TrivySeverityLevel.CRITICAL,
         String strategy = TrivyScanStrategy.FAIL
@@ -64,7 +64,7 @@ class Trivy implements Serializable {
      *
      * @param format The format of the output file (@see TrivyScanFormat)
      */
-    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String trivyReportFilename = "${script.env.WORKSPACE}/.trivy/trivyReport.json") {
+    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String trivyReportFilename = "${script.env.WORKSPACE}/trivy/trivyReport.json") {
         String formatExtension
         switch (format) {
             case TrivyScanFormat.HTML:
@@ -84,6 +84,6 @@ class Trivy implements Serializable {
                 script.sh(script: "trivy convert --format ${format} --output ${trivyReportFilenameWithoutExtension}.${formatExtension} ${trivyReportFilename}")
             }
 
-        script.archiveArtifacts artifacts: "${trivyReportFilenameWithoutExtension}.${format}", allowEmptyArchive: true
+        script.archiveArtifacts artifacts: "${trivyReportFilenameWithoutExtension}.*", allowEmptyArchive: true
     }
 }
