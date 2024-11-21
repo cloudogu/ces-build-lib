@@ -15,7 +15,7 @@ class TrivyScanFormat {
     static String JSON = "json"
 
     /**
-     * Output as plain text file.
+     * Output as table.
      */
-    static String PLAIN = "plain"
+    static String TABLE = "table"
 }

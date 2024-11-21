@@ -6,6 +6,7 @@ class Trivy implements Serializable {
     private Docker docker
     private String trivyVersion
     private String trivyDirectory = ".trivy"
+    private String trivyReportFilenameWithoutExtension = trivyDirectory+"/trivyReport"
 
     Trivy(script, Docker docker = new Docker(script), String trivyVersion = "0.57.1") {
         this.script = script
@@ -63,8 +64,26 @@ class Trivy implements Serializable {
      *
      * @param format The format of the output file (@see TrivyScanFormat)
      */
-    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML) {
-        // TODO: DO NOT scan again! Take the trivyReportFile and convert its content
-        // See https://aquasecurity.github.io/trivy/v0.52/docs/references/configuration/cli/trivy_convert/
+    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String trivyReportFilename = "${script.env.WORKSPACE}/.trivy/trivyReport.json") {
+        String formatExtension
+        switch (format) {
+            case TrivyScanFormat.HTML:
+                formatExtension = "html"
+                // TODO: html is no standard convert format. Use a template!
+            case TrivyScanFormat.JSON:
+                // Result file is already in JSON format
+                return
+            case TrivyScanFormat.TABLE:
+                formatExtension = "table"
+            default:
+                // TODO: Do nothing? Throw exception? idk
+                break
+        }
+        docker.image("aquasec/trivy:${trivyVersion}")
+            .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
+                script.sh(script: "trivy convert --format ${format} --output ${trivyReportFilenameWithoutExtension}.${formatExtension} ${trivyReportFilename}")
+            }
+
+        script.archiveArtifacts artifacts: "${trivyReportFilenameWithoutExtension}.${format}", allowEmptyArchive: true
     }
 }
