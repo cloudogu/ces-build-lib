@@ -42,18 +42,18 @@ class Trivy implements Serializable {
                 // Write result to $trivyReportFilename in json format (--format json), which can be converted in the saveFormattedTrivyReport function
                 // Exit with exit code 1 if vulnerabilities are found
                 script.sh("mkdir -p " + trivyDirectory)
-                exitCode = script.sh(script: "trivy image --exit-code 1 --exit-on-eol 1 --format ${TrivyScanFormat.JSON} -o ${trivyReportFilename} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
+                exitCode = script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFilename} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
         switch (exitCode) {
             case 0:
                 // Everything all right, no vulnerabilities
                 return true
-            case 1:
+            case 10:
                 // Found vulnerabilities
                 // TODO: Set build status according to strategy
                 return false
             default:
-                throw new TrivyScanException("Error during trivy scan; exit code: " + exitCode)
+                script.error("Error during trivy scan; exit code: " + exitCode)
         }
         // TODO: Include .trivyignore file, if existent. Do not fail if .trivyignore file does not exist.
     }
