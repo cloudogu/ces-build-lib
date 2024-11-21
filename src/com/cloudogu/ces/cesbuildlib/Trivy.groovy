@@ -65,25 +65,28 @@ class Trivy implements Serializable {
      * @param format The format of the output file (@see TrivyScanFormat)
      */
     void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String trivyReportFilename = "${script.env.WORKSPACE}/trivy/trivyReport.json") {
-        String formatExtension
+        String fileExtension
+        String formatString
         switch (format) {
             case TrivyScanFormat.HTML:
-                formatExtension = "html"
-                // TODO: html is no standard convert format. Use a template!
+                formatString = "template --template \"@/contrib/html.tpl\""
+                fileExtension = "html"
+                break
             case TrivyScanFormat.JSON:
                 // Result file is already in JSON format
                 return
             case TrivyScanFormat.TABLE:
-                formatExtension = "table"
+                formatString = "table"
+                fileExtension = "txt"
+                break
             default:
                 // TODO: Do nothing? Throw exception? idk
                 break
         }
         docker.image("aquasec/trivy:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                script.sh(script: "trivy convert --format ${format} --output ${trivyReportFilenameWithoutExtension}.${formatExtension} ${trivyReportFilename}")
+                script.sh(script: "trivy convert --format ${formatString} --output ${trivyReportFilenameWithoutExtension}.${fileExtension} ${trivyReportFilename}")
             }
-
         script.archiveArtifacts artifacts: "${trivyReportFilenameWithoutExtension}.*", allowEmptyArchive: true
     }
 }
