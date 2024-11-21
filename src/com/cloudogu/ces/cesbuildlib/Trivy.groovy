@@ -4,10 +4,10 @@ class Trivy implements Serializable {
     static final String DEFAULT_TRIVY_VERSION = "0.57.1"
     private script
     private Docker docker
-    private String trivyVersion = DEFAULT_TRIVY_VERSION
+    private String trivyVersion
     private String trivyDirectory = ".trivy"
 
-    Trivy(script, Docker docker = new Docker(script), String trivyVersion = this.trivyVersion) {
+    Trivy(script, Docker docker = new Docker(script), String trivyVersion = "0.57.1") {
         this.script = script
         this.docker = docker
         this.trivyVersion = trivyVersion
