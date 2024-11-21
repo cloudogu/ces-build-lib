@@ -4,10 +4,10 @@ class Trivy implements Serializable {
     static final String DEFAULT_TRIVY_VERSION = "0.57.1"
     private script
     private Docker docker
-    private String trivyVersion
+    private String trivyVersion = DEFAULT_TRIVY_VERSION
     private String trivyDirectory = ".trivy"
 
-    Trivy(script, Docker docker = new Docker(script), String trivyVersion = DEFAULT_TRIVY_VERSION) {
+    Trivy(script, Docker docker = new Docker(script), String trivyVersion = this.trivyVersion) {
         this.script = script
         this.docker = docker
         this.trivyVersion = trivyVersion
@@ -35,7 +35,7 @@ class Trivy implements Serializable {
         String strategy = TrivyScanStrategy.FAIL
     ) {
         int exitCode
-        this.docker.image("aquasec/trivy:${trivyVersion}")
+        docker.image("aquasec/trivy:${trivyVersion}")
             .mountJenkinsUser()
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
