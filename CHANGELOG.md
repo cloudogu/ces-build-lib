@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
-- [#137] Determine PreRelease Branch
+
+## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
+### Added
+- [#137] function to determine PreRelease Branch
 
 ## [3.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-10-25
 ### Changed
