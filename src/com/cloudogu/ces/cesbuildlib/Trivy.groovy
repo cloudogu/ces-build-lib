@@ -6,7 +6,6 @@ class Trivy implements Serializable {
     private Docker docker
     private String trivyVersion
     private String trivyDirectory = "trivy"
-    private String trivyReportFilenameWithoutExtension = trivyDirectory+"/trivyReport"
 
     Trivy(script, Docker docker = new Docker(script), String trivyVersion = "0.57.1") {
         this.script = script
@@ -30,20 +29,20 @@ class Trivy implements Serializable {
      */
     boolean scanImage(
         String imageName,
-        String trivyReportFilename = "${this.script.env.WORKSPACE}/trivy/trivyReport.json",
         String additionalFlags = "",
         String severityLevel = TrivySeverityLevel.CRITICAL,
-        String strategy = TrivyScanStrategy.FAIL
+        String strategy = TrivyScanStrategy.FAIL,
+        String trivyReportFile = "trivy/trivyReport.json"
     ) {
         int exitCode
         docker.image("aquasec/trivy:${trivyVersion}")
             .mountJenkinsUser()
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                // Write result to $trivyReportFilename in json format (--format json), which can be converted in the saveFormattedTrivyReport function
+                // Write result to $trivyReportFile in json format (--format json), which can be converted in the saveFormattedTrivyReport function
                 // Exit with exit code 1 if vulnerabilities are found
                 script.sh("mkdir -p " + trivyDirectory)
-                exitCode = script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFilename} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
+                exitCode = script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
         switch (exitCode) {
             case 0:
@@ -62,18 +61,22 @@ class Trivy implements Serializable {
      * Save the Trivy scan results as a file with a specific format
      *
      * @param format The format of the output file (@see TrivyScanFormat)
+     * @param formattedTrivyReportFilename The file name your report files should get, without file extension. E.g. "ubuntu24report"
+     * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
      */
-    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String trivyReportFilename = "${script.env.WORKSPACE}/trivy/trivyReport.json") {
+    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String formattedTrivyReportFilename = "trivyReport", String trivyReportFile = "trivy/trivyReport.json") {
         String fileExtension
         String formatString
+        String trivyDirectory = "trivy/"
         switch (format) {
             case TrivyScanFormat.HTML:
                 formatString = "template --template \"@/contrib/html.tpl\""
                 fileExtension = "html"
                 break
             case TrivyScanFormat.JSON:
-                // Result file is already in JSON format
-                return
+                formatString = "json"
+                fileExtension = "json"
+                break
             case TrivyScanFormat.TABLE:
                 formatString = "table"
                 fileExtension = "txt"
@@ -84,8 +87,8 @@ class Trivy implements Serializable {
         }
         docker.image("aquasec/trivy:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                script.sh(script: "trivy convert --format ${formatString} --output ${trivyReportFilenameWithoutExtension}.${fileExtension} ${trivyReportFilename}")
+                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
             }
-        script.archiveArtifacts artifacts: "${trivyReportFilenameWithoutExtension}.*", allowEmptyArchive: true
+        script.archiveArtifacts artifacts: "${trivyDirectory}${formattedTrivyReportFilename}.*", allowEmptyArchive: true
     }
 }
