@@ -56,7 +56,6 @@ class Trivy implements Serializable {
             default:
                 script.error("Error during trivy scan; exit code: " + exitCode)
         }
-        // TODO: Include .trivyignore file, if existent. Do not fail if .trivyignore file does not exist.
     }
 
     /**
