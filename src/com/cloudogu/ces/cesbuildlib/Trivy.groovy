@@ -30,7 +30,7 @@ class Trivy implements Serializable {
     boolean scanImage(
         String imageName,
         String severityLevel = TrivySeverityLevel.CRITICAL,
-        String strategy = TrivyScanStrategy.FAIL,
+        String strategy = TrivyScanStrategy.UNSTABLE,
         // Avoid rate limits of default Trivy database source
         String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
@@ -51,7 +51,19 @@ class Trivy implements Serializable {
                 return true
             case 10:
                 // Found vulnerabilities
-                // TODO: Set build status according to strategy
+                // Set build status according to strategy
+                switch (strategy) {
+                    case TrivyScanStrategy.IGNORE:
+                        break
+                    case TrivyScanStrategy.UNSTABLE:
+                        script.archiveArtifacts artifacts: "${trivyReportFile}", allowEmptyArchive: true
+                        script.unstable("Trivy has found vulnerabilities in image " + imageName + ". See " + trivyReportFile)
+                        break
+                    case TrivyScanStrategy.FAIL:
+                        script.archiveArtifacts artifacts: "${trivyReportFile}", allowEmptyArchive: true
+                        script.error("Trivy has found vulnerabilities in image " + imageName + ". See " + trivyReportFile)
+                        break
+                }
                 return false
             default:
                 script.error("Error during trivy scan; exit code: " + exitCode)
