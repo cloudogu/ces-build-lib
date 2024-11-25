@@ -29,9 +29,10 @@ class Trivy implements Serializable {
      */
     boolean scanImage(
         String imageName,
-        String additionalFlags = "",
         String severityLevel = TrivySeverityLevel.CRITICAL,
         String strategy = TrivyScanStrategy.FAIL,
+        // Avoid rate limits of default Trivy database source
+        String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
     ) {
         int exitCode
