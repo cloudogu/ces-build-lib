@@ -80,8 +80,8 @@ class Trivy implements Serializable {
                 fileExtension = "txt"
                 break
             default:
-                // TODO: Do nothing? Throw exception? idk
-                break
+                script.error("This format did not match the supported formats: " + format)
+                return
         }
         docker.image("aquasec/trivy:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
