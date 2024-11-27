@@ -92,8 +92,8 @@ class Trivy implements Serializable {
         String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
     ) {
-        String image = script.sh(script: "jq .Image ${doguDir}/dogu.json", returnStdout: true)
-        String version = script.sh(script: "jq .Version ${doguDir}/dogu.json", returnStdout: true)
+        String image = script.sh(script: "jq .Image ${doguDir}/dogu.json", returnStdout: true).trim()
+        String version = script.sh(script: "jq .Version ${doguDir}/dogu.json", returnStdout: true).trim()
         return scanImage(image+":"+version, severityLevel, strategy, additionalFlags, trivyReportFile)
     }
 
