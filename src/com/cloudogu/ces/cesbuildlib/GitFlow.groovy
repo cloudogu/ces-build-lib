@@ -19,6 +19,13 @@ class GitFlow implements Serializable {
     }
 
     /**
+     * @return if this branch is the develop branch and therefor ready for pre-release according to git flow
+     */
+    boolean isPreReleaseBranch() {
+        return git.getSimpleBranchName().equals("develop")
+    }
+
+    /**
      * Finishes a git flow release and pushes all merged branches to remote
      *
      * Only execute this function if you are already on a release branch

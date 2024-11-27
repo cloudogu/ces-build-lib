@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
+### Added
+- [#137] function to determine PreRelease Branch
+
 ## [3.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-10-25
 ### Changed
 - [#134] **Breaking**: Change container registry secret from `k8s-dogu-operator-docker-registry` to `ces-container-registries`.
