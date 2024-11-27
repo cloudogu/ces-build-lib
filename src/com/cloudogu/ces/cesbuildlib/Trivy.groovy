@@ -35,15 +35,14 @@ class Trivy implements Serializable {
         String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
     ) {
-        int exitCode
-        docker.image("aquasec/trivy:${trivyVersion}")
+        Integer exitCode = docker.image("aquasec/trivy:${trivyVersion}")
             .mountJenkinsUser()
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 // Write result to $trivyReportFile in json format (--format json), which can be converted in the saveFormattedTrivyReport function
                 // Exit with exit code 1 if vulnerabilities are found
                 script.sh("mkdir -p " + trivyDirectory)
-                exitCode = script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
+                script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
         switch (exitCode) {
             case 0:
