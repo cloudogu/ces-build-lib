@@ -46,6 +46,7 @@ class TrivyTest extends GroovyTestCase {
         when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenAnswer(new Answer<Integer>() {
             @Override
             Integer answer(InvocationOnMock invocation) throws Throwable {
+                // mock "sh trivy" so that it returns the expected status code and check trivy arguments
                 Integer expectedStatusCode = 0
                 Closure closure = invocation.getArgument(1)
                 scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, expectedStatusCode)
@@ -53,6 +54,7 @@ class TrivyTest extends GroovyTestCase {
                 assertEquals(expectedStatusCode, statusCode)
                 assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
 
+                // emulate trivy call with local trivy installation and check that it has the same behavior
                 Files.createDirectories(trivyDir)
                 Process process = trivyExec.exec(Trivy.DEFAULT_TRIVY_VERSION, trivyArguments, workDir)
                 if(process.waitFor(2, TimeUnit.MINUTES)) {
