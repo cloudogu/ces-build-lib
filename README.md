@@ -1329,6 +1329,24 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
 trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ```
 
+## Scan Dogu image with Trivy
+
+The `scanDogu()` function lets you scan a Dogu image without typing its full name. The method reads the image name
+and version from the dogu.json inside the directory you point it to via its first argument.
+The default directory is the current directory.
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanDogu()
+// Explicitly set directory that contains the dogu code (dogu.json)
+trivy.scanDogu("subfolder/test1/jenkins")
+// Set scan options just like in the scanImage method
+trivy.scanDogu(".", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/mydogu.json")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
+```
+
 ## Ignore / allowlist
 
 If you want to ignore / allow certain vulnerabilities, please use a .trivyignore file

@@ -21,10 +21,10 @@ class Trivy implements Serializable {
      * - Evaluate via exit codes: 0 = no vulnerability; 1 = vulnerabilities found; other = function call failed
      *
      * @param imageName The name of the image to be scanned; may include a version tag
-     * @param trivyVersion The version of Trivy used for scanning
-     * @param additionalFlags Additional Trivy command flags
      * @param severityLevel The vulnerability level to scan. Can be a member of TrivySeverityLevel or a custom String (e.g. 'CRITICAL,LOW')
      * @param strategy The strategy to follow after the scan. Should the build become unstable or failed? Or Should any vulnerability be ignored? (@see TrivyScanStrategy)
+     * @param additionalFlags Additional Trivy command flags
+     * @param trivyReportFile Location of Trivy report file. Should be set individually when scanning multiple images in the same pipeline
      * @return Returns true if the scan was ok (no vulnerability found); returns false if any vulnerability was found
      */
     boolean scanImage(
@@ -68,6 +68,33 @@ class Trivy implements Serializable {
             default:
                 script.error("Error during trivy scan; exit code: " + exitCode)
         }
+    }
+
+    /**
+     * Scans a dogu image for vulnerabilities.
+     * Notes:
+     * - Use a .trivyignore file for allowed CVEs
+     * - This function will generate a JSON formatted report file which can be converted to other formats via saveFormattedTrivyReport()
+     * - Evaluate via exit codes: 0 = no vulnerability; 1 = vulnerabilities found; other = function call failed
+     *
+     * @param doguDir The directory the dogu code (dogu.json) is located
+     * @param severityLevel The vulnerability level to scan. Can be a member of TrivySeverityLevel or a custom String (e.g. 'CRITICAL,LOW')
+     * @param strategy The strategy to follow after the scan. Should the build become unstable or failed? Or Should any vulnerability be ignored? (@see TrivyScanStrategy)
+     * @param additionalFlags Additional Trivy command flags
+     * @param trivyReportFile Location of Trivy report file. Should be set individually when scanning multiple images in the same pipeline
+     * @return Returns true if the scan was ok (no vulnerability found); returns false if any vulnerability was found
+     */
+    boolean scanDogu(
+        String doguDir = ".",
+        String severityLevel = TrivySeverityLevel.CRITICAL,
+        String strategy = TrivyScanStrategy.UNSTABLE,
+        // Avoid rate limits of default Trivy database source
+        String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
+        String trivyReportFile = "trivy/trivyReport.json"
+    ) {
+        String image = script.sh(script: "jq .Image ${doguDir}/dogu.json", returnStdout: true)
+        String version = script.sh(script: "jq .Version ${doguDir}/dogu.json", returnStdout: true)
+        return scanImage(image+":"+version, severityLevel, strategy, additionalFlags, trivyReportFile)
     }
 
     /**
