@@ -1243,7 +1243,7 @@ See [shellCheck](vars/shellCheck.groovy)
 
 # Trivy
 
-Scan images for vulnerabilities with Trivy.
+Scan container images for vulnerabilities with Trivy.
 
 ## Create a Trivy object
 
