@@ -1,6 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
-
+import junit.framework.AssertionFailedError
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
@@ -20,17 +20,15 @@ class TrivyTest extends GroovyTestCase {
     Path installDir = Paths.get("target/trivyInstalls")
     Path workDir = Paths.get("")
     TrivyExecutor trivyExec = new TrivyExecutor(installDir)
+    String trivyImage = "aquasec/trivy:" + Trivy.DEFAULT_TRIVY_VERSION
 
-    void testScanImage_successfulTrivyExecution() {
-        // with hopes that this image will never have CVEs
-        String imageName = "hello-world"
-        String severityLevel = TrivySeverityLevel.CRITICAL
+
+    ScriptMock doTestScan(String imageName, String severityLevel, String strategy, int expectedStatusCode) {
         File trivyReportFile = new File("trivy/trivyReport.json")
         Path trivyDir = Paths.get(trivyReportFile.getParent())
         String trivyArguments = "image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}"
         String expectedTrivyCommand = "trivy $trivyArguments"
 
-        String trivyImage = "aquasec/trivy:" + Trivy.DEFAULT_TRIVY_VERSION
         def scriptMock = new ScriptMock()
         scriptMock.env.WORKSPACE = "/test"
         Docker dockerMock = mock(Docker.class)
@@ -42,7 +40,6 @@ class TrivyTest extends GroovyTestCase {
             @Override
             Integer answer(InvocationOnMock invocation) throws Throwable {
                 // mock "sh trivy" so that it returns the expected status code and check trivy arguments
-                Integer expectedStatusCode = 0
                 Closure closure = invocation.getArgument(1)
                 scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, expectedStatusCode)
                 Integer statusCode = closure.call() as Integer
@@ -63,7 +60,18 @@ class TrivyTest extends GroovyTestCase {
             }
         })
         Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, dockerMock)
-        trivy.scanImage(imageName, severityLevel, TrivyScanStrategy.UNSTABLE)
+
+        trivy.scanImage(imageName, severityLevel, strategy)
+
+        return scriptMock
+    }
+
+    void testScanImage_successfulTrivyExecution() {
+        // with hopes that this image will never have CVEs
+        String imageName = "hello-world"
+        String severityLevel = TrivySeverityLevel.CRITICAL
+
+        def scriptMock = doTestScan(imageName, severityLevel, TrivyScanStrategy.UNSTABLE, 0)
 
         assertEquals(false, scriptMock.getUnstable())
     }
@@ -72,45 +80,8 @@ class TrivyTest extends GroovyTestCase {
         // with hopes that this image will always have CVEs
         String imageName = "alpine:3.18.7"
         String severityLevel = TrivySeverityLevel.ALL
-        File trivyReportFile = new File("trivy/trivyReport.json")
-        Path trivyDir = Paths.get(trivyReportFile.getParent())
-        String trivyArguments = "image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}"
-        String expectedTrivyCommand = "trivy $trivyArguments"
 
-        String trivyImage = "aquasec/trivy:" + Trivy.DEFAULT_TRIVY_VERSION
-        def scriptMock = new ScriptMock()
-        scriptMock.env.WORKSPACE = "/test"
-        Docker dockerMock = mock(Docker.class)
-        Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.image(trivyImage)).thenReturn(imageMock)
-        when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
-        when(imageMock.mountDockerSocket()).thenReturn(imageMock)
-        when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenAnswer(new Answer<Integer>() {
-            @Override
-            Integer answer(InvocationOnMock invocation) throws Throwable {
-                // mock "sh trivy" so that it returns the expected status code and check trivy arguments
-                Integer expectedStatusCode = 10
-                Closure closure = invocation.getArgument(1)
-                scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, expectedStatusCode)
-                Integer statusCode = closure.call() as Integer
-                assertEquals(expectedStatusCode, statusCode)
-                assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
-
-                // emulate trivy call with local trivy installation and check that it has the same behavior
-                Files.createDirectories(trivyDir)
-                Process process = trivyExec.exec(Trivy.DEFAULT_TRIVY_VERSION, trivyArguments, workDir)
-                if(process.waitFor(2, TimeUnit.MINUTES)) {
-                    assertEquals(expectedStatusCode, process.exitValue())
-                } else {
-                    process.destroyForcibly()
-                    fail("terminate trivy due to timeout")
-                }
-
-                return expectedStatusCode
-            }
-        })
-        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, dockerMock)
-        trivy.scanImage(imageName, severityLevel, TrivyScanStrategy.UNSTABLE)
+        def scriptMock = doTestScan(imageName, severityLevel, TrivyScanStrategy.UNSTABLE, 10)
 
         assertEquals(true, scriptMock.getUnstable())
     }
@@ -119,97 +90,35 @@ class TrivyTest extends GroovyTestCase {
         // with hopes that this image will always have CVEs
         String imageName = "alpine:3.18.7"
         String severityLevel = TrivySeverityLevel.ALL
-        File trivyReportFile = new File("trivy/trivyReport.json")
-        Path trivyDir = Paths.get(trivyReportFile.getParent())
-        String trivyArguments = "image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}"
-        String expectedTrivyCommand = "trivy $trivyArguments"
 
-        String trivyImage = "aquasec/trivy:" + Trivy.DEFAULT_TRIVY_VERSION
-        def scriptMock = new ScriptMock()
-        scriptMock.env.WORKSPACE = "/test"
-        Docker dockerMock = mock(Docker.class)
-        Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.image(trivyImage)).thenReturn(imageMock)
-        when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
-        when(imageMock.mountDockerSocket()).thenReturn(imageMock)
-        when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenAnswer(new Answer<Integer>() {
-            @Override
-            Integer answer(InvocationOnMock invocation) throws Throwable {
-                // mock "sh trivy" so that it returns the expected status code and check trivy arguments
-                Integer expectedStatusCode = 10
-                Closure closure = invocation.getArgument(1)
-                scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, expectedStatusCode)
-                Integer statusCode = closure.call() as Integer
-                assertEquals(expectedStatusCode, statusCode)
-                assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
-
-                // emulate trivy call with local trivy installation and check that it has the same behavior
-                Files.createDirectories(trivyDir)
-                Process process = trivyExec.exec(Trivy.DEFAULT_TRIVY_VERSION, trivyArguments, workDir)
-                if(process.waitFor(2, TimeUnit.MINUTES)) {
-                    assertEquals(expectedStatusCode, process.exitValue())
-                } else {
-                    process.destroyForcibly()
-                    fail("terminate trivy due to timeout")
-                }
-
-                return expectedStatusCode
-            }
-        })
-        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, dockerMock)
-        def errorMsg = shouldFail {
-            trivy.scanImage(imageName, severityLevel, TrivyScanStrategy.FAIL)
+        def gotException = false
+        try {
+            doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 10)doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 10)
+        } catch (AssertionFailedError e) {
+            // exception could also be a junit assertion exception. This means a previous assertion failed
+            throw e
+        } catch (Exception e) {
+            assertTrue("exception is: ${e.getMessage()}", e.getMessage().contains("Trivy has found vulnerabilities in image"))
+            gotException = true
         }
-        assertTrue("exception is: $errorMsg", errorMsg.contains("Trivy has found vulnerabilities in image"))
-        assertEquals(false, scriptMock.getUnstable())
+        assertTrue(gotException)
     }
 
     void testScanImage_unsuccessfulTrivyExecution() {
         // with hopes that this image will always have CVEs
         String imageName = "inval!d:::///1.1...1.1."
         String severityLevel = TrivySeverityLevel.ALL
-        File trivyReportFile = new File("trivy/trivyReport.json")
-        Path trivyDir = Paths.get(trivyReportFile.getParent())
-        String trivyArguments = "image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}"
-        String expectedTrivyCommand = "trivy $trivyArguments"
 
-        String trivyImage = "aquasec/trivy:" + Trivy.DEFAULT_TRIVY_VERSION
-        def scriptMock = new ScriptMock()
-        scriptMock.env.WORKSPACE = "/test"
-        Docker dockerMock = mock(Docker.class)
-        Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.image(trivyImage)).thenReturn(imageMock)
-        when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
-        when(imageMock.mountDockerSocket()).thenReturn(imageMock)
-        when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenAnswer(new Answer<Integer>() {
-            @Override
-            Integer answer(InvocationOnMock invocation) throws Throwable {
-                // mock "sh trivy" so that it returns the expected status code and check trivy arguments
-                Integer expectedStatusCode = 1
-                Closure closure = invocation.getArgument(1)
-                scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, expectedStatusCode)
-                Integer statusCode = closure.call() as Integer
-                assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
-                assertEquals(expectedStatusCode, statusCode)
-
-                // emulate trivy call with local trivy installation and check that it has the same behavior
-                Files.createDirectories(trivyDir)
-                Process process = trivyExec.exec(Trivy.DEFAULT_TRIVY_VERSION, trivyArguments, workDir)
-                if(process.waitFor(2, TimeUnit.MINUTES)) {
-                    assertEquals(expectedStatusCode, process.exitValue())
-                } else {
-                    process.destroyForcibly()
-                    fail("terminate trivy due to timeout")
-                }
-
-                return expectedStatusCode
-            }
-        })
-        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, dockerMock)
-        def errorMsg = shouldFail {
-            trivy.scanImage("inval!d:::///1.1...1.1.", severityLevel, TrivyScanStrategy.UNSTABLE)
+        def gotException = false
+        try {
+            doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 1)
+        } catch (AssertionFailedError e) {
+            // exception could also be a junit assertion exception. This means a previous assertion failed
+            throw e
+        } catch (Exception e) {
+            assertTrue("exception is: ${e.getMessage()}", e.getMessage().contains("Error during trivy scan; exit code: 1"))
+            gotException = true
         }
-        assertTrue("exception is: $errorMsg", errorMsg.contains("Error during trivy scan; exit code: 1"))
+        assertTrue(gotException)
     }
-
 }
