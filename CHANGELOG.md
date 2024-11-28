@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Added
+- Add Trivy class for scanning container images with Trivy
+  - Combines the functionality of the findVulnerabilitiesWithTrivy function and the Trivy class of the dogu-build-lib
+
+### Deprecated
+- findVulnerabilitiesWithTrivy function is deprecated now. Please use the new Trivy class.
 
 ## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
 ### Added
