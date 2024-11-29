@@ -18,6 +18,6 @@ class Sh implements Serializable {
                 // Trim to remove trailing line breaks, which result in unwanted behavior in Jenkinsfiles:
                 // E.g. when using output in other sh() calls leading to executing the sh command after the line breaks,
                 // possibly discarding additional arguments
-                .trim()
+                ?.trim()
     }
 }

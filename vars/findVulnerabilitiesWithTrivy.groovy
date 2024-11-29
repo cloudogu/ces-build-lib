@@ -10,8 +10,8 @@ ArrayList call (Map args) {
         if(args.containsKey('allowList'))
             error "Arg allowList is deprecated, please use .trivyignore file"
         def imageName = args.imageName
-        def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.55.2'
-        def severityFlag = args.severity ? "--severity=${args.severity.join(',')}" : ''
+        def trivyVersion = args.trivyVersion ? args.trivyVersion : '0.57.1'
+        def severityFlag = args.severity ? "${args.severity.join(',')}" : ''
         def additionalFlags = args.additionalFlags ? args.additionalFlags : ''
         println(severityFlag)
 
@@ -27,7 +27,8 @@ ArrayList call (Map args) {
 
 ArrayList getVulnerabilities(String trivyVersion, String severityFlag, String additionalFlags,String imageName) {
     // this runs trivy and creates an output file with found vulnerabilities
-    runTrivyInDocker(trivyVersion, severityFlag, additionalFlags, imageName)
+    Trivy trivy = new Trivy(this, trivyVersion)
+    trivy.scanImage(imageName, severityFlag, TrivyScanStrategy.UNSTABLE, additionalFlags, "${env.WORKSPACE}/.trivy/trivyOutput.json")
 
     def trivyOutput = readJSON file: "${env.WORKSPACE}/.trivy/trivyOutput.json"
 
@@ -41,21 +42,6 @@ ArrayList getVulnerabilities(String trivyVersion, String severityFlag, String ad
     return vulnerabilities
 
 }
-
-
-
-
-def runTrivyInDocker(String trivyVersion, severityFlag, additionalFlags, imageName) {
-    new Docker(this).image("aquasec/trivy:${trivyVersion}")
-        .mountJenkinsUser()
-        .mountDockerSocket()
-        .inside("-v ${env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-
-            sh "trivy image -f json -o .trivy/trivyOutput.json ${severityFlag} ${additionalFlags} ${imageName}"
-        }
-}
-
-
 
 static boolean validateArgs(Map args) {
     return !(args == null || args.imageName == null || args.imageName == '')

@@ -11,7 +11,7 @@ node('docker') {
 
     def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
 
-    def mvn = cesBuildLib.MavenWrapperInDocker.new(this, 'adoptopenjdk/openjdk11:jdk-11.0.10_9-alpine')
+    def mvn = cesBuildLib.MavenWrapperInDocker.new(this, 'eclipse-temurin:11.0.25_9-jdk-alpine')
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
 
@@ -40,7 +40,7 @@ node('docker') {
         }
 
         stage('Unit Test') {
-            mvn 'test -Dmaven.test.failure.ignore=true'
+            mvn 'test'
             // Archive Unit and integration test results, if any
             junit allowEmptyResults: true, testResults: '**/target/failsafe-reports/TEST-*.xml,**/target/surefire-reports/TEST-*.xml'
         }
