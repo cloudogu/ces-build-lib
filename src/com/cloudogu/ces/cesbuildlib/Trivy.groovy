@@ -40,7 +40,7 @@ class Trivy implements Serializable {
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 // Write result to $trivyReportFile in json format (--format json), which can be converted in the saveFormattedTrivyReport function
-                // Exit with exit code 1 if vulnerabilities are found
+                // Exit with exit code 10 if vulnerabilities are found or os is so old that trivy has no records for it anymore
                 script.sh("mkdir -p " + trivyDirectory)
                 script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
