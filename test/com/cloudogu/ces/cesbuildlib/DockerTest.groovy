@@ -490,7 +490,6 @@ class DockerTest {
     /**
      * @return Mock Docker instance with mock image, that contains mocked methods.
      */
-    @SuppressWarnings("GroovyAssignabilityCheck")
     private Docker createWithImage(Map<String, Closure> mockedMethod = [:]) {
         def mockedScript = [
                 docker: [image: { String id ->

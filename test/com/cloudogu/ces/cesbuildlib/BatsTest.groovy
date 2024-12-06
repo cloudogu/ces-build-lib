@@ -1,6 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.Test
+import static org.junit.Assert.*
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
@@ -12,7 +13,7 @@ import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.verify
 import static org.mockito.Mockito.when
 
-class BatsTest extends GroovyTestCase {
+class BatsTest {
 
     ScriptMock scriptMock = new ScriptMock()
 

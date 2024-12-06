@@ -31,40 +31,49 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>2.4.21</version>
+            <version>3.0.23</version>
+            <type>pom</type>
         </dependency>
 
         <dependency>
             <groupId>com.cloudbees</groupId>
             <artifactId>groovy-cps</artifactId>
-            <version>1.31</version>
+            <version>1.34</version>
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-test-junit5</artifactId>
+            <version>3.0.23</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.3</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>3.3.3</version>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>4.5.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
-            <version>2.2</version>
+            <version>3.0</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.lesfurets</groupId>
             <artifactId>jenkins-pipeline-unit</artifactId>
-            <version>1.17</version>
+            <version>1.23</version>
             <scope>test</scope>
         </dependency>
 
@@ -83,7 +92,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.13.0</version>
                 <configuration>
                     <compilerId>groovy-eclipse-compiler</compilerId>
                 </configuration>
@@ -91,15 +100,22 @@
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-eclipse-compiler</artifactId>
-                        <version>3.3.0-01</version>
+                        <version>3.7.0</version>
                     </dependency>
                     <dependency>
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-eclipse-batch</artifactId>
-                        <version>2.5.6-01</version>
+                        <version>3.0.7-03</version>
                     </dependency>
                 </dependencies>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.0</version>
+            </plugin>
+
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
