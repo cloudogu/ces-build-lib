@@ -1,8 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.Test
+import static org.junit.Assert.*
+import static groovy.test.GroovyAssert.shouldFail
 
-class GitFlowTest extends GroovyTestCase {
+class GitFlowTest {
     def scriptMock = new ScriptMock()
     
     @Test
@@ -143,10 +145,10 @@ class GitFlowTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put('git ls-remote origin refs/tags/myVersion', 'thisIsATag')
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
-        String err = shouldFail(Exception.class) {
+        def err = shouldFail(Exception.class) {
             gitflow.finishRelease("myVersion")
         }
-        assertEquals("You cannot build this version, because it already exists.", err)
+        assertEquals('You cannot build this version, because it already exists.', err.getMessage())
     }
 
     @Test
@@ -155,10 +157,10 @@ class GitFlowTest extends GroovyTestCase {
         scriptMock.expectedShRetValueForScript.put("git log origin/branch..origin/develop --oneline", "some changes")
         Git git = new Git(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git)
-        String err = shouldFail(Exception.class) {
+        def err = shouldFail(Exception.class) {
             gitflow.finishRelease("myVersion")
         }
-        assertEquals("There are changes on develop branch that are not merged into release. Please merge and restart process.", err)
+        assertEquals('There are changes on develop branch that are not merged into release. Please merge and restart process.', err.getMessage())
     }
 
     void assertAuthor(int withEnvInvocationIndex, String author, String email) {

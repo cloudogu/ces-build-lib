@@ -1,8 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.Test
+import static org.junit.Assert.*
+import static groovy.test.GroovyAssert.shouldFail
 
-class GitHubTest extends GroovyTestCase {
+class GitHubTest {
     def testChangelog =
             '''
 ## [Unreleased]
@@ -78,7 +80,7 @@ class GitHubTest extends GroovyTestCase {
             """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
         String expectedHeader = """--header "Content-Type: application/json"  https://api.github.com/repos/myRepoName/releases"""
 
-        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
+        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}".toString(), scriptMock.allActualArgs[i++])
     }
 
     @Test
@@ -104,7 +106,7 @@ class GitHubTest extends GroovyTestCase {
             """"name": "v1.0.0", "body":"### Added\\n- everything"}'"""
         String expectedHeader = """--header "Content-Type: application/json"  https://api.github.com/repos/myRepoName/releases"""
 
-        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}", scriptMock.allActualArgs[i++])
+        assertEquals("curl -u \$GIT_AUTH_USR:\$GIT_AUTH_PSW --request POST ${expectedData} ${expectedHeader}".toString(), scriptMock.allActualArgs[i++])
     }
 
     @Test
@@ -118,7 +120,7 @@ class GitHubTest extends GroovyTestCase {
         def exception = shouldFail {
             github.createRelease("v1.0.0", "changes")
         }
-        assert exception.contains("Unable to create Github release without credentials")
+        assert exception.getMessage().contains('Unable to create Github release without credentials')
 
         assertFalse(scriptMock.unstable)
         github.createReleaseWithChangelog("v1.0.0", changelog)

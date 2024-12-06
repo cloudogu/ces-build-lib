@@ -1,5 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
+import static org.junit.Assert.*
+
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -9,7 +11,7 @@ import static org.mockito.ArgumentMatchers.anyString
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
-class K3dTest extends GroovyTestCase {
+class K3dTest {
     void testCreateClusterName() {
         K3d sut = new K3d("script", "leWorkSpace", "leK3dWorkSpace", "path")
         String testClusterName = sut.createClusterName()

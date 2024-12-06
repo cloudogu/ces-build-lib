@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [#140] Raise Dependencies
+  - Update Groovy to 3.0.23
+  - Update JUnit to 5.11.3 and added groovy-test-junit5:3.0.23
+  - Update Mockito to 4.5.1
+  - Update Hamcrest to 3.0
+  - Update Maven to 3.9.9
+    - maven-compiler-plugin to 3.13.0
 
 ## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
 ### Added
