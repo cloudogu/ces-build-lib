@@ -18,7 +18,6 @@ class Trivy implements Serializable {
      * Notes:
      * - Use a .trivyignore file for allowed CVEs
      * - This function will generate a JSON formatted report file which can be converted to other formats via saveFormattedTrivyReport()
-     * - Evaluate via exit codes: 0 = no vulnerability; 1 = vulnerabilities found; other = function call failed
      *
      * @param imageName The name of the image to be scanned; may include a version tag
      * @param severityLevel The vulnerability level to scan. Can be a member of TrivySeverityLevel or a custom String (e.g. 'CRITICAL,LOW')
@@ -74,7 +73,6 @@ class Trivy implements Serializable {
      * Notes:
      * - Use a .trivyignore file for allowed CVEs
      * - This function will generate a JSON formatted report file which can be converted to other formats via saveFormattedTrivyReport()
-     * - Evaluate via exit codes: 0 = no vulnerability; 1 = vulnerabilities found; other = function call failed
      *
      * @param doguDir The directory the dogu code (dogu.json) is located
      * @param severityLevel The vulnerability level to scan. Can be a member of TrivySeverityLevel or a custom String (e.g. 'CRITICAL,LOW')
