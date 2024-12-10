@@ -12,12 +12,12 @@ class TrivySeverityLevel {
     /**
      * High or critical vulnerabilities.
      */
-    static String HIGH = "CRITICAL,HIGH"
+    static String HIGH_AND_ABOVE = "CRITICAL,HIGH"
 
     /**
      * Medium or higher vulnerabilities.
      */
-    static String MEDIUM = "CRITICAL,HIGH,MEDIUM"
+    static String MEDIUM_AND_ABOVE = "CRITICAL,HIGH,MEDIUM"
 
     /**
      * All vulnerabilities.
