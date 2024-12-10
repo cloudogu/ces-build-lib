@@ -127,6 +127,6 @@ class Trivy implements Serializable {
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
             }
-        script.archiveArtifacts artifacts: "${trivyDirectory}${formattedTrivyReportFilename}.*", allowEmptyArchive: true
+        script.archiveArtifacts artifacts: "${trivyDirectory}/${formattedTrivyReportFilename}.*", allowEmptyArchive: true
     }
 }
