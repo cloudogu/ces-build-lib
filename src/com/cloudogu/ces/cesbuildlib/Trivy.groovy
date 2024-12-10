@@ -106,7 +106,6 @@ class Trivy implements Serializable {
     void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String formattedTrivyReportFilename = "formattedTrivyReport", String trivyReportFile = "trivy/trivyReport.json") {
         String fileExtension
         String formatString
-        String trivyDirectory = "trivy/"
         switch (format) {
             case TrivyScanFormat.HTML:
                 formatString = "template --template \"@/contrib/html.tpl\""
@@ -126,7 +125,7 @@ class Trivy implements Serializable {
         }
         docker.image("aquasec/trivy:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
+                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
             }
         script.archiveArtifacts artifacts: "${trivyDirectory}${formattedTrivyReportFilename}.*", allowEmptyArchive: true
     }
