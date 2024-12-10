@@ -1303,7 +1303,8 @@ trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTAB
 ```
 
 Note that the flags "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db"
-are set by default to avoid rate limiting of Trivy database downloads.
+are set by default to avoid rate limiting of Trivy database downloads. If you set `additionalFlags` by yourself, you are overwriting
+these default flags and have to make sure to include them in your set of additional flags, if needed.
 
 ### Set the Trivy report file name
 
