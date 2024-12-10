@@ -2,14 +2,17 @@ package com.cloudogu.ces.cesbuildlib
 
 class Trivy implements Serializable {
     static final String DEFAULT_TRIVY_VERSION = "0.57.1"
+    static final String DEFAULT_TRIVY_IMAGE = "aquasec/trivy"
     private script
     private Docker docker
     private String trivyVersion
+    private String trivyImage
     private String trivyDirectory = "trivy"
 
-    Trivy(script, String trivyVersion = "0.57.1", Docker docker = new Docker(script)) {
+    Trivy(script, String trivyVersion = "0.57.1", String trivyImage = "aquasec/trivy", Docker docker = new Docker(script)) {
         this.script = script
         this.trivyVersion = trivyVersion
+        this.trivyImage = trivyImage
         this.docker = docker
     }
 
@@ -34,12 +37,12 @@ class Trivy implements Serializable {
         String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
     ) {
-        Integer exitCode = docker.image("aquasec/trivy:${trivyVersion}")
+        Integer exitCode = docker.image("${trivyImage}:${trivyVersion}")
             .mountJenkinsUser()
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 // Write result to $trivyReportFile in json format (--format json), which can be converted in the saveFormattedTrivyReport function
-                // Exit with exit code 10 if vulnerabilities are found or os is so old that trivy has no records for it anymore
+                // Exit with exit code 10 if vulnerabilities are found or OS is so old that trivy has no records for it anymore
                 script.sh("mkdir -p " + trivyDirectory)
                 script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
@@ -121,7 +124,7 @@ class Trivy implements Serializable {
                 script.error("This format did not match the supported formats: " + format)
                 return
         }
-        docker.image("aquasec/trivy:${trivyVersion}")
+        docker.image("${trivyImage}:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
             }

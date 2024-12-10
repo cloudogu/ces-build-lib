@@ -1251,10 +1251,12 @@ Scan container images for vulnerabilities with Trivy.
 Trivy trivy = new Trivy(this)
 // With specific Trivy version
 Trivy trivy = new Trivy(this, "0.57.1")
+// With specific Trivy image
+Trivy trivy = new Trivy(this, "0.57.1", "images.mycompany.test/trivy")
 // With explicit Docker registry
 Docker docker = new Docker(this)
 docker.withRegistry("https://my.registry.invalid", myRegistryCredentialsID)
-Trivy trivy = new Trivy(this, "0.57.1", docker)
+Trivy trivy = new Trivy(this, "0.57.1", "aquasec/trivy", docker)
 ```
 
 ## Scan image with Trivy

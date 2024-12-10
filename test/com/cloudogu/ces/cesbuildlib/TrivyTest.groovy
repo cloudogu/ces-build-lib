@@ -59,7 +59,7 @@ class TrivyTest extends GroovyTestCase {
                 return expectedStatusCode
             }
         })
-        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, dockerMock)
+        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
 
         trivy.scanImage(imageName, severityLevel, strategy)
 
