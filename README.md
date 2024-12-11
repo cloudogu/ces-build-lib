@@ -1338,8 +1338,8 @@ The output file of this converted Trivy report will have the extension "custom".
 ```groovy
 Trivy trivy = new Trivy(this)
 trivy.scanImage("ubuntu:24.04")
-trivy.saveFormattedTrivyReport("cosign-vuln")
-trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz")
+trivy.saveFormattedTrivyReport("cosign-vuln", "ubuntu24.04cosign")
+trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz", "ubuntu24.04myTemplate")
 ```
 
 ## Scan Dogu image with Trivy
