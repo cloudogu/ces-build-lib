@@ -1332,6 +1332,16 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
 trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ```
 
+You may also use any other supported [Trivy format](https://trivy.dev/v0.57/docs/references/configuration/cli/trivy_convert/) or a custom template from a file in your workspace.
+The output file of this converted Trivy report will have the extension "custom".
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04")
+trivy.saveFormattedTrivyReport("cosign-vuln")
+trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz")
+```
+
 ## Scan Dogu image with Trivy
 
 The `scanDogu()` function lets you scan a Dogu image without typing its full name. The method reads the image name

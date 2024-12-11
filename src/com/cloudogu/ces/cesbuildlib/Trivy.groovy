@@ -42,7 +42,7 @@ class Trivy implements Serializable {
             .mountDockerSocket()
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 // Write result to $trivyReportFile in json format (--format json), which can be converted in the saveFormattedTrivyReport function
-                // Exit with exit code 10 if vulnerabilities are found or OS is so old that trivy has no records for it anymore
+                // Exit with exit code 10 if vulnerabilities are found or OS is so old that Trivy has no records for it anymore
                 script.sh("mkdir -p " + trivyDirectory)
                 script.sh(script: "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o ${trivyReportFile} --severity ${severityLevel} ${additionalFlags} ${imageName}", returnStatus: true)
             }
@@ -121,8 +121,20 @@ class Trivy implements Serializable {
                 fileExtension = "txt"
                 break
             default:
-                script.error("This format did not match the supported formats: " + format)
-                return
+                // You may enter supported formats (sarif, cyclonedx, spdx, spdx-json, github, cosign-vuln, table or json)
+                // or your own template ("template --template @FILENAME")
+                List<String> trivyFormats = ['sarif', 'cyclonedx', 'spdx', 'spdx-json', 'github', 'cosign-vuln', 'table', 'json']
+                // Check if "format" is a custom template from a file
+                boolean isTemplateFormat = format ==~ /^template --template @\S+$/
+                // Check if "format" is one of the trivyFormats or a template
+                if (trivyFormats.any { format.contains(it) } || isTemplateFormat) {
+                    formatString = format
+                    fileExtension = "custom"
+                    break
+                } else {
+                    script.error("This format did not match the supported formats: " + format)
+                    return
+                }
         }
         docker.image("${trivyImage}:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
