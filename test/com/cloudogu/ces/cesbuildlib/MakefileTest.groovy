@@ -2,7 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 import static org.assertj.core.api.Assertions.assertThat
 
-class MakefileTest extends GroovyTestCase {
+class MakefileTest {
 
     void testGetVersion() {
         def scriptMock = new ScriptMock()

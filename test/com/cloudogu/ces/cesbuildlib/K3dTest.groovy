@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -9,7 +10,12 @@ import static org.mockito.ArgumentMatchers.anyString
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
-class K3dTest extends GroovyTestCase {
+import static org.junit.Assert.*
+import static groovy.test.GroovyAssert.shouldFail
+
+class K3dTest {
+
+    @Test
     void testCreateClusterName() {
         K3d sut = new K3d("script", "leWorkSpace", "leK3dWorkSpace", "path")
         String testClusterName = sut.createClusterName()
@@ -20,6 +26,7 @@ class K3dTest extends GroovyTestCase {
         assertTrue(testClusterName != testClusterName2)
     }
 
+    @Test
     void testDeleteK3d() {
         // given
         def scriptMock = new ScriptMock()
@@ -40,6 +47,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(24)
     }
 
+    @Test
     void testKubectl() {
         // given
         String workspaceDir = "leWorkspace"
@@ -53,6 +61,8 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get nodes".trim())
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
     }
+
+    @Test
     void testHelm() {
         // given
         String workspaceDir = "leWorkspace"
@@ -69,6 +79,7 @@ class K3dTest extends GroovyTestCase {
 
     // we cannot test lazy-installation because the mock is incapable of mocking the right types, the right values
     // and thus repeated calls to the same script with different results.
+    @Test
     void testInstallHelm_initially() {
         // given
         String workspaceDir = "leWorkspace"
@@ -84,6 +95,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("sudo snap install helm --classic".trim())
     }
 
+    @Test
     void testStartK3d() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
@@ -121,6 +133,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(22)
     }
 
+    @Test
     void testStartK3dWithCustomCredentials() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "path"
@@ -158,6 +171,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(22)
     }
 
+    @Test
     void testBuildAndPush() {
         // given
         String imageName = "superimage"
@@ -194,6 +208,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(23)
     }
 
+    @Test
     void testSetup() {
         // given
         def workspaceEnvDir = "leK3dWorkSpace"
@@ -249,6 +264,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(setupYaml.contains("{{ .Namespace }}")).isFalse()
     }
 
+    @Test
     void testSetupShouldThrowExceptionOnDoguOperatorRollout() {
         // given
         String tag = "v0.6.0"
@@ -262,12 +278,12 @@ class K3dTest extends GroovyTestCase {
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
         // when
-        String errorMsg = shouldFail(RuntimeException) {
+        def errorMsg = shouldFail(RuntimeException) {
             sut.setup(tag, [:], 1, 1)
         }
 
         // then
-        assertThat(errorMsg).isEqualTo("failed to wait for deployment/k8s-dogu-operator-controller-manager rollout: timeout")
+        assertThat(errorMsg.getMessage()).isEqualTo("failed to wait for deployment/k8s-dogu-operator-controller-manager rollout: timeout")
 
         assertThat(scriptMock.actualEcho.get(0)).isEqualTo("configuring setup...")
         assertThat(scriptMock.actualEcho.get(1)).isEqualTo("create values.yaml for setup deployment")
@@ -276,6 +292,7 @@ class K3dTest extends GroovyTestCase {
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
     }
 
+    @Test
     void testK3d_installDogu() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
@@ -387,7 +404,7 @@ spec:
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(21)
     }
 
-
+    @Test
     void testK3d_collectAndArchiveLogs() {
         // given
         def workspaceDir = "leWorkspace"
@@ -505,6 +522,7 @@ spec:
         assertThat(fileCounter).isEqualTo(25)
     }
 
+    @Test
     void testK3d_applyDoguResource() {
         // given
         def workspaceDir = "leWorkspace"
@@ -536,6 +554,7 @@ spec:
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(1)
     }
 
+    @Test
     void testK3d_configureSetupImage() {
         // given
         def workspaceDir = "leWorkspace"
@@ -564,6 +583,7 @@ spec:
         assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
     }
 
+    @Test
     void testK3d_configureComponentOperatorVersion() {
         // given
         def workspaceDir = "leWorkspace"
@@ -577,7 +597,7 @@ spec:
         scriptMock.expectedShRetValueForScript.put("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml", "foo")
 
         // when
-        sut.configureComponentOperatorVersion("1.2.3", "4.5.6", "test_ns")
+        sut.configureComponentOperatorVersion('1.2.3', '4.5.6', 'test_ns')
 
         // then
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
@@ -588,6 +608,7 @@ spec:
         assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml".trim())
     }
 
+    @Test
     void testK3d_configureLogLevel() {
         // given
         def workspaceDir = "leWorkspace"
@@ -608,6 +629,7 @@ spec:
         assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".logLevel = \\\"SUPER_ERROR\\\"\" k3d_values.yaml".trim())
     }
 
+    @Test
     void testK3d_configureComponents() {
         // given
         def workspaceDir = "leWorkspace"

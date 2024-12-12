@@ -1,8 +1,10 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.junit.Test
+import static org.junit.Assert.*
+import static groovy.test.GroovyAssert.shouldFail
 
-class ChangelogTest extends GroovyTestCase {
+class ChangelogTest {
     def validChangelog =
             '''
 ## [Unreleased]
@@ -77,6 +79,6 @@ class ChangelogTest extends GroovyTestCase {
         def exception = shouldFail {
             changelog.changesForVersion("not existing version")
         }
-        assertEquals("The desired version 'not existing version' could not be found in the changelog.", exception)
+        assertEquals("The desired version 'not existing version' could not be found in the changelog.", exception.getMessage())
     }
 }

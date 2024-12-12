@@ -12,7 +12,9 @@ import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.verify
 import static org.mockito.Mockito.when
 
-class BatsTest extends GroovyTestCase {
+import static org.junit.Assert.*
+
+class BatsTest {
 
     ScriptMock scriptMock = new ScriptMock()
 

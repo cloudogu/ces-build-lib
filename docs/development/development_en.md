@@ -21,3 +21,13 @@ Run
 ```
 
 Then right-click tests in IntelliJ and run.
+
+# Update Maven Version
+
+Use this line to update the mvnw command with your desired version:
+
+```bash
+./mvnw -N wrapper:wrapper -Dmaven=3.9.9
+```
+
+This will change the mvnw-File and the mvnw.cmd-File.
