@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Test
-import static org.junit.Assert.*
+import org.junit.jupiter.api.Test
+import static org.junit.jupiter.api.Assertions.*
 import static groovy.test.GroovyAssert.shouldFail
 
 class ChangelogTest {

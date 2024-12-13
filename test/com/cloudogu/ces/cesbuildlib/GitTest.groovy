@@ -1,11 +1,12 @@
 package com.cloudogu.ces.cesbuildlib
 
 import org.hamcrest.Matchers
-import org.junit.After
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 import static groovy.util.GroovyTestCase.assertEquals
-import static org.junit.Assert.*
+import static org.junit.jupiter.api.Assertions.*
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class GitTest {
 
@@ -15,7 +16,7 @@ class GitTest {
     static final EXPECTED_COMMITTER_NAME = 'U 2'
     static final EXPECTED_COMMITTER_EMAIL = 'user-numb@t.wo'
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         Git.metaClass = null

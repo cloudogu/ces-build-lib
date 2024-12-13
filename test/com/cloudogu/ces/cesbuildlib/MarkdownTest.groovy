@@ -1,12 +1,12 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Test
-import static org.junit.Assert.*
+import org.junit.jupiter.api.Test
 
 import static org.mockito.Mockito.times
 import static org.mockito.Mockito.verify
 
 class MarkdownTest {
+
     @Test
     void testIfDockerContainerCommandIsCalledWithCorrectArgs() {
         Docker dockerMock = DockerMock.create("ghcr.io/tcort/markdown-link-check:stable")
