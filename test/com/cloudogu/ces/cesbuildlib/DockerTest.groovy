@@ -1,9 +1,9 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assert.*
+import static org.junit.jupiter.api.Assertions.*
 
 class DockerTest {
 
@@ -490,7 +490,6 @@ class DockerTest {
     /**
      * @return Mock Docker instance with mock image, that contains mocked methods.
      */
-    @SuppressWarnings("GroovyAssignabilityCheck")
     private Docker createWithImage(Map<String, Closure> mockedMethod = [:]) {
         def mockedScript = [
                 docker: [image: { String id ->

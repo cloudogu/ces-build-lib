@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.After
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.Assert.assertEquals
@@ -13,7 +13,7 @@ class SonarCloudTest {
 
     def sonarCloud = new SonarCloud(scriptMock, [sonarQubeEnv: 'sonarcloud.io'])
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         SonarQube.metaClass = null

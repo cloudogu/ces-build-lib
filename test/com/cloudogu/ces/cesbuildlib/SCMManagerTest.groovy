@@ -2,8 +2,8 @@ package com.cloudogu.ces.cesbuildlib
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static org.assertj.core.api.Assertions.assertThat
 import static org.mockito.ArgumentMatchers.any
@@ -35,7 +35,7 @@ class SCMManagerTest {
         ]
     ])
     
-    @Before
+    @BeforeEach
     void init() {
         httpMock = mock(HttpClient.class)
         scmm.http = httpMock

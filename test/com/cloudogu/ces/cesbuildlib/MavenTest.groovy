@@ -1,9 +1,9 @@
 package com.cloudogu.ces.cesbuildlib
 
 import com.cloudogu.ces.cesbuildlib.Maven.DeployGoal
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.Assert.assertEquals
@@ -20,12 +20,12 @@ class MavenTest {
     def mvn = new MavenForTest(scriptMock)
     String mvnArgs = null
 
-    @Before
+    @BeforeEach
     void setup() {
         scriptMock.expectedPwd = EXPECTED_PWD
     }
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         Maven.metaClass = null

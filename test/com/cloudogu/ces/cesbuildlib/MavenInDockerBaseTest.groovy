@@ -1,7 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static org.assertj.core.api.Assertions.assertThat
 import static org.junit.Assert.assertEquals
@@ -26,7 +26,7 @@ class MavenInDockerBaseTest {
 
     def mvn = new MavenInDockerForTest(scriptMock)
 
-    @Before
+    @BeforeEach
     void setup() {
         mvn.docker = docker.mock
     }
