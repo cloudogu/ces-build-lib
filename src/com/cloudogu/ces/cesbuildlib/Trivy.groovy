@@ -104,21 +104,27 @@ class Trivy implements Serializable {
      * @param formattedTrivyReportFilename The file name your report files should get, without file extension. E.g. "ubuntu24report"
      * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
      */
-    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String formattedTrivyReportFilename = "formattedTrivyReport", String trivyReportFile = "trivy/trivyReport.json") {
-        String fileExtension
+    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String formattedTrivyReportFilename = "formattedTrivyReport.txt", String trivyReportFile = "trivy/trivyReport.json") {
         String formatString
+        String defaultFilename = "formattedTrivyReport.txt"
         switch (format) {
             case TrivyScanFormat.HTML:
                 formatString = "template --template \"@/contrib/html.tpl\""
-                fileExtension = "html"
+                if (formattedTrivyReportFilename == defaultFilename) {
+                    formattedTrivyReportFilename == "formattedTrivyReport.html"
+                }
                 break
             case TrivyScanFormat.JSON:
                 formatString = "json"
-                fileExtension = "json"
+                if (formattedTrivyReportFilename == defaultFilename) {
+                    formattedTrivyReportFilename == "formattedTrivyReport.json"
+                }
                 break
             case TrivyScanFormat.TABLE:
                 formatString = "table"
-                fileExtension = "txt"
+                if (formattedTrivyReportFilename == defaultFilename) {
+                    formattedTrivyReportFilename == "formattedTrivyReport.table"
+                }
                 break
             default:
                 // You may enter supported formats (sarif, cyclonedx, spdx, spdx-json, github, cosign-vuln, table or json)
@@ -138,7 +144,7 @@ class Trivy implements Serializable {
         }
         docker.image("${trivyImage}:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename}.${fileExtension} ${trivyReportFile}")
+                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename} ${trivyReportFile}")
             }
         script.archiveArtifacts artifacts: "${trivyDirectory}/${formattedTrivyReportFilename}.*", allowEmptyArchive: true
     }
