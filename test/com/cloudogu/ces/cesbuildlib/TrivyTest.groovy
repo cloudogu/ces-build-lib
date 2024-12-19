@@ -93,7 +93,7 @@ class TrivyTest extends GroovyTestCase {
 
         def gotException = false
         try {
-            doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 10)doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 10)
+            doTestScan(imageName, severityLevel, TrivyScanStrategy.FAIL, 10)
         } catch (AssertionFailedError e) {
             // exception could also be a junit assertion exception. This means a previous assertion failed
             throw e
@@ -105,7 +105,6 @@ class TrivyTest extends GroovyTestCase {
     }
 
     void testScanImage_unsuccessfulTrivyExecution() {
-        // with hopes that this image will always have CVEs
         String imageName = "inval!d:::///1.1...1.1."
         String severityLevel = TrivySeverityLevel.ALL
 
