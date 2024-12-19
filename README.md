@@ -1317,7 +1317,7 @@ Trivy trivy = new Trivy(this)
 trivy.scanImage("ubuntu:20.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/ubuntu20.json")
 trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/ubuntu24.json")
 // Save report by using the same file name (last parameter)
-trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML, "ubuntu20.04report", "trivy/ubuntu20.json")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML, "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu20.04report", "trivy/ubuntu20.json")
 ```
 
 ## Save Trivy report in another file format
@@ -1332,13 +1332,22 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
 trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ```
 
+You may filter the output to show only specific severity levels (default: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"):
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE, "CRITICAL")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON, "UNKNOWN,LOW,MEDIUM")
+```
+
 You may also use any other supported [Trivy format](https://trivy.dev/v0.57/docs/references/configuration/cli/trivy_convert/) or a custom template from a file in your workspace.
 
 ```groovy
 Trivy trivy = new Trivy(this)
 trivy.scanImage("ubuntu:24.04")
-trivy.saveFormattedTrivyReport("cosign-vuln", "ubuntu24.04cosign.txt")
-trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz", "ubuntu24.04myTemplate.txt")
+trivy.saveFormattedTrivyReport("cosign-vuln", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu24.04cosign.txt")
+trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu24.04myTemplate.txt")
 ```
 
 ## Scan Dogu image with Trivy

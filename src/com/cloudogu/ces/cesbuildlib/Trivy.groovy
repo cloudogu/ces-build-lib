@@ -101,11 +101,13 @@ class Trivy implements Serializable {
      * Save the Trivy scan results as a file with a specific format
      *
      * @param format The format of the output file (@see TrivyScanFormat)
+     * @param severity Severities of security issues to be added (taken from UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)
      * @param formattedTrivyReportFilename The file name your report files should get, without file extension. E.g. "ubuntu24report"
      * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
      */
-    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String formattedTrivyReportFilename = "formattedTrivyReport.txt", String trivyReportFile = "trivy/trivyReport.json") {
+    void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML, String severity = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", String formattedTrivyReportFilename = "formattedTrivyReport.txt", String trivyReportFile = "trivy/trivyReport.json") {
         String formatString
+        String defaultSeverityLevels = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
         String defaultFilename = "formattedTrivyReport.txt"
         switch (format) {
             case TrivyScanFormat.HTML:
@@ -142,9 +144,15 @@ class Trivy implements Serializable {
                     return
                 }
         }
+        // Validate severity input parameter to prevent injection of additional parameters
+        if (severity != defaultSeverityLevels) {
+            if (!severity.split(',').every { it.trim() in ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"] }) {
+                script.error("The severity levels provided ($severity) do not match the applicable levels (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL).")
+            }
+        }
         docker.image("${trivyImage}:${trivyVersion}")
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
-                script.sh(script: "trivy convert --format ${formatString} --output ${trivyDirectory}/${formattedTrivyReportFilename} ${trivyReportFile}")
+                script.sh(script: "trivy convert --format ${formatString} --severity ${severity} --output ${trivyDirectory}/${formattedTrivyReportFilename} ${trivyReportFile}")
             }
         script.archiveArtifacts artifacts: "${trivyDirectory}/${formattedTrivyReportFilename}.*", allowEmptyArchive: true
     }
