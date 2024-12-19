@@ -137,7 +137,6 @@ class Trivy implements Serializable {
                 // Check if "format" is one of the trivyFormats or a template
                 if (trivyFormats.any { format.contains(it) } || isTemplateFormat) {
                     formatString = format
-                    fileExtension = "custom"
                     break
                 } else {
                     script.error("This format did not match the supported formats: " + format)
