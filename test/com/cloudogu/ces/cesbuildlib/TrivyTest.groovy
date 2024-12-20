@@ -49,7 +49,7 @@ class TrivyTest extends GroovyTestCase {
                 // emulate trivy call with local trivy installation and check that it has the same behavior
                 Files.createDirectories(trivyDir)
                 Process process = trivyExec.exec(Trivy.DEFAULT_TRIVY_VERSION, trivyArguments, workDir)
-                if(process.waitFor(2, TimeUnit.MINUTES)) {
+                if (process.waitFor(2, TimeUnit.MINUTES)) {
                     assertEquals(expectedStatusCode, process.exitValue())
                 } else {
                     process.destroyForcibly()
@@ -119,5 +119,42 @@ class TrivyTest extends GroovyTestCase {
             gotException = true
         }
         assertTrue(gotException)
+    }
+
+    void testSaveFormattedTrivyReport() {
+        ScriptMock scriptMock = mockSaveFormattedTrivyReport(
+            "template --template \"@/contrib/html.tpl\"",
+            "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
+            "trivy/formattedTrivyReport.html")
+
+        println(scriptMock.archivedArtifacts)
+        assertFalse(true)
+    }
+
+    ScriptMock mockSaveFormattedTrivyReport(String expectedFormat, String expectedSeverity, String expectedOutput) {
+        String trivyArguments = "convert --format ${expectedFormat} --severity ${expectedSeverity} --output ${expectedOutput} trivy/trivyReport.json"
+        String expectedTrivyCommand = "trivy $trivyArguments"
+
+        def scriptMock = new ScriptMock()
+        scriptMock.env.WORKSPACE = "/test"
+        Docker dockerMock = mock(Docker.class)
+        Docker.Image imageMock = mock(Docker.Image.class)
+        when(dockerMock.image(trivyImage)).thenReturn(imageMock)
+        when(imageMock.inside(matches("-v /test/.trivy/.cache:/root/.cache/"), any())).thenAnswer(new Answer<Integer>() {
+            @Override
+            Integer answer(InvocationOnMock invocation) throws Throwable {
+                // mock "sh trivy" so that it returns the expected status code and check trivy arguments
+                Closure closure = invocation.getArgument(1)
+                scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, 0)
+                closure.call()
+                assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
+                println(scriptMock.getActualShMapArgs().getLast())
+                return 0
+            }
+        })
+        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
+        trivy.saveFormattedTrivyReport()
+
+        return scriptMock
     }
 }

@@ -18,4 +18,8 @@ class TrivyScanFormat {
      * Output as table.
      */
     static String TABLE = "table"
+
+    static boolean isStandardScanFormat(String format) {
+        return format == HTML || format == JSON || format == TABLE
+    }
 }
