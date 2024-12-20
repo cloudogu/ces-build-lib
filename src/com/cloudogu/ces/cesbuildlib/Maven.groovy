@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+@SuppressWarnings("rawtypes")
 abstract class Maven implements Serializable {
     protected script
 
@@ -113,7 +114,7 @@ abstract class Maven implements Serializable {
         useRepositoryCredentials(config)
     }
 
-    void useMirrors(Map<String, String>... configs) {
+    void useMirrors(Map... configs) {
 
         for (int i=0; i<configs.size(); i++) {
             def mirror = new Mirror(configs[i].name, configs[i].mirrorOf, configs[i].url)

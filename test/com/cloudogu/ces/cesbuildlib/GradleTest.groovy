@@ -1,8 +1,8 @@
 package com.cloudogu.ces.cesbuildlib
 
 
-import org.junit.After
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 import static org.junit.Assert.assertEquals
 
@@ -10,7 +10,7 @@ class GradleTest {
     def scriptMock = new ScriptMock()
     def gradle = new GradleMock(scriptMock)
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         Gradle.metaClass = null

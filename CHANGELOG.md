@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 - findVulnerabilitiesWithTrivy function is deprecated now. Please use the new Trivy class.
 
+### Changed
+- [#140] Update Maven-Build-Dependencies 
+  - JUnit 5
+  - Groovy 2.5
+  - Maven 3.9.9
+    - Compiler-Target: Java 11
+
 ## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
 ### Added
 - [#137] function to determine PreRelease Branch

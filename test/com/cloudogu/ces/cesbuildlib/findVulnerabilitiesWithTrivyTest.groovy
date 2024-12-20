@@ -2,9 +2,9 @@ package com.cloudogu.ces.cesbuildlib
 
 import com.lesfurets.jenkins.unit.BasePipelineTest
 import groovy.json.JsonSlurper
-import org.junit.After
-import org.junit.Before
-import org.junit.Test 
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test 
 
 class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
 
@@ -12,7 +12,7 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
     def slurper = new JsonSlurper()
 
     @Override
-    @Before
+    @BeforeEach
     void setUp() throws Exception {
         super.setUp()
         script = loadScript('vars/findVulnerabilitiesWithTrivy.groovy')
@@ -20,7 +20,7 @@ class FindVulnerabilitiesWithTrivyTest extends BasePipelineTest {
         Docker.metaClass.constructor = { def script -> DockerMock.create() }
     }
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         Docker.metaClass = null
