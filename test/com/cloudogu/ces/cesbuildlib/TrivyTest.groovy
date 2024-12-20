@@ -1,6 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 import junit.framework.AssertionFailedError
+import org.junit.jupiter.api.Test
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 
@@ -9,12 +10,13 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
+import static org.junit.jupiter.api.Assertions.*
 import static org.mockito.ArgumentMatchers.any
 import static org.mockito.ArgumentMatchers.matches
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
-class TrivyTest extends GroovyTestCase {
+class TrivyTest {
 
     String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db"
     Path installDir = Paths.get("target/trivyInstalls")
@@ -66,6 +68,7 @@ class TrivyTest extends GroovyTestCase {
         return scriptMock
     }
 
+    @Test
     void testScanImage_successfulTrivyExecution() {
         // with hopes that this image will never have CVEs
         String imageName = "hello-world"
@@ -76,6 +79,7 @@ class TrivyTest extends GroovyTestCase {
         assertEquals(false, scriptMock.getUnstable())
     }
 
+    @Test
     void testScanImage_unstableBecauseOfCVEs() {
         // with hopes that this image will always have CVEs
         String imageName = "alpine:3.18.7"
@@ -86,6 +90,7 @@ class TrivyTest extends GroovyTestCase {
         assertEquals(true, scriptMock.getUnstable())
     }
 
+    @Test
     void testScanImage_failBecauseOfCVEs() {
         // with hopes that this image will always have CVEs
         String imageName = "alpine:3.18.7"
@@ -98,12 +103,13 @@ class TrivyTest extends GroovyTestCase {
             // exception could also be a junit assertion exception. This means a previous assertion failed
             throw e
         } catch (Exception e) {
-            assertTrue("exception is: ${e.getMessage()}", e.getMessage().contains("Trivy has found vulnerabilities in image"))
+            assertTrue(e.getMessage().contains("Trivy has found vulnerabilities in image"), "exception is: ${e.getMessage()}")
             gotException = true
         }
         assertTrue(gotException)
     }
 
+    @Test
     void testScanImage_unsuccessfulTrivyExecution() {
         String imageName = "inval!d:::///1.1...1.1."
         String severityLevel = TrivySeverityLevel.ALL
@@ -115,12 +121,13 @@ class TrivyTest extends GroovyTestCase {
             // exception could also be a junit assertion exception. This means a previous assertion failed
             throw e
         } catch (Exception e) {
-            assertTrue("exception is: ${e.getMessage()}", e.getMessage().contains("Error during trivy scan; exit code: 1"))
+            assertTrue(e.getMessage().contains("Error during trivy scan; exit code: 1"), "exception is: ${e.getMessage()}")
             gotException = true
         }
         assertTrue(gotException)
     }
 
+    @Test
     void testSaveFormattedTrivyReport() {
         ScriptMock scriptMock = mockSaveFormattedTrivyReport(
             "template --template \"@/contrib/html.tpl\"",
@@ -128,7 +135,6 @@ class TrivyTest extends GroovyTestCase {
             "trivy/formattedTrivyReport.html")
 
         println(scriptMock.archivedArtifacts)
-        assertFalse(true)
     }
 
     ScriptMock mockSaveFormattedTrivyReport(String expectedFormat, String expectedSeverity, String expectedOutput) {
