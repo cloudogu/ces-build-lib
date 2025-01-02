@@ -128,16 +128,88 @@ class TrivyTest {
     }
 
     @Test
-    void testSaveFormattedTrivyReport() {
-        ScriptMock scriptMock = mockSaveFormattedTrivyReport(
+    void testSaveFormattedTrivyReport_HtmlAllSeverities() {
+        Trivy trivy = mockTrivy(
             "template --template \"@/contrib/html.tpl\"",
             "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
             "trivy/formattedTrivyReport.html")
-
-        println(scriptMock.archivedArtifacts)
+        trivy.saveFormattedTrivyReport()
     }
 
-    ScriptMock mockSaveFormattedTrivyReport(String expectedFormat, String expectedSeverity, String expectedOutput) {
+    @Test
+    void testSaveFormattedTrivyReport_JsonCriticalSeverity() {
+        Trivy trivy = mockTrivy(
+            "json",
+            "CRITICAL",
+            "trivy/formattedTrivyReport.json")
+        trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON, TrivySeverityLevel.CRITICAL)
+    }
+
+    @Test
+    void testSaveFormattedTrivyReport_TableHighAndUpSeverity() {
+        Trivy trivy = mockTrivy(
+            "table",
+            "CRITICAL,HIGH",
+            "trivy/formattedTrivyReport.table")
+        trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE, TrivySeverityLevel.HIGH_AND_ABOVE)
+    }
+
+    @Test
+    void testSaveFormattedTrivyReport_MediumAndUpSeverity() {
+        Trivy trivy = mockTrivy(
+            "sarif",
+            "CRITICAL,HIGH,MEDIUM",
+            "trivy/formattedTrivyReport.txt")
+        trivy.saveFormattedTrivyReport("sarif", TrivySeverityLevel.MEDIUM_AND_ABOVE)
+    }
+
+    @Test
+    void testSaveFormattedTrivyReport_CustomFilename() {
+        Trivy trivy = mockTrivy(
+            "json",
+            "CRITICAL,HIGH,MEDIUM",
+            "trivy/myOutput.custom")
+        trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON, TrivySeverityLevel.MEDIUM_AND_ABOVE, "myOutput.custom")
+    }
+
+    @Test
+    void testSaveFormattedTrivyReport_UnsupportedFormat() {
+        def scriptMock = new ScriptMock()
+        scriptMock.env.WORKSPACE = "/test"
+        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, mock(Docker.class))
+        def gotException = false
+        try {
+            trivy.saveFormattedTrivyReport("UnsupportedFormat", TrivySeverityLevel.MEDIUM_AND_ABOVE)
+        } catch (AssertionFailedError e) {
+            // exception could also be a junit assertion exception. This means a previous assertion failed
+            throw e
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("This format did not match the supported formats"), "exception is: ${e.getMessage()}")
+            gotException = true
+        }
+        assertTrue(gotException)
+    }
+
+    @Test
+    void testSaveFormattedTrivyReport_UnsupportedSeverity() {
+        def scriptMock = new ScriptMock()
+        scriptMock.env.WORKSPACE = "/test"
+        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, mock(Docker.class))
+        def gotException = false
+        try {
+            trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON, "UnsupportedSeverity")
+        } catch (AssertionFailedError e) {
+            // exception could also be a junit assertion exception. This means a previous assertion failed
+            throw e
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("The severity levels provided (UnsupportedSeverity) do not match the " +
+                "applicable levels (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)."), "exception is: ${e.getMessage()}")
+            gotException = true
+        }
+        assertTrue(gotException)
+    }
+
+    Trivy mockTrivy(String expectedFormat, String expectedSeverity, String expectedOutput) {
         String trivyArguments = "convert --format ${expectedFormat} --severity ${expectedSeverity} --output ${expectedOutput} trivy/trivyReport.json"
         String expectedTrivyCommand = "trivy $trivyArguments"
 
@@ -154,13 +226,10 @@ class TrivyTest {
                 scriptMock.expectedShRetValueForScript.put(expectedTrivyCommand, 0)
                 closure.call()
                 assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
-                println(scriptMock.getActualShMapArgs().getLast())
                 return 0
             }
         })
         Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
-        trivy.saveFormattedTrivyReport()
-
-        return scriptMock
+        return trivy
     }
 }
