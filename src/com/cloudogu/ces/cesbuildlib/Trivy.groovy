@@ -11,7 +11,8 @@ class Trivy implements Serializable {
     private String trivyImage
     private String trivyDirectory = "trivy"
 
-    Trivy(script, String trivyVersion = DEFAULT_TRIVY_VERSION, String trivyImage = DEFAULT_TRIVY_IMAGE, Docker docker = new Docker(script)) {
+    // Do not use DEFAULT_TRIVY_VERSION or DEFAULT_TRIVY_IMAGE here, as it will lead to java.lang.VerifyError
+    Trivy(script, String trivyVersion = "0.57.1", String trivyImage = "aquasec/trivy", Docker docker = new Docker(script)) {
         this.script = script
         this.trivyVersion = trivyVersion
         this.trivyImage = trivyImage
