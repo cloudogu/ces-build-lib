@@ -1,5 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
+import com.cloudbees.groovy.cps.NonCPS
+
 class Trivy implements Serializable {
     static final String DEFAULT_TRIVY_VERSION = "0.57.1"
     static final String DEFAULT_TRIVY_IMAGE = "aquasec/trivy"
@@ -9,11 +11,11 @@ class Trivy implements Serializable {
     private String trivyImage
     private String trivyDirectory = "trivy"
 
-    Trivy(script, String trivyVersion = DEFAULT_TRIVY_VERSION, String trivyImage = DEFAULT_TRIVY_IMAGE, Docker docker = null) {
+    Trivy(script, String trivyVersion = DEFAULT_TRIVY_VERSION, String trivyImage = DEFAULT_TRIVY_IMAGE, Docker docker = new Docker(script)) {
         this.script = script
         this.trivyVersion = trivyVersion
         this.trivyImage = trivyImage
-        this.docker = docker ?: new Docker(script)
+        this.docker = docker
     }
 
     /**
@@ -110,6 +112,7 @@ class Trivy implements Serializable {
      * @param formattedTrivyReportFilename The file name your report files should get, with file extension. E.g. "ubuntu24report.html"
      * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
      */
+    @NonCPS
     void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML,
                                   String severity = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
                                   String formattedTrivyReportFilename = null,
