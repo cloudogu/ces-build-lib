@@ -6,14 +6,14 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assert.assertEquals
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 class MavenTest {
     private static final String EOL = System.getProperty("line.separator")
 
     static final EXPECTED_PWD = "/home/jenkins/workspaces/NAME"
     def expectedDeploymentGoalWithStaging =
-            'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
+        'org.sonatype.plugins:nexus-staging-maven-plugin:deploy -Dmaven.deploy.skip=true ' +
             '-DserverId=expectedId -DnexusUrl=https://expected.url -DautoReleaseAfterClose=true '
 
     def scriptMock = new ScriptMock()
@@ -36,23 +36,23 @@ class MavenTest {
         def result = mvn "test"
         assertEquals("test", result)
     }
-    
+
     @Test
     void testWithoutSettingsXml() throws Exception {
         def result = mvn "test"
-        assert !(mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
+        assert !(mvn.createCommandLineArgs('dont care')).contains('settings.xml')
         assertEquals("test", result)
     }
 
     @Test
     void testCallWithMirrors() throws Exception {
-        mvn.useMirrors([name: 'n1', mirrorOf: 'm1', url: 'u1'], 
-                       [name: 'n2', mirrorOf: 'm2', url: 'u2'])
+        mvn.useMirrors([name: 'n1', mirrorOf: 'm1', url: 'u1'],
+            [name: 'n2', mirrorOf: 'm2', url: 'u2'])
 
-        assert (mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
-        
+        assert (mvn.createCommandLineArgs('dont care')).contains('settings.xml')
+
         def result = mvn "test"
-        
+
         assertEquals("test", result)
 
         assert scriptMock.writeFileParams.size() == 1
@@ -84,7 +84,7 @@ class MavenTest {
     @Test
     void testCallWithMultipleCredentials() throws Exception {
         mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'],
-                                      [id: 'number1', credentialsId: 'creds1'])
+            [id: 'number1', credentialsId: 'creds1'])
         def result = mvn "test"
         assertEquals("test", result)
 
@@ -102,16 +102,14 @@ class MavenTest {
     @Test
     void testGetVersion() {
         Maven mvn = new MavenForTest()
-        assertEquals("Unexpected version returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion(), "Unexpected version returned")
     }
-    
+
     @Test
     void testGetVersionWithCredentials() {
         mvn.useRepositoryCredentials([id: 'number0', credentialsId: 'creds0'])
-        assertEquals("Unexpected version returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion())
-        
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout", mvn.getVersion(), "Unexpected version returned")
+
         assert 'creds0' == scriptMock.actualUsernamePasswordArgs[0]['credentialsId']
         assert "NEXUS_REPO_CREDENTIALS_PASSWORD_0" == scriptMock.actualUsernamePasswordArgs[0]['passwordVariable']
         assert "NEXUS_REPO_CREDENTIALS_USERNAME_0" == scriptMock.actualUsernamePasswordArgs[0]['usernameVariable']
@@ -120,29 +118,25 @@ class MavenTest {
     @Test
     void testGetArtifactId() {
         Maven mvn = new MavenForTest()
-        assertEquals("Unexpected artifact returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId())
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.artifactId -q -DforceStdout", mvn.getArtifactId(), "Unexpected artifact returned")
     }
 
     @Test
     void testGetGroupId() {
         Maven mvn = new MavenForTest()
-        assertEquals("Unexpected group returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId())
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.groupId -q -DforceStdout", mvn.getGroupId(), "Unexpected group returned")
     }
 
     @Test
     void testGetName() {
         Maven mvn = new MavenForTest()
-        assertEquals("Unexpected name returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName())
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.name -q -DforceStdout", mvn.getName(), "Unexpected name returned")
     }
 
     @Test
     void testGetMavenProperty() {
         Maven mvn = new MavenForTest()
-        assertEquals("Unexpected name returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'), "Unexpected name returned")
     }
 
     @Test
@@ -162,16 +156,14 @@ class MavenTest {
     @Test
     void testGetMavenPropertyWithMavenWrapper() {
         Maven mvn = new MavenWrapperForTest()
-        assertEquals("Unexpected property returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'), "Unexpected property returned")
     }
 
     @Test
     void testGetMavenPropertyWithMavenWrapperNotYetDownloaded() {
         Maven mvn = new MavenWrapperForTest()
         mvn.downloaded = false
-        assertEquals("Unexpected property returned",
-                "org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'))
+        assertEquals("org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=key -q -DforceStdout", mvn.getMavenProperty('key'), "Unexpected property returned")
     }
 
     @Test
@@ -185,13 +177,13 @@ class MavenTest {
     @Test
     void testUseRepositoryCredentialsMissingRequiredFieldsId() {
         assertMissingRepositoryParameter('id',
-                { mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds']) } )
+            { mvn.useRepositoryCredentials([url: 'url', credentialsId: 'creds']) })
     }
 
     @Test
     void testUseRepositoryCredentialsMissingRequiredFields() {
         assertMissingRepositoryParameter('credentialsIdUsernameAndPassword',
-                { mvn.useRepositoryCredentials([url: 'url', id: 'id']) } )
+            { mvn.useRepositoryCredentials([url: 'url', id: 'id']) })
     }
 
     @Test
@@ -206,16 +198,16 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [[id: 'expectedId', credentialsId: 'expectedCredentials'],
-                 [id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus2']],
-                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+            [[id: 'expectedId', credentialsId: 'expectedCredentials'],
+             [id: 'id', url: 'https://expected.url', credentialsId: 'creds', type: 'Nexus2']],
+            { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
     @Test
     void testDeployToNexusRepositoryWithMultipleUrls() {
         def exception = shouldFail {
             mvn.useRepositoryCredentials([id: 'id', credentialsId: 'creds', url: '1'],
-                                         [id: '2', credentialsId: 'creds2', url: '2'])
+                [id: '2', credentialsId: 'creds2', url: '2'])
         }
 
         assert "Multiple repositories with URL passed. Maven CLI only allows for passing one alt deployment repo." == exception.getMessage()
@@ -240,7 +232,7 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(DeployGoal.NEXUS_STAGING, expectedAdditionalArgs, actualAdditionalArgs,
-                expectedDeploymentGoalWithStaging, 'source:jar javadoc:jar package')
+            expectedDeploymentGoalWithStaging, 'source:jar javadoc:jar package')
     }
 
 
@@ -263,8 +255,8 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
-                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+            [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
+            { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
     @Test
@@ -272,8 +264,8 @@ class MavenTest {
         def expectedAdditionalArgs = 'expectedAdditionalArgs'
         def actualAdditionalArgs = 'expectedAdditionalArgs'
         deployToNexusRepository(actualAdditionalArgs, 'site:deploy',
-                [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
-                { mvn.deploySiteToNexus(expectedAdditionalArgs) })
+            [[id: 'expectedId', credentialsId: 'expectedCredentials', type: 'Nexus2']],
+            { mvn.deploySiteToNexus(expectedAdditionalArgs) })
     }
 
     void deployToNexusRepositoryWithSignature(DeployGoal goal, String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
@@ -298,9 +290,9 @@ class MavenTest {
     private deployToNexusRepository(DeployGoal goal, String expectedAdditionalArgs, String actualAdditionalArgs,
                                     String expectedDeploymentGoal, String beforeAdditionalArgs = '') {
         deployToNexusRepository(actualAdditionalArgs, expectedDeploymentGoal,
-                [[id  : 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials', type: 'Nexus2']],
-                { mvn.deployToNexusRepository(goal, expectedAdditionalArgs)},
-                beforeAdditionalArgs
+            [[id: 'expectedId', url: 'https://expected.url', credentialsId: 'expectedCredentials', type: 'Nexus2']],
+            { mvn.deployToNexusRepository(goal, expectedAdditionalArgs) },
+            beforeAdditionalArgs
         )
     }
 
@@ -314,13 +306,12 @@ class MavenTest {
         }
 
         String deploymentRepoId = deploymentRepo.id
-        def expectedCredentials = deploymentRepo.credentialsId
         def expectedUrl = deploymentRepo.url
 
         mvn.useRepositoryCredentials(repos.toArray(new Map[0]))
         methodUnderTest.call()
-        
-        assert (mvn.createCommandLineArgs ('dont care')).contains('settings.xml')
+
+        assert (mvn.createCommandLineArgs('dont care')).contains('settings.xml')
 
         def repoIds = []
         for (int i = 0; i < repos.size(); i++) {
@@ -349,13 +340,13 @@ class MavenTest {
     private void assertSettingsXmlRepos(String... deploymentRepoIds) {
         assert scriptMock.writeFileParams.size() == 1
         def actualSettingsXml = scriptMock.writeFileParams.get(0)['text']
-        
+
         for (int i = 0; i < deploymentRepoIds.size(); i++) {
             def deploymentRepoId = deploymentRepoIds[i]
 
             def string = "<server><id>${deploymentRepoId}</id>" +
-                    "<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME_${i}}</username>" +
-                    "<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD_${i}}</password></server>"
+                "<username>\${env.NEXUS_REPO_CREDENTIALS_USERNAME_${i}}</username>" +
+                "<password>\${env.NEXUS_REPO_CREDENTIALS_PASSWORD_${i}}</password></server>"
             assert actualSettingsXml.contains(string)
         }
     }

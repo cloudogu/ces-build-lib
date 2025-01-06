@@ -1,9 +1,9 @@
 package com.cloudogu.ces.cesbuildlib
 
-import junit.framework.AssertionFailedError
 import org.junit.jupiter.api.Test
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.opentest4j.AssertionFailedError
 
 import java.nio.file.Files
 import java.nio.file.Path
