@@ -9,11 +9,11 @@ class Trivy implements Serializable {
     private String trivyImage
     private String trivyDirectory = "trivy"
 
-    Trivy(script, String trivyVersion = DEFAULT_TRIVY_VERSION, String trivyImage = DEFAULT_TRIVY_IMAGE, Docker docker = new Docker(script)) {
+    Trivy(script, String trivyVersion = DEFAULT_TRIVY_VERSION, String trivyImage = DEFAULT_TRIVY_IMAGE, Docker docker = null) {
         this.script = script
         this.trivyVersion = trivyVersion
         this.trivyImage = trivyImage
-        this.docker = docker
+        this.docker = docker ?: new Docker(script)
     }
 
     /**
