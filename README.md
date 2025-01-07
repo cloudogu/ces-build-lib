@@ -1332,7 +1332,7 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
 trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ```
 
-You may filter the output to show only specific severity levels (default: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"):
+You may filter the output to show only specific severity levels (default: `"UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"`):
 
 ```groovy
 Trivy trivy = new Trivy(this)
@@ -1370,9 +1370,10 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 
 ## Ignore / allowlist
 
-If you want to ignore / allow certain vulnerabilities, please use a .trivyignore file
-Provide the file in your repo `/` directory where you run your job
-e.g.:
+If you want to ignore / allow certain vulnerabilities, please use a `.trivyignore` file.
+
+Provide the file in your repo `/` directory where you run your job, e.g.:
+
 ```shell
 .gitignore
 Jenkinsfile
