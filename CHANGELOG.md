@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [4.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.0.0) - 2025-01-07
 ### Added
 - Add Trivy class for scanning container images with Trivy
   - Combines the functionality of the findVulnerabilitiesWithTrivy function and the Trivy class of the dogu-build-lib
@@ -21,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Maven 3.9.9
     - Compiler-Target: Java 11
 
-## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.0.0) - 2024-11-25
+## [3.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/3.1.0) - 2024-11-25
 ### Added
 - [#137] function to determine PreRelease Branch
 
