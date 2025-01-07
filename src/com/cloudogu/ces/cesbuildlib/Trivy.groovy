@@ -113,9 +113,8 @@ class Trivy implements Serializable {
      * @param formattedTrivyReportFilename The file name your report files should get, with file extension. E.g. "ubuntu24report.html"
      * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
      */
-    @NonCPS
     void saveFormattedTrivyReport(String format = TrivyScanFormat.HTML,
-                                  String severity = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL",
+                                  String severity = TrivySeverityLevel.ALL,
                                   String formattedTrivyReportFilename = null,
                                   String trivyReportFile = "trivy/trivyReport.json") {
 
