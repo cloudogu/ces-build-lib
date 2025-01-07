@@ -1352,12 +1352,27 @@ trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz", "UNKNO
 
 ## Scan Dogu image with Trivy
 
+This section describes how to get a Dogu image from the testing CES instance and scan it with Trivy.
+
+### Get Dogu image from CES instance
+
+Make sure to have a `build` stage in your Dogu test pipeline which builds the Dogu image, e.g. via
+the `ecoSystem.build("/dogu")` command.
+After the build stage you will be able to copy the Dogu image to your local Jenkins worker via
+the `ecoSystem.copyDoguImageToJenkinsWorker("/dogu")` command.
+
+### Scan Dogu image
+
 The `scanDogu()` function lets you scan a Dogu image without typing its full name. The method reads the image name
 and version from the dogu.json inside the directory you point it to via its first argument.
 The default directory is the current directory.
 
 ```groovy
+// Preparation
+ecoSystem.copyDoguImageToJenkinsWorker("/dogu")
 Trivy trivy = new Trivy(this)
+
+// Scan the Dogu image
 trivy.scanDogu()
 // Explicitly set directory that contains the dogu code (dogu.json)
 trivy.scanDogu("subfolder/test1/jenkins")
