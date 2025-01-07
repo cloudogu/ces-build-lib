@@ -153,7 +153,7 @@ class Trivy implements Serializable {
             .inside("-v ${script.env.WORKSPACE}/.trivy/.cache:/root/.cache/") {
                 script.sh(script: "trivy convert --format ${formatString} --severity ${severity} --output ${trivyDirectory}/${formattedTrivyReportFilename} ${trivyReportFile}")
             }
-        script.archiveArtifacts artifacts: "${trivyDirectory}/${formattedTrivyReportFilename}.*", allowEmptyArchive: true
+        script.archiveArtifacts artifacts: "${trivyDirectory}/*", allowEmptyArchive: true
     }
 
     private static String getFileExtension(String format) {
