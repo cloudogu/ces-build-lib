@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.0.1) - 2025-01-07
+### Fixed
+- Archive Trivy scan artifacts correctly
+
 ## [4.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.0.0) - 2025-01-07
 ### Added
 - Add Trivy class for scanning container images with Trivy
