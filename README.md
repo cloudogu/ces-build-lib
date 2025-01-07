@@ -68,6 +68,7 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
 - [Markdown](#markdown)
     - [DockerLint (Deprecated)](#dockerlint-deprecated)
     - [ShellCheck](#shellcheck)
+- [Trivy](#trivy)
 - [Steps](#steps)
   - [mailIfStatusChanged](#mailifstatuschanged)
   - [isPullRequest](#ispullrequest)
@@ -1240,6 +1241,179 @@ shellCheck(fileList) // fileList="a.sh b.sh" execute shellcheck on a custom list
 
 See [shellCheck](vars/shellCheck.groovy)
 
+# Trivy
+
+Scan container images for vulnerabilities with Trivy.
+
+## Create a Trivy object
+
+```groovy
+Trivy trivy = new Trivy(this)
+// With specific Trivy version
+Trivy trivy = new Trivy(this, "0.57.1")
+// With specific Trivy image
+Trivy trivy = new Trivy(this, "0.57.1", "images.mycompany.test/trivy")
+// With explicit Docker registry
+Docker docker = new Docker(this)
+docker.withRegistry("https://my.registry.invalid", myRegistryCredentialsID)
+Trivy trivy = new Trivy(this, "0.57.1", "aquasec/trivy", docker)
+```
+
+## Scan image with Trivy
+
+Scan an image with Trivy by calling the `scanImage` function.
+
+```groovy
+Trivy trivy = new Trivy(this)
+boolean imageIsSafe = trivy.scanImage("ubuntu:24.04")
+if (!imageIsSafe){
+    echo "This image has vulnerabilities!"
+}
+```
+
+### Set the severity level for the scan
+
+You can set the severity levels of the vulnerabilities Trivy should scan for as a parameter of the scan method:
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL)
+trivy.scanImage("ubuntu:24.04", "CRITICAL,LOW")
+```
+
+For the available pre-defined severity levels see [TrivySeverityLevel.groovy](src/com/cloudogu/ces/cesbuildlib/TrivySeverityLevel.groovy)
+
+### Set the pipeline strategy
+
+To define how the Jenkins pipeline should behave if vulnerabilities are found, you can set certain strategies:
+- TrivyScanStrategy.IGNORE: Ignore the vulnerabilities and continue
+- TrivyScanStrategy.UNSTABLE: Mark the job as "unstable" and continue
+- TrivyScanStrategy.FAIL: Mark the job as failed
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE)
+```
+
+### Set additional Trivy flags
+
+To set additional Trivy command flags, use the `additionalFlags` parameter:
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "--db-repository public.ecr.aws/aquasecurity/trivy-db")
+```
+
+Note that the flags `--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db`
+are set by default to avoid rate limiting of Trivy database downloads. If you set `additionalFlags` by yourself, you are overwriting
+these default flags and have to make sure to include them in your set of additional flags, if needed.
+
+### Set the Trivy report file name
+
+If you want to run multiple image scans in one pipeline, you can set distinct file names for the report files:
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:20.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/ubuntu20.json")
+trivy.scanImage("ubuntu:24.04", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/ubuntu24.json")
+// Save report by using the same file name (last parameter)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML, "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu20.04report", "trivy/ubuntu20.json")
+```
+
+## Save Trivy report in another file format
+
+After calling the `scanImage` function you can save the scan report as JSON, HTML or table files.
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
+```
+
+You may filter the output to show only specific severity levels (default: `"UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"`):
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE, "CRITICAL")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON, "UNKNOWN,LOW,MEDIUM")
+```
+
+You may also use any other supported [Trivy format](https://trivy.dev/v0.57/docs/references/configuration/cli/trivy_convert/) or a custom template from a file in your workspace.
+
+```groovy
+Trivy trivy = new Trivy(this)
+trivy.scanImage("ubuntu:24.04")
+trivy.saveFormattedTrivyReport("cosign-vuln", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu24.04cosign.txt")
+trivy.saveFormattedTrivyReport("template --template @myTemplateFile.xyz", "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL", "ubuntu24.04myTemplate.txt")
+```
+
+## Scan Dogu image with Trivy
+
+This section describes how to get a Dogu image from the testing CES instance and scan it with Trivy.
+
+### Get Dogu image from CES instance
+
+Make sure to have a `build` stage in your Dogu test pipeline which builds the Dogu image, e.g. via
+the `ecoSystem.build("/dogu")` command.
+After the build stage you will be able to copy the Dogu image to your local Jenkins worker via
+the `ecoSystem.copyDoguImageToJenkinsWorker("/dogu")` command.
+
+### Scan Dogu image
+
+The `scanDogu()` function lets you scan a Dogu image without typing its full name. The method reads the image name
+and version from the dogu.json inside the directory you point it to via its first argument.
+The default directory is the current directory.
+
+```groovy
+// Preparation
+ecoSystem.copyDoguImageToJenkinsWorker("/dogu")
+Trivy trivy = new Trivy(this)
+
+// Scan the Dogu image
+trivy.scanDogu()
+// Explicitly set directory that contains the dogu code (dogu.json)
+trivy.scanDogu("subfolder/test1/jenkins")
+// Set scan options just like in the scanImage method
+trivy.scanDogu(".", TrivySeverityLevel.ALL, TrivyScanStrategy.UNSTABLE, "", "trivy/mydogu.json")
+trivy.saveFormattedTrivyReport(TrivyScanFormat.TABLE)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
+trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
+```
+
+## Ignore / allowlist
+
+If you want to ignore / allow certain vulnerabilities, please use a `.trivyignore` file.
+
+Provide the file in your repo `/` directory where you run your job, e.g.:
+
+```shell
+.gitignore
+Jenkinsfile
+.trivyignore
+```
+
+[Offical documentation](https://trivy.dev/v0.57/docs/configuration/filtering/#by-finding-ids)
+```ignorelang
+# Accept the risk
+CVE-2018-14618
+
+# Accept the risk until 2023-01-01
+CVE-2019-14697 exp:2023-01-01
+
+# No impact in our settings
+CVE-2019-1543
+
+# Ignore misconfigurations
+AVD-DS-0002
+
+# Ignore secrets
+generic-unwanted-rule
+aws-account-id
+```
+
 # Steps
 
 ## mailIfStatusChanged
@@ -1293,7 +1467,9 @@ For example, if running on `http(s)://server:port/jenkins`, `server` is returned
 
 Returns true if the build is successful, i.e. not failed or unstable (yet).
 
-## findVulnerabilitiesWithTrivy
+## findVulnerabilitiesWithTrivy (Deprecated)
+
+This function is deprecated. Use [Trivy](#trivy) functionality instead.
 
 Returns a list of vulnerabilities or an empty list if there are no vulnerabilities for the given severity.
 
@@ -1330,36 +1506,7 @@ node {
 }
 ```
 
-### Ignore / allowlist
 
-If you want to ignore / allow certain vulnerabilities please use a .trivyignore file
-Provide the file in your repo / directory where you run your job
-e.g.:
-```shell
-.gitignore
-Jenkinsfile
-.trivyignore
-```
-
-[Offical documentation](https://aquasecurity.github.io/trivy/v0.41/docs/configuration/filtering/#by-finding-ids)
-```ignorelang
-# Accept the risk
-CVE-2018-14618
-
-# Accept the risk until 2023-01-01
-CVE-2019-14697 exp:2023-01-01
-
-# No impact in our settings
-CVE-2019-1543
-
-# Ignore misconfigurations
-AVD-DS-0002
-
-# Ignore secrets
-generic-unwanted-rule
-aws-account-id
-
-```
 
 If there are vulnerabilities the output looks as follows.
 

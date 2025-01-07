@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import static org.assertj.core.api.Assertions.assertThat
 import static org.mockito.ArgumentMatchers.any
 import static org.mockito.Mockito.mock
-import static org.mockito.Mockito.when 
+import static org.mockito.Mockito.when
 
 class SCMManagerTest {
 
@@ -19,7 +19,7 @@ class SCMManagerTest {
     HttpClient httpMock
 
     def slurper = new JsonSlurper()
-    
+
     def jsonTwoPrs = JsonOutput.toJson([
         _embedded: [
             pullRequests: [
@@ -34,7 +34,7 @@ class SCMManagerTest {
             ]
         ]
     ])
-    
+
     @BeforeEach
     void init() {
         httpMock = mock(HttpClient.class)
@@ -52,7 +52,7 @@ class SCMManagerTest {
                 body    : jsonTwoPrs.toString()
             ]
         })
-        
+
         def prs = scmm.searchPullRequestIdByTitle(repo, "one")
         assertThat(prs).isEqualTo('1')
     }

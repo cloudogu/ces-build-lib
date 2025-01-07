@@ -401,7 +401,7 @@ class Docker implements Serializable {
             def userName = sh.returnStdOut('whoami')
             String jenkinsUserFromEtcPasswd = sh.returnStdOut "cat /etc/passwd | grep $userName"
 
-            if (jenkinsUserFromEtcPasswd.isEmpty()) {
+            if (jenkinsUserFromEtcPasswd == null || jenkinsUserFromEtcPasswd.isEmpty()) {
                 script.error 'Unable to parse user jenkins from /etc/passwd.'
             }
             return jenkinsUserFromEtcPasswd
