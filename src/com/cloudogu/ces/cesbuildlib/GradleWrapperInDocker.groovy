@@ -8,7 +8,6 @@ class GradleWrapperInDocker extends GradleInDockerBase {
     /** The docker image to use, e.g. {@code adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine} **/
     private String imageId
 
-    @SuppressWarnings("GrDeprecatedAPIUsage") // GradleWrapper will become protected constructor that is no longer deprecated
     GradleWrapperInDocker(script, String imageId, String credentialsId = null) {
         super(script)
         this.imageId = imageId

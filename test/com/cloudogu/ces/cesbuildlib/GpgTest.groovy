@@ -1,6 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer

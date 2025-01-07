@@ -285,7 +285,7 @@ class K3d {
         def builder = new StringBuilder(namespace)
         String operatorValue = builder.append("/k8s-component-operator:").append(operatorVersion).toString()
         appendToYamlFile(K3D_VALUES_YAML_FILE, componentOpKey, operatorValue)
-        builder.setLength(0)
+        builder.delete(0, builder.length());
         String crdValue = builder.append(namespace).append("/k8s-component-operator-crd:").append(crdVersion).toString()
         appendToYamlFile(K3D_VALUES_YAML_FILE, componentCRDKey, crdValue)
     }

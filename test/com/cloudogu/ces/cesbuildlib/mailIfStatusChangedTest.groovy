@@ -1,13 +1,13 @@
 package com.cloudogu.ces.cesbuildlib
 
 import com.lesfurets.jenkins.unit.BasePipelineTest
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class MailIfStatusChangedTest extends BasePipelineTest {
 
     @Override
-    @Before
+    @BeforeEach
     void setUp() throws Exception {
         super.setUp()
     }

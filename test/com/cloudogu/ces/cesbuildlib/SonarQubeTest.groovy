@@ -1,8 +1,8 @@
 package com.cloudogu.ces.cesbuildlib
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 class SonarQubeTest {
@@ -10,14 +10,14 @@ class SonarQubeTest {
     def scriptMock = new ScriptMock()
     def mavenMock = new MavenMock(scriptMock)
 
-    @Before
+    @BeforeEach
     void setup()  {
         mavenMock.mockedArtifactId = "ces-build-lib"
         mavenMock.mockedGroupId = "com.cloudogu.ces"
         mavenMock.mockedName = "ces build lib"
     }
 
-    @After
+    @AfterEach
     void tearDown() throws Exception {
         // always reset metaClass after messing with it to prevent changes from leaking to other tests
         SonarQube.metaClass = null

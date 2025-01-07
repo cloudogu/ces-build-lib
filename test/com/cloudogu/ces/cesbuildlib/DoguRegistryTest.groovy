@@ -1,12 +1,13 @@
 package com.cloudogu.ces.cesbuildlib
 
 import groovy.json.JsonSlurper
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import static org.junit.jupiter.api.Assertions.*
 
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
-class DoguRegistryTest extends GroovyTestCase {
+class DoguRegistryTest {
 
     @Test
     void testCreateRegistryObjectWithDefaults() {
@@ -71,7 +72,7 @@ class DoguRegistryTest extends GroovyTestCase {
         // then
         assertEquals("echo 'Push Dogu:\n-Namespace/Name: testing/ldap\n-Version: 2.4.48-4'", scriptMock.allActualArgs.get(0))
         assertEquals("cat dogu.json", scriptMock.allActualArgs.get(1))
-        assertEquals("echo 'Error pushing ${doguPath}'", scriptMock.allActualArgs.get(2))
+        assertEquals("echo 'Error pushing ${doguPath}'".toString(), scriptMock.allActualArgs.get(2))
         assertEquals("echo 'body'", scriptMock.allActualArgs.get(3))
         assertEquals("exit 1", scriptMock.allActualArgs.get(4))
     }
@@ -100,7 +101,7 @@ class DoguRegistryTest extends GroovyTestCase {
         sut.pushK8sYaml(yamlPath, k8sName, namespace, version)
 
         // then
-        assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'", scriptMock.allActualArgs.get(0))
+        assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'".toString(), scriptMock.allActualArgs.get(0))
     }
 
     @Test
@@ -127,8 +128,8 @@ class DoguRegistryTest extends GroovyTestCase {
         sut.pushK8sYaml(yamlPath, k8sName, namespace, version)
 
         // then
-        assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'", scriptMock.allActualArgs.get(0))
-        assertEquals("echo 'Error pushing ${yamlPath}'", scriptMock.allActualArgs.get(1))
+        assertEquals("echo 'Push Yaml:\n-Name: ${k8sName}\n-Namespace: ${namespace}\n-Version: ${version}'".toString(), scriptMock.allActualArgs.get(0))
+        assertEquals("echo 'Error pushing ${yamlPath}'".toString(), scriptMock.allActualArgs.get(1))
         assertEquals("echo 'body'", scriptMock.allActualArgs.get(2))
         assertEquals("exit 1", scriptMock.allActualArgs.get(3))
     }
