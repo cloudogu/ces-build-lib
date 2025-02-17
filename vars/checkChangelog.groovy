@@ -1,6 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
-def call(Changelog changelog = new Changelog(this), ReleaseNotes releaseNotes = new ReleaseNotes(this)) {
+def call(Changelog changelog = new Changelog(this)) {
     // Checking if this is associated with a pull request
     if (env.CHANGE_TARGET) {
         echo "Checking changelog..."
