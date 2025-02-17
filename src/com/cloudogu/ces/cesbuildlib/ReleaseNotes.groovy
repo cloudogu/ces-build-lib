@@ -9,7 +9,7 @@ class ReleaseNotes implements Serializable {
     private String releaseNotesFileNameEN
 
     ReleaseNotes(script) {
-        this(script, 'docs/gui/releasenotes_de.md', 'docs/gui/releasenotes_en.md')
+        this(script, 'docs/gui/release_notes_de.md', 'docs/gui/release_notes_en.md')
     }
 
     ReleaseNotes(script, releaseNotesFileNameDE, releaseNotesFileNameEN) {
