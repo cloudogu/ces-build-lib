@@ -8,10 +8,5 @@ def call(Changelog changelog = new Changelog(this), ReleaseNotes releaseNotes = 
         if (!newChanges || newChanges.allWhitespace) {
             unstable('CHANGELOG.md should contain new change entries in the `[Unreleased]` section but none were found.')
         }
-        echo "Checking release notes..."
-        String newChangesReleaseNotes = releaseNotes.changesForDEVersion("Unreleased")
-        if (!newChangesReleaseNotes || newChangesReleaseNotes.allWhitespace) {
-            unstable('Release Notes should contain new change entries in the `[Unreleased]` section but none were found.')
-        }
     }
 }
