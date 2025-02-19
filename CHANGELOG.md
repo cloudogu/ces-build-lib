@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.1.0) - 2025-02-19
+### Added
+- Add checkChangelog function to make sure your changelog has been updated on an open PR
+- Add checkReleaseNotes function to make sure your release notes have been updated on an open PR
+
 ## [4.0.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.0.1) - 2025-01-07
 ### Fixed
 - Archive Trivy scan artifacts correctly

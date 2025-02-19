@@ -75,6 +75,8 @@ Jenkins Pipeline Shared library, that contains additional features for Git, Mave
   - [findEmailRecipients](#findemailrecipients)
   - [findHostName](#findhostname)
   - [isBuildSuccessful](#isbuildsuccessful)
+  - [checkChangelog](#checkchangelog)
+  - [checkReleaseNotes](#checkreleasenotes)
   - [findVulnerabilitiesWithTrivy](#findvulnerabilitieswithtrivy)
     - [Simple examples](#simple-examples)
     - [Ignore / allowlist](#ignore--allowlist)
@@ -1466,6 +1468,30 @@ For example, if running on `http(s)://server:port/jenkins`, `server` is returned
 ## isBuildSuccessful
 
 Returns true if the build is successful, i.e. not failed or unstable (yet).
+
+## checkChangelog
+
+Automatically check if your changelog has been updated if a PR is created.
+If the changelog has not been updated, the build will become unstable.
+
+Usage:
+
+```groovy
+Changelog changelog = new Changelog(this)
+checkChangelog(changelog)
+```
+
+## checkReleaseNotes
+
+Automatically check if your release notes have been updated if a PR is created.
+If the release notes have not been updated, the build will become unstable.
+
+Usage:
+
+```groovy
+ReleaseNotes releaseNotes = new ReleaseNotes(this)
+checkReleaseNotes(releaseNotes)
+```
 
 ## findVulnerabilitiesWithTrivy (Deprecated)
 
