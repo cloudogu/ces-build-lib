@@ -11,7 +11,7 @@ node('docker') {
 
     def cesBuildLib = libraryFromLocalRepo().com.cloudogu.ces.cesbuildlib
 
-    def mvn = cesBuildLib.MavenWrapperInDocker.new(this, 'eclipse-temurin:17.0.14_7-jdk-alpine')
+    def mvn = cesBuildLib.MavenWrapperInDocker.new(this, 'eclipse-temurin:11.0.25_9-jdk-alpine')
     mvn.useLocalRepoFromJenkins = true
     def git = cesBuildLib.Git.new(this)
 
@@ -50,7 +50,9 @@ node('docker') {
             def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
             sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh-token')
 
-            sonarQube.analyzeWith(mvn)
+            def mvnWithJdk17 = cesBuildLib.MavenWrapperInDocker.new(this, 'eclipse-temurin:17.0.14_7-jdk-alpine')
+            mvnWithJdk17.useLocalRepoFromJenkins = true
+            sonarQube.analyzeWith(mvnWithJdk17)
 
             if (!sonarQube.waitForQualityGateWebhookToBeCalled()) {
                 unstable("Pipeline unstable due to SonarQube quality gate failure")
