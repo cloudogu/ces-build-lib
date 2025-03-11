@@ -25,10 +25,9 @@ class GradleInDockerBaseTest {
 
     @Test
     void inDockerWithRegistry() {
-        def gradle = new GradleInDockerBaseForTest(scriptMock)
+        def gradle = new GradleInDockerBaseForTest(scriptMock, 'myCreds')
         gradle.docker = docker.mock
         scriptMock.expectedDefaultShRetValue = ''
-        gradle.credentialsId = 'myCreds'
         boolean closureCalled = false
 
         gradle.inDocker(IMAGE_ID, {
@@ -62,8 +61,8 @@ class GradleInDockerBaseTest {
 
     class GradleInDockerBaseForTest extends GradleInDockerBase {
 
-        GradleInDockerBaseForTest(script) {
-            super(script)
+        GradleInDockerBaseForTest(script, String credentialsId = null) {
+            super(script, credentialsId)
         }
 
         def call(Closure closure, boolean printStdOut) {
