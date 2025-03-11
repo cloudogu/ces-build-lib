@@ -9,9 +9,8 @@ class GradleWrapperInDocker extends GradleInDockerBase {
     private String imageId
 
     GradleWrapperInDocker(script, String imageId, String credentialsId = null) {
-        super(script)
+        super(script, credentialsId)
         this.imageId = imageId
-        this.credentialsId = credentialsId
     }
 
     @Override
