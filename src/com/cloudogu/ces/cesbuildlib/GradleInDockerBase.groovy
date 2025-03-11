@@ -6,12 +6,13 @@ abstract class GradleInDockerBase extends Gradle {
 
     /** Setting this to {@code true} allows the Gradle build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
-    protected String credentialsId = null
+    private String credentialsId = null
 
     Docker docker
 
-    GradleInDockerBase(script) {
+    GradleInDockerBase(script, String credentialsId = null) {
         super(script)
+        this.credentialsId = credentialsId
         this.docker = new Docker(script)
     }
 
