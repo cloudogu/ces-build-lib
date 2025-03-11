@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [4.1.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.1.1) - 2025-03-11
 ### Fixed
 - [#143] Fix IllegalAccessError when using `GradleWrapperInDocker(..)`
 
