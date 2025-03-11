@@ -50,6 +50,7 @@ node('docker') {
             def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
             sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh-token')
 
+            // SonarQube >= v25.01 needs JDK 17
             def mvnWithJdk17 = cesBuildLib.MavenWrapperInDocker.new(this, 'eclipse-temurin:17.0.14_7-jdk-alpine')
             mvnWithJdk17.useLocalRepoFromJenkins = true
             sonarQube.analyzeWith(mvnWithJdk17)
