@@ -403,7 +403,7 @@ class K3d {
     void applyDoguResource(String doguName, String doguNamespace, String doguVersion) {
         def filename = "target/make/k8s/${doguName}.yaml"
         def doguContentYaml = """
-apiVersion: k8s.cloudogu.com/v1
+apiVersion: k8s.cloudogu.com/v2
 kind: Dogu
 metadata:
   name: ${doguName}

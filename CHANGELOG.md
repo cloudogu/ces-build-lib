@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Fixed
+- [#147] Use dogu v2 api for applying dogus in k3d.
 
 ## [4.1.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.1.1) - 2025-03-11
 ### Fixed
