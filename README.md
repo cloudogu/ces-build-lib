@@ -817,13 +817,11 @@ Note that
   should be easy, however.
   
 ## Branches
+By default, the [sonarqube-community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin) is required and used.
+The reason for this is that since SonarQube version > 25 analysis with the legacy logic (creating one project per branch) fails
+on pull request because SonarQube requires the target branch (e.g. main) in the same project.
 
-By default, the `SonarQube` legacy logic, of creating one project per branch in a Jenkins Multibranch Pipeline project.
-
-A more convenient alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin)
-or the [sonarqube-community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin), which has 
-similar features but is difficult to install, not supported officially and does not allow for migration to the official 
-branch plugin later on.
+A more convenient alternative is the paid-version-only [Branch Plugin](https://docs.sonarqube.org/display/PLUG/Branch+Plugin).
 
 You can enable either branch plugins like so:
 
@@ -891,17 +889,8 @@ Note that SonarCloud uses the Branch Plugin, so the first analysis has to be don
 
 ## Pull Requests in SonarQube
 
-As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub. 
-It is no longer possible to do this from a regular community edition SonarQube, as the 
-[GitHub Plugin for SonarQube](https://docs.sonarqube.org/display/PLUG/GitHub+Plugin) is deprecated.
-
-So a PR build is treated just like any other. That is, 
-
-* without branch plugin: A new project using the `BRANCH_NAME` from env is created. 
-* with Branch Plugin: A new branch is analysed using the `BRANCH_NAME` from env.
-
-The Jenkins GitHub Plugin sets `BRANCH_NAME` to the PR Name, e.g. `PR-42`.
-
+As described above, SonarCloud can annotate PullRequests using the SonarCloud Application for GitHub.
+For the regular community edition the [community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin) is required.
 
 # Changelog
 Provides the functionality to read changes of a specific version in a changelog that is 
