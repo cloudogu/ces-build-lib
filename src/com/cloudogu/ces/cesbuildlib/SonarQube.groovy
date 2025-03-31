@@ -100,7 +100,10 @@ class SonarQube implements Serializable {
         if (isIgnoringBranches) {
             return
         }
-        
+        def artifactId = mvn.artifactId.trim()
+        mvn.additionalArgs += " -Dsonar.projectKey=${artifactId}"  +
+            " -Dsonar.projectName=${artifactId} "
+
         // Run SQ analysis in specific project for feature, hotfix, etc.
         // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
         // However, the alternative (the branch plugin is paid version only)
@@ -116,6 +119,10 @@ class SonarQube implements Serializable {
                 // Avoid exception "The main branch must not have a target" on master branch
                 mvn.additionalArgs += " -Dsonar.branch.target=${targetBranch} "
             }
+        } else if (script.env.CHANGE_TARGET) {
+            mvn.additionalArgs += " -Dsonar.pullrequest.key=${script.env.CHANGE_ID} " +
+                " -Dsonar.pullrequest.branch=${script.env.CHANGE_BRANCH} " +
+                " -Dsonar.pullrequest.base=${script.env.CHANGE_TARGET} "
         } else if (script.env.BRANCH_NAME) {
             // From SonarQube 7.9 "-Dsonar.branch" leads to an exception, because it's deprecated.
             //mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
@@ -134,15 +141,7 @@ class SonarQube implements Serializable {
             // BRANCH_NAME=PR-26
             // CHANGE_BRANCH=feature/simpify_git_push
             // CHANGE_TARGET=develop
-            
-            def artifactId = mvn.artifactId.trim()
-            // Malformed key for Project: 'groupId:artifactId:feature/something'. 
-            // Allowed characters are alphanumeric, '-', '_', '.' and ':', with at least one non-digit.
-            mvn.additionalArgs += " -Dsonar.projectKey=${artifactId}"  +
-                    " -Dsonar.projectName=${artifactId} " +
-                    " -Dsonar.pullrequest.key=${script.env.CHANGE_ID} " +
-                    " -Dsonar.pullrequest.branch=${script.env.CHANGE_BRANCH} " +
-                    " -Dsonar.pullrequest.base=${script.env.CHANGE_TARGET} "
+            mvn.additionalArgs += "-Dsonar.branch.name=${script.env.BRANCH_NAME}"
         }
     }
     
