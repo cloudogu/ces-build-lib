@@ -140,9 +140,9 @@ class SonarQube implements Serializable {
             // Allowed characters are alphanumeric, '-', '_', '.' and ':', with at least one non-digit.
             mvn.additionalArgs += " -Dsonar.projectKey=${artifactId}"  +
                     " -Dsonar.projectName=${artifactId} " +
-                    " -Dsonar.pullrequest.key=${env.CHANGE_ID} " +
-                    " -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} " +
-                    " -Dsonar.pullrequest.base=${env.CHANGE_TARGET} "
+                    " -Dsonar.pullrequest.key=${script.env.CHANGE_ID} " +
+                    " -Dsonar.pullrequest.branch=${script.env.CHANGE_BRANCH} " +
+                    " -Dsonar.pullrequest.base=${script.env.CHANGE_TARGET} "
         }
     }
     
