@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - [#147] Use dogu v2 api for applying dogus in k3d.
+- A bug where the SonarQube class created a new project in SonarQube for every analysed branch.
+This happened because the maven group, artifact id and the branch name was used for the project key.
+With this change only the artifact id will be used for the project id in sonarqube.
 
 ## [4.1.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.1.1) - 2025-03-11
 ### Fixed
