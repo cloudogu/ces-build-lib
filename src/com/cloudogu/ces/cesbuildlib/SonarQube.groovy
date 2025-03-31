@@ -101,15 +101,6 @@ class SonarQube implements Serializable {
             return
         }
         def artifactId = mvn.artifactId.trim()
-        mvn.additionalArgs += " -Dsonar.projectKey=${artifactId}"  +
-            " -Dsonar.projectName=${artifactId} "
-
-        // Run SQ analysis in specific project for feature, hotfix, etc.
-        // Note that -Dsonar.branch is deprecated from SQ 6.6: https://docs.sonarqube.org/display/SONAR/Analysis+Parameters
-        // However, the alternative (the branch plugin is paid version only)
-        // See https://docs.sonarqube.org/display/PLUG/Branch+Plugin
-        // An alternative could be this: 
-        // https://github.com/mc1arke/sonarqube-community-branch-plugin
         if (isUsingBranchPlugin) {
             mvn.additionalArgs += " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
 
@@ -119,32 +110,29 @@ class SonarQube implements Serializable {
                 // Avoid exception "The main branch must not have a target" on master branch
                 mvn.additionalArgs += " -Dsonar.branch.target=${targetBranch} "
             }
+            // Use -Dsonar.branch.name with following plugin:
+            // https://github.com/mc1arke/sonarqube-community-branch-plugin
+            // Some examples for Env Vars when building PRs.
+            // BRANCH_NAME=PR-26
+            // CHANGE_BRANCH=feature/simplify_git_push
+            // CHANGE_TARGET=develop
         } else if (script.env.CHANGE_TARGET) {
-            mvn.additionalArgs += " -Dsonar.pullrequest.key=${script.env.CHANGE_ID} " +
+            mvn.additionalArgs += "-Dsonar.projectKey=${replaceCharactersNotAllowedInProjectKey(artifactId)} " +
+                " -Dsonar.projectName=${artifactId} " +
+                " -Dsonar.pullrequest.key=${script.env.CHANGE_ID} " +
                 " -Dsonar.pullrequest.branch=${script.env.CHANGE_BRANCH} " +
                 " -Dsonar.pullrequest.base=${script.env.CHANGE_TARGET} "
         } else if (script.env.BRANCH_NAME) {
-            // From SonarQube 7.9 "-Dsonar.branch" leads to an exception, because it's deprecated.
-            //mvn.additionalArgs += " -Dsonar.branch=${script.env.BRANCH_NAME} "
-            // In order to not break behavior of ces-build-lib, we re-implement similar behavior in ces-build-lib.
-
-            // Note that the legacy "-Dsonar.branch" resulted in the display name "<maven name> <branch name>"
-            // We can't do that because the blank sends us to jenkis-shell-quoting-hell.
-            // Even this didn't help: https://gist.github.com/Faheetah/e11bd0315c34ed32e681616e41279ef4
-            // So change it to "<maven artifact>:<branch name>", as artifact is not allowed to consist spaces
-
-            // We also apply this logic to PRs, since GitHub Plugin is deprecated from 7.2+.
-            // From SonarQube 6.6 "-Dsonar.analysis.mode" leads to an exception, because it's deprecated.
-            // There seems to be no replacement in the community version.
-            // See https://docs.sonarqube.org/display/PLUG/GitHub+Plugin
-            // Some examples for Env Vars when building PRs. 
-            // BRANCH_NAME=PR-26
-            // CHANGE_BRANCH=feature/simpify_git_push
-            // CHANGE_TARGET=develop
-            mvn.additionalArgs += "-Dsonar.branch.name=${script.env.BRANCH_NAME}"
+            mvn.additionalArgs += "-Dsonar.projectKey=${replaceCharactersNotAllowedInProjectKey(artifactId)} " +
+                " -Dsonar.projectName=${artifactId} " +
+                " -Dsonar.branch.name=${script.env.BRANCH_NAME} "
         }
     }
-    
+
+    protected static String replaceCharactersNotAllowedInProjectKey(String potentialProjectKey) {
+        return potentialProjectKey.replaceAll("[^a-zA-Z0-9-_.:]", "_")
+    }
+
     protected String determineIntegrationBranch() {
         if (config['integrationBranch']) {
             return config['integrationBranch']
@@ -217,7 +205,7 @@ class SonarQube implements Serializable {
                 }
 
                 analyzeWith(mvn, script.env.SONAR_MAVEN_GOAL, script.env.SONAR_HOST_URL, script.env.SONAR_AUTH_TOKEN,
-                        sonarExtraProps)
+                    sonarExtraProps)
             }
         }
     }
@@ -253,9 +241,9 @@ class SonarQube implements Serializable {
 
         def executeWith(Maven mvn) {
             script.withCredentials([script.usernamePassword(credentialsId: usernameAndPasswordCredential,
-                    passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
                 analyzeWith(mvn, 'sonar:sonar', host, script.env.USERNAME,
-                        "-Dsonar.password=${script.env.PASSWORD} ")
+                    "-Dsonar.password=${script.env.PASSWORD} ")
             }
         }
     }
