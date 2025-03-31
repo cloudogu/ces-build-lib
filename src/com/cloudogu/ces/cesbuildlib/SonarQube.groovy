@@ -138,15 +138,12 @@ class SonarQube implements Serializable {
             def artifactId = mvn.artifactId.trim()
             // Malformed key for Project: 'groupId:artifactId:feature/something'. 
             // Allowed characters are alphanumeric, '-', '_', '.' and ':', with at least one non-digit.
-            String projectKey = replaceCharactersNotAllowedInProjectKey(script.env.BRANCH_NAME)
-            String projectName = script.env.BRANCH_NAME
-            mvn.additionalArgs += " -Dsonar.projectKey=${mvn.groupId}:${artifactId}:${projectKey}"  +
-                    " -Dsonar.projectName=${artifactId}:${projectName} "
+            mvn.additionalArgs += " -Dsonar.projectKey=${artifactId}"  +
+                    " -Dsonar.projectName=${artifactId} " +
+                    " -Dsonar.pullrequest.key=${env.CHANGE_ID} " +
+                    " -Dsonar.pullrequest.branch=${env.CHANGE_BRANCH} " +
+                    " -Dsonar.pullrequest.base=${env.CHANGE_TARGET} "
         }
-    }
-
-    protected String replaceCharactersNotAllowedInProjectKey(String potentialProjectKey) {
-        return potentialProjectKey.replaceAll("[^a-zA-Z0-9-_.:]", "_");
     }
     
     protected String determineIntegrationBranch() {
