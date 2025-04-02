@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- The default legacy behaviour where SonarQube class created a new project in SonarQube for every analysed branch.
+- Removes the default legacy behavior which created a new project in SonarQube for every analyzed branch.
 This change uses the [community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin) as default
 to create a project for the single artifact id. In this project all analyses of branches and pull requests will be stored.
 
