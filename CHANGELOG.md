@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [4.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.2.0) - 2025-04-02
 ### Changed
 - Removes the default legacy behavior which created a new project in SonarQube for every analyzed branch.
 This change uses the [community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin) as default
