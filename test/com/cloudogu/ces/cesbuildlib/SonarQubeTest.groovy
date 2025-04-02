@@ -47,7 +47,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=auth '
-        assertBranchName(branchName, branchName)
+        assertBranchName(branchName, mavenMock)
         assert scriptMock.actualStringArgs['credentialsId'] == 'secretTextCred'
     }
 
@@ -75,7 +75,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=usr -Dsonar.password=pw '
-        assertBranchName('develop', 'develop')
+        assertBranchName('develop', mavenMock)
         assert scriptMock.actualUsernamePasswordArgs[0]['credentialsId'] == 'usrPwCred'
     }
 
@@ -128,7 +128,7 @@ class SonarQubeTest {
 
         assert mavenMock.args ==
                 'sonar:sonar -Dsonar.host.url=host -Dsonar.login=auth -DextraKey=extraValue'
-        assertBranchName('develop', 'develop')
+        assertBranchName('develop', mavenMock)
         assert scriptMock.actualSonarQubeEnv == 'sqEnv'
     }
 
@@ -157,8 +157,13 @@ class SonarQubeTest {
     @Test
     void analyzeWithBranchContainCharsNotValidForProjectKey() throws Exception {
         String branchName = 'feature/abc'
-        String projectKey = 'feature_abc'
-        String projectName = branchName
+        // Use custom maven mock because the attributes are read only
+        def mavenMock = new MavenMock(scriptMock)
+        mavenMock.mockedArtifactId = "ces/build/lib"
+        mavenMock.mockedGroupId = "com.cloudogu.ces"
+        mavenMock.mockedName = "ces build lib"
+        String projectKey = 'ces_build_lib'
+        String projectName = "ces/build/lib"
         
         def sonarQube = new SonarQube(scriptMock, [usernamePassword: 'usrPwCred', sonarHostUrl: 'http://ces/sonar'])
         scriptMock.env = [
@@ -168,7 +173,9 @@ class SonarQubeTest {
 
         sonarQube.analyzeWith(mavenMock)
         
-        assertBranchName(projectKey, projectName)
+        assertBranchName(branchName, mavenMock)
+        assertProjectKey(projectKey, mavenMock)
+        assertProjectName(projectName, mavenMock)
     }
 
     @Test
@@ -252,6 +259,27 @@ class SonarQubeTest {
     }
 
     @Test
+    void analyzeWithBranchCommunityBranchPluginOnPullRequest() throws Exception {
+        def branchName = "PR-42"
+        def changeID = "123"
+        def changeTarget = "develop"
+        scriptMock.env = [
+            CHANGE_BRANCH: branchName,
+            CHANGE_TARGET: changeTarget,
+            CHANGE_ID: changeID,
+        ]
+
+        def sonarQube = new SonarQube(scriptMock, ["sonarQubeEnv": "env"])
+        sonarQube.analyzeWith(mavenMock)
+
+        assertProjectName(mavenMock.artifactId, mavenMock)
+        assertProjectKey(mavenMock.artifactId, mavenMock)
+        assert mavenMock.additionalArgs.contains("-Dsonar.pullrequest.key=${changeID}")
+        assert mavenMock.additionalArgs.contains("-Dsonar.pullrequest.branch=${branchName}")
+        assert mavenMock.additionalArgs.contains("-Dsonar.pullrequest.base=${changeTarget}")
+    }
+
+    @Test
     void waitForQualityGate() throws Exception {
         scriptMock.expectedQGate = [status: 'OK']
 
@@ -321,7 +349,15 @@ class SonarQubeTest {
         assert exception.message == "Missing required 'sonarHostUrl' parameter."
     }
 
-    void assertBranchName(String projectKey, String projectName) {
-        assert mavenMock.additionalArgs.contains("-Dsonar.projectKey=com.cloudogu.ces:ces-build-lib:${projectKey} -Dsonar.projectName=ces-build-lib:${projectName}")
+    static void assertProjectKey(String projectKey, MavenMock mavenMock) {
+        assert mavenMock.additionalArgs.contains("-Dsonar.projectKey=${projectKey}")
+    }
+
+    static void assertProjectName(String projectName, MavenMock mavenMock) {
+        assert mavenMock.additionalArgs.contains("-Dsonar.projectName=${projectName}")
+    }
+
+    static void assertBranchName(String branchName, MavenMock mavenMock) {
+        assert mavenMock.additionalArgs.contains("-Dsonar.branch.name=${branchName}")
     }
 }

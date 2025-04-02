@@ -358,7 +358,7 @@ class K3dTest {
         scriptMock.expectedShRetValueForScript.put("echo 'test' | grep 'test'", "test")
 
         String doguYaml = """
-apiVersion: k8s.cloudogu.com/v1
+apiVersion: k8s.cloudogu.com/v2
 kind: Dogu
 metadata:
   name: nginx-ingress
@@ -384,7 +384,7 @@ spec:
         assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("yq -oj '.Image=\"myIP.local:5000/test/myimage:0.1.2\"' dogu.json > leWorkspace/target/dogu.json")
         assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl create configmap test-descriptor --from-file=leWorkspace/target/dogu.json")
         assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl apply -f \n" +
-            "apiVersion: k8s.cloudogu.com/v1\n" +
+            "apiVersion: k8s.cloudogu.com/v2\n" +
             "kind: Dogu\n" +
             "metadata:\n" +
             "  name: nginx-ingress\n" +
@@ -532,7 +532,7 @@ spec:
 
         def filename = "target/make/k8s/testName.yaml"
         def doguContentYaml = """
-apiVersion: k8s.cloudogu.com/v1
+apiVersion: k8s.cloudogu.com/v2
 kind: Dogu
 metadata:
   name: testName

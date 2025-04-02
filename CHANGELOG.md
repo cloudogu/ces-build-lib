@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.2.0) - 2025-04-02
+### Changed
+- Removes the default legacy behavior which created a new project in SonarQube for every analyzed branch.
+This change uses the [community-branch-plugin](https://github.com/mc1arke/sonarqube-community-branch-plugin) as default
+to create a project for the single artifact id. In this project all analyses of branches and pull requests will be stored.
+
+### Fixed
+- [#147] Use dogu v2 api for applying dogus in k3d.
+
 ## [4.1.1](https://github.com/cloudogu/ces-build-lib/releases/tag/4.1.1) - 2025-03-11
 ### Fixed
 - [#143] Fix IllegalAccessError when using `GradleWrapperInDocker(..)`
