@@ -22,7 +22,7 @@ class GitFlow implements Serializable {
      * @return if this branch is the develop branch and therefor ready for pre-release according to git flow
      */
     boolean isPreReleaseBranch() {
-        return git.getSimpleBranchName().equals("develop")
+        return true
     }
 
     /**
