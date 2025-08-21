@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- Updates the BATS shell test image to 1.12 which supports the `--report-formatter` switch
 
 ## [4.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.2.0) - 2025-04-02
 ### Changed
