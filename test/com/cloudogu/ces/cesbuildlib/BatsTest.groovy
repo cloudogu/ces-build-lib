@@ -37,7 +37,7 @@ class BatsTest {
         // given
         Docker dockerMock = mock(Docker.class)
         Docker.Image imageMock = mock(Docker.Image.class)
-        when(dockerMock.build("cloudogu/bats:1.2.1", "--build-arg=BATS_BASE_IMAGE=bats/bats --build-arg=BATS_TAG=1.2.1 ./build/make/bats")).thenReturn(imageMock)
+        when(dockerMock.build("cloudogu/bats:1.12.0", "--build-arg=BATS_BASE_IMAGE=bats/bats --build-arg=BATS_TAG=1.12.0 ./build/make/bats")).thenReturn(imageMock)
         when(imageMock.inside(anyString(), any())).thenAnswer(new Answer<Object>() {
             @Override
             Object answer(InvocationOnMock invocation) throws Throwable {
@@ -53,9 +53,9 @@ class BatsTest {
 
         // then
         assertThat(scriptMock.actualEcho[0].trim()).contains("Executing bats tests with config:")
-        assertThat(scriptMock.actualEcho[1].trim()).contains("[bats_base_image:bats/bats, bats_custom_image:cloudogu/bats, bats_tag:1.2.1]")
+        assertThat(scriptMock.actualEcho[1].trim()).contains("[bats_base_image:bats/bats, bats_custom_image:cloudogu/bats, bats_tag:1.12.0]")
 
-        verify(dockerMock).build("cloudogu/bats:1.2.1", "--build-arg=BATS_BASE_IMAGE=bats/bats --build-arg=BATS_TAG=1.2.1 ./build/make/bats")
+        verify(dockerMock).build("cloudogu/bats:1.12.0", "--build-arg=BATS_BASE_IMAGE=bats/bats --build-arg=BATS_TAG=1.12.0 ./build/make/bats")
         verify(imageMock).inside(eq("--entrypoint='' -v :/workspace -v /testdir:/usr/share/webapps"), any())
 
         assertEquals("true", scriptMock.actualJUnitFlags["allowEmptyResults"].toString())

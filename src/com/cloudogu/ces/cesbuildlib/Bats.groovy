@@ -13,7 +13,7 @@ class Bats {
     def defaultSetupConfig = [
         bats_base_image  : "bats/bats",
         bats_custom_image: "cloudogu/bats",
-        bats_tag         : "1.2.1"
+        bats_tag         : "1.12.0"
     ]
 
     Bats(script, docker) {
