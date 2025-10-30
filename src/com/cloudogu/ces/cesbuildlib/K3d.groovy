@@ -14,6 +14,7 @@ class K3d {
     private static String K3D_LOG_FILENAME = "k8sLogs"
     private static String K3D_SETUP_JSON_FILE = "k3d_setup.json"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
+    private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
 
     private String clusterName
@@ -36,8 +37,6 @@ class K3d {
         adminGroup             : "CesAdministrators",
         dependencies           : ["official/ldap",
                                   "official/cas",
-                                  "k8s/nginx-ingress",
-                                  "k8s/nginx-static",
                                   "official/postfix",
                                   "official/usermgt"],
         defaultDogu            : "",
@@ -254,15 +253,16 @@ class K3d {
         }
     }
 
-    void configureSetupJson(config = [:]) {
-        String setupJsonConfigKey = ".setup_json"
-
-        script.echo "configuring setup..."
+    void configureEcosystemCoreValues(config = [:]) {
+        script.echo "configuring ecosystem core..."
         // Merge default config with the one passed as parameter
         config = defaultSetupConfig << config
-        writeSetupJson(config)
+        writeBlueprintYaml(config)
+    }
 
-        appendFileToYamlFile(K3D_VALUES_YAML_FILE, setupJsonConfigKey, K3D_SETUP_JSON_FILE)
+    @Deprecated
+    void configureSetupJson(config = [:]) {
+        configureEcosystemCoreValues(config)
     }
 
     void configureSetupImage(String image) {
@@ -320,7 +320,13 @@ class K3d {
             helm("registry login ${registryUrl} --username '${script.env.HARBOR_USERNAME}' --password '${script.env.HARBOR_PASSWORD}'")
         }
 
-        helm("install -f ${K3D_VALUES_YAML_FILE} k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
+        // install crd first
+        helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
+
+        helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default")
+
+        helm("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
+
         helm("registry logout ${registryUrl}")
 
         script.echo "Wait for dogu-operator to be ready..."
@@ -363,7 +369,7 @@ class K3d {
  */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
-        configureSetupJson(config)
+        configureEcosystemCoreValues(config)
         installAndTriggerSetup(tag, timout, interval)
     }
 
@@ -610,14 +616,47 @@ data:
         String formatted = ""
 
         for (int i = 0; i < deps.size(); i++) {
-            formatted += "\"${deps[i]}\""
-
+            formatted += "      - \"${deps[i]}\""
             if ((i + 1) < deps.size()) {
-                formatted += ', '
+                formatted += '\n'
             }
         }
 
         return formatted
+    }
+
+    private void writeBlueprintYaml(config) {
+        List<String> deps = config.dependencies + config.additionalDependencies
+        String formattedDeps = formatDependencies(deps)
+        script.writeFile file: K3D_BLUEPRINT_FILE, text: """
+apiVersion: k8s.cloudogu.com/v2
+kind: Blueprint
+metadata:
+  labels:
+    app: ces
+    app.kubernetes.io/name: k8s-blueprint-lib
+  name: blueprint-ces-module
+  namespace: default
+spec:
+  displayName: "Blueprint Terraform CES-Module"
+  blueprint:
+    dogus:
+${formattedDeps}
+    config:
+      dogus:
+        ldap:
+          "admin_username": "${config.adminUsername}"
+          "admin_mail": "ces-admin@cloudogu.com"
+          "admin_member": "true"
+          "admin_password": "${config.adminPassword}"
+      global:
+        "fqdn": "${externalIP}"
+        "domain": "ces.local"
+        "certificate/type": "selfsigned"
+        "k8s/use_internal_ip": "false"
+        "internalIp": ""
+        "admin_group": "${config.adminGroup}"
+"""
     }
 
     private void writeSetupJson(config) {
