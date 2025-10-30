@@ -634,7 +634,7 @@ data:
     }
 
     private void prepatchFQDN() {
-        String global_config_map = kubectl("kubectl get configmap global-config -n default -o yaml", true)
+        String global_config_map = kubectl("get configmap global-config -n default -o yaml", true)
         script.writeFile file: "cm.yaml", text: global_config_map
 
         doInYQContainer {
