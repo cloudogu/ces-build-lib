@@ -325,12 +325,14 @@ class K3d {
 
         helm("install ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default")
 
+        script.echo "Wait for blueprint-operator to be ready..."
+        waitForDeploymentRollout("k8s-blueprint-operator-controller-manager", timeout, interval)
+
         helm("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
 
         helm("registry logout ${registryUrl}")
 
-        script.echo "Wait for dogu-operator to be ready..."
-        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timeout, interval)
+
 
         script.echo "Wait for setup-finisher to be executed..."
         waitForSetupToFinish(timeout, interval)
@@ -616,7 +618,8 @@ data:
         String formatted = ""
 
         for (int i = 0; i < deps.size(); i++) {
-            formatted += "      - \"${deps[i]}\""
+            formatted += "      - name: ${deps[i]}\n" +
+                         "        version: latest"
             if ((i + 1) < deps.size()) {
                 formatted += '\n'
             }
