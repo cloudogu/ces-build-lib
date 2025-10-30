@@ -326,6 +326,8 @@ class K3d {
         // install crd first
         helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
 
+        prepatchFQDN()
+
         helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default --timeout 15m")
 
         script.echo "Wait for blueprint-operator to be ready..."
@@ -629,6 +631,17 @@ data:
         }
 
         return formatted
+    }
+
+    private void prepatchFQDN() {
+        String global_config_map = kubectl("kubectl get configmap global-config -n default -o yaml", true)
+        script.writeFile file: "cm.yaml", text: global_config_map
+
+        doInYQContainer {
+            script.sh("yq eval -i '.data[\"config.yaml\"] |= (from_yaml | .fqdn = \"${externalIP}\" | to_yaml)' cm.yaml")
+        }
+
+        kubectl("apply -f cm.yaml")
     }
 
     private void writeBlueprintYaml(config) {
