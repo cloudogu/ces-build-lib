@@ -255,7 +255,7 @@ class K3d {
 
     void configureEcosystemCoreValues(config = [:]) {
 
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes", "15")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 15")
 
         script.echo "configuring ecosystem core..."
         // Merge default config with the one passed as parameter
