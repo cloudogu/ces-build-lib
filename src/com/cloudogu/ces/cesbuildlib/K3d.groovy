@@ -323,7 +323,7 @@ class K3d {
         // install crd first
         helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
 
-        helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default")
+        helm("install ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default")
 
         helm("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
 
