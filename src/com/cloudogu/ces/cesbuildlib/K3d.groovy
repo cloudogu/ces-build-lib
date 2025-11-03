@@ -361,7 +361,7 @@ class K3d {
 
     void waitForDogusToBeRolledOut(Integer timeout, Integer interval) {
         String dogus = kubectl("get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
-        String[] doguList = dogus.split("\n")
+        String[] doguList = dogus.trim().split("\n")
         for (String dogu : doguList) {
             script.echo "Wait for $dogu to be rolled out..."
             waitForDeploymentRollout(dogu, timeout, interval)
@@ -371,13 +371,13 @@ class K3d {
     void waitForSetupToFinish(Integer timeout, Integer interval) {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
-            String deploys = kubectl("get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
-            if (!deploys.contains("k8s-ces-setup")) {
+            String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
+            if (blueprintReady == "True True") {
                 return
             }
         }
 
-        this.script.error "failed to wait for setup to finish: timeout"
+        this.script.error "failed to wait for ecosystem-core setup to finish: ${timeout}"
     }
 
 /**
