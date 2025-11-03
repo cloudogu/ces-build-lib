@@ -1,6 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 import com.cloudbees.groovy.cps.NonCPS
+import groovy.json.JsonOutput
 
 class K3d {
     /**
@@ -30,6 +31,7 @@ class K3d {
     private String registryName
     private String workspace
     private Docker docker
+    private HttpClient httpClient
 
     def defaultSetupConfig = [
         adminUsername          : "ces-admin",
@@ -70,6 +72,7 @@ class K3d {
         this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
         this.docker = new Docker(script)
+        this.httpClient =  new HttpClient(this, harborCredentialsID)
     }
 
     /**
@@ -637,25 +640,21 @@ data:
 
     String formatDependencies(List<String> deps) {
         String formatted = ""
-        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
-            String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true,)
-            for (int i = 0; i < deps.size(); i++) {
-                String[] parts = deps[i].split(":")
-                script.echo "DEP: '${deps[i]}'"
-                String version = "";
-                if (parts.length != 2 || parts[1] == "latest") {
-                    docker.image("mikefarah/yq:${YQ_VERSION}")
-                        .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir"){
-                        version = script.sh(script: "apk add --no-cache curl && curl -s https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions -u ${auth} | yq 'sort_by(.) | .[-1]'", returnStdout: true)
-                    }
-                } else {
-                    version = parts[1]
-                }
-                formatted += "      - name: ${parts[0]}\n" +
-                    "        version: ${version}"
-                if ((i + 1) < deps.size()) {
-                    formatted += '\n'
-                }
+        for (int i = 0; i < deps.size(); i++) {
+            String[] parts = deps[i].split(":")
+            script.echo "DEP: '${deps[i]}'"
+            String version = "";
+            if (parts.length != 2 || parts[1] == "latest") {
+                def response = httpClient.get("https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions")
+                def versions = script.readJSON text: response["body"], returnPojo: true
+                version = version[0]
+            } else {
+                version = parts[1]
+            }
+            formatted += "      - name: ${parts[0]}\n" +
+                "        version: ${version}"
+            if ((i + 1) < deps.size()) {
+                formatted += '\n'
             }
         }
 
