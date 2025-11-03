@@ -262,7 +262,7 @@ class K3d {
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", "2.0.1")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", "3.0.0-CR1")
 
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{\"name\": \"k8s-dogu-operator\"}, {\"name\": \"k8s-service-discovery\"}]")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{name: k8s-dogu-operator}, {name: k8s-service-discovery}]")
 
 
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
