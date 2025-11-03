@@ -647,8 +647,7 @@ data:
             String version = "";
             if (parts.length != 2 || parts[1] == "latest") {
                 def response = httpClient.get("https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions")
-                script.echo response["body"]
-                script.echo response["status"]
+                script.echo JsonOutput.toJson(response["body"].toString())
                 def versions = script.readJSON text: response["body"], returnPojo: true
                 version = versions.getAt(0 as String)
             } else {
