@@ -372,13 +372,15 @@ class K3d {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
+            String dogus = kubectl("get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
             script.echo blueprintReady
+            script.echo dogus
             if (blueprintReady == "True True") {
                 return
             }
         }
 
-        this.script.error "failed to wait for ecosystem-core setup to finish: ${timeout}"
+        this.script.error "failed to wait for ecosystem-core setup to finish: timeout"
     }
 
 /**
