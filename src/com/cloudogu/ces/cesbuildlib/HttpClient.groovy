@@ -59,7 +59,7 @@ class HttpClient implements Serializable {
     }
 
     private String getCurlCommand(String httpMethod, String url, String contentType, String data) {
-        return "curl -i '" + escapeSingleQuotes(httpMethod) + "' " +
+        return "curl -i " +
             (credentials ? getCurlAuthParam() : '') +
             (contentType ? "-H 'Content-Type: " + escapeSingleQuotes(contentType) + "' " : '') +
             (data ? "-d '" + escapeSingleQuotes(data) + "' " : '') +
