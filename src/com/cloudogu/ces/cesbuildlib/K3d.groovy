@@ -256,8 +256,8 @@ class K3d {
     void configureEcosystemCoreValues(config = [:]) {
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 15")
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy = \"Cluster\"")
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy = \"Cluster\"")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy", "Cluster")
 
         script.echo "configuring ecosystem core..."
         // Merge default config with the one passed as parameter
@@ -328,7 +328,7 @@ class K3d {
         // install crd first
         helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
 
-        prepatchFQDN()
+        //prepatchFQDN()
 
         helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default --timeout 15m")
 
