@@ -635,14 +635,30 @@ data:
         return [registryIp, registryPort]
     }
 
-    static String formatDependencies(List<String> deps) {
+    String formatDependencies(List<String> deps) {
         String formatted = ""
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
+            for (int i = 0; i < deps.size(); i++) {
+                String[] parts = deps[i].split[":"]
+                String version = ""
+                if (parts.length > 1 && parts[1] != "latest") {
+                    version = parts[1]
+                } else {
+                    String url = "https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions"
+                    def connection = new URL(url).openConnection()
+                    String basicAuth = "Basic " + "${script.env.HARBOR_USERNAME}:${script.env.HARBOR_PASSWORD}".bytes.encodeBase64().toString()
+                    connection.setRequestProperty("Authorization", basicAuth)
+                    connection.setRequestMethod("GET")
+                    connection.connect()
 
-        for (int i = 0; i < deps.size(); i++) {
-            formatted += "      - name: ${deps[i]}\n" +
-                         "        version: latest"
-            if ((i + 1) < deps.size()) {
-                formatted += '\n'
+                    def response = connection.inputStream.text
+                    script.echo response
+                }
+                formatted += "      - name: ${parts[0]}\n" +
+                    "        version: ${version}"
+                if ((i + 1) < deps.size()) {
+                    formatted += '\n'
+                }
             }
         }
 
