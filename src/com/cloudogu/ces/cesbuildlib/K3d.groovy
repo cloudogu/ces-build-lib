@@ -255,9 +255,22 @@ class K3d {
 
     void configureEcosystemCoreValues(config = [:]) {
 
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 15")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 5")
+
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator.version", "3.15.0")
+
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", "2.0.1")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", "3.0.0-CR1")
+
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{\"name\": \"k8s-dogu-operator\"}, {\"name\": \"k8s-service-discovery\"}]")
+
+
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy", "Cluster")
+
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".backup.enabled = false")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".monitoring.enabled = false")
+
 
         script.echo "configuring ecosystem core..."
         // Merge default config with the one passed as parameter
