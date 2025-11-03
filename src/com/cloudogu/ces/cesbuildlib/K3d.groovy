@@ -639,7 +639,7 @@ data:
         String formatted = ""
         script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
             for (int i = 0; i < deps.size(); i++) {
-                String[] parts = deps[i].split[":"]
+                String[] parts = deps[i].split(":")
                 String version = ""
                 if (parts.length > 1 && parts[1] != "latest") {
                     version = parts[1]
