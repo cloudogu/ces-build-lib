@@ -644,10 +644,9 @@ data:
                 script.echo "DEP: '${deps[i]}'"
                 String version = "";
                 if (parts.length != 2 || parts[1] == "latest") {
-                    docker.image("alpine")
+                    docker.image("imega/jq")
                         .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir"){
-                        version = script.sh(script: "apk add --no-cache curl jq >/dev/null && \
-  curl -s https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions -u ${auth} \
+                        version = script.sh(script: "curl -s https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions -u ${auth} \
   | jq -r '.[]' | sort -V | tail -1", returnStdout: true)
                     }
                 } else {
