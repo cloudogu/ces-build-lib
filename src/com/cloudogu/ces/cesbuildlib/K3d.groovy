@@ -146,9 +146,9 @@ class K3d {
             // Persists the cache of Jenkins agents pods for faster builds
             " -v /tmp:/tmp@server:0 " +
             // Disable traefik (no ingresses used so far)
-            " --k3s-arg=--disable=traefik@all:* " +
+            //" --k3s-arg=--disable=traefik@all:* " +
             // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
-            " --k3s-arg=--disable=servicelb@all:* " +
+            //" --k3s-arg=--disable=servicelb@all:* " +
             // Pin k8s version to 1.21.2
             " --image=${K8S_IMAGE} " +
             // Use our k3d registry
