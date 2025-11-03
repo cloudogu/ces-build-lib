@@ -638,11 +638,23 @@ data:
     String formatDependencies(List<String> deps) {
         String formatted = ""
         script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
+            String auth = script.sh(script: "printf '%s:%s' '${script.env.HARBOR_USERNAME}' '${script.env.HARBOR_PASSWORD}' | base64", returnStdout: true,)
             for (int i = 0; i < deps.size(); i++) {
                 String[] parts = deps[i].split(":")
                 script.echo "DEP: '${deps[i]}'"
+                String version = "";
+                if (parts.length != 2 || parts[1] == "latest") {
+                    docker.image("alpine")
+                        .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir"){
+                        version = script.sh(script: "apk add --no-cache curl jq >/dev/null && \
+  curl -s https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions -u ${auth} \
+  | jq -r '.[]' | sort -V | tail -1", returnStdout: true)
+                    }
+                } else {
+                    version = parts[1]
+                }
                 formatted += "      - name: ${parts[0]}\n" +
-                    "        version: ${parts[1]}"
+                    "        version: ${version}"
                 if ((i + 1) < deps.size()) {
                     formatted += '\n'
                 }
