@@ -2,6 +2,7 @@ package com.cloudogu.ces.cesbuildlib
 
 import com.cloudbees.groovy.cps.NonCPS
 import groovy.json.JsonOutput
+import com.cloudogu.ces.cesbuildlib.*
 
 class K3d {
     /**
@@ -72,7 +73,7 @@ class K3d {
         this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
         this.docker = new Docker(script)
-        this.httpClient =  new HttpClient(this, "harbor-robot-trivy-cve")
+        this.httpClient =  new HttpClient(this.script, "harbor-robot-trivy-cve")
     }
 
     /**
@@ -646,8 +647,9 @@ data:
             String version = "";
             if (parts.length != 2 || parts[1] == "latest") {
                 def response = httpClient.get("https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions")
+                script.echo JsonOutput.toJson(response["body"].toString())
                 def versions = script.readJSON text: response["body"], returnPojo: true
-                version = versions[0]
+                version = versions.getAt(0 as String)
             } else {
                 version = parts[1]
             }
