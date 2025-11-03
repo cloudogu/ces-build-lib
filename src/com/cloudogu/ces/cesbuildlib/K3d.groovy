@@ -646,17 +646,6 @@ data:
         return formatted
     }
 
-    private void prepatchFQDN() {
-        String global_config_map = kubectl("get configmap global-config -n default -o yaml", true)
-        script.writeFile file: "cm.yaml", text: global_config_map
-
-        doInYQContainer {
-            script.sh("yq eval -i '.data[\"config.yaml\"] |= (from_yaml | .fqdn = \"${externalIP}\" | to_yaml)' cm.yaml")
-        }
-
-        kubectl("apply -f cm.yaml")
-    }
-
     private void writeBlueprintYaml(config) {
         List<String> deps = config.dependencies + config.additionalDependencies
         String formattedDeps = formatDependencies(deps)
@@ -677,17 +666,27 @@ ${formattedDeps}
     config:
       dogus:
         ldap:
-          "admin_username": "${config.adminUsername}"
-          "admin_mail": "ces-admin@cloudogu.com"
-          "admin_member": "true"
-          "admin_password": "${config.adminPassword}"
+          - key: admin_username
+            value: "${config.adminUsername}"
+          - key: admin_mail
+            value: "ces-admin@cloudogu.com"
+          - key: admin_member
+            value: "true"
+          - key: admin_password
+            value: "${config.adminPassword}"
       global:
-        "fqdn": "${externalIP}"
-        "domain": "ces.local"
-        "certificate/type": "selfsigned"
-        "k8s/use_internal_ip": "false"
-        "internalIp": ""
-        "admin_group": "${config.adminGroup}"
+        - key: fqdn
+          value: "${externalIP}"
+        - key: domain
+          value: "ces.local"
+        - key: certificate/type
+          value: "selfsigned"
+        - key: k8s/use_internal_ip
+          value: "false"
+        - key: internalIp
+          value: ""
+        - key: admin_group
+          value: "${config.adminGroup}"
 """
     }
 
@@ -749,8 +748,8 @@ ${formattedDeps}
         }
         script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
         script.sh("rm -rf ${K3D_SETUP_JSON_FILE}".toString())
-        script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
-        script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
+        //script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
+        //script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
 
         collectResourcesSummaries()
         collectDoguDescriptions()
