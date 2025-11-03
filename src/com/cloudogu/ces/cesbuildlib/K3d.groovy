@@ -150,9 +150,9 @@ class K3d {
             // Persists the cache of Jenkins agents pods for faster builds
             " -v /tmp:/tmp@server:0 " +
             // Disable traefik (no ingresses used so far)
-            //" --k3s-arg=--disable=traefik@all:* " +a
+            " --k3s-arg=--disable=traefik@all:* " +a
             // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
-            //" --k3s-arg=--disable=servicelb@all:* " +
+            " --k3s-arg=--disable=servicelb@all:* " +
             // Pin k8s version to 1.21.2
             " --image=${K8S_IMAGE} " +
             // Use our k3d registry
@@ -647,7 +647,8 @@ data:
             String version = "";
             if (parts.length != 2 || parts[1] == "latest") {
                 def response = httpClient.get("https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions")
-                script.echo JsonOutput.toJson(response["body"].toString())
+                script.echo response["body"]
+                script.echo response["status"]
                 def versions = script.readJSON text: response["body"], returnPojo: true
                 version = versions.getAt(0 as String)
             } else {
