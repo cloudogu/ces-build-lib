@@ -348,11 +348,9 @@ class K3d {
         script.echo "Wait for blueprint-operator to be ready..."
         waitForDeploymentRollout("k8s-blueprint-operator-controller-manager", timeout, interval)
 
-        helm("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
+        kubectl("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
 
         helm("registry logout ${registryUrl}")
-
-
 
         script.echo "Wait for setup-finisher to be executed..."
         waitForSetupToFinish(timeout, interval)
