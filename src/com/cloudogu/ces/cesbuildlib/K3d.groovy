@@ -644,10 +644,10 @@ data:
                 script.echo "DEP: '${deps[i]}'"
                 String version = "";
                 if (parts.length != 2 || parts[1] == "latest") {
-                    docker.image("pascaliske/alpine‑curl‑jq:latest")
+                    docker.image("mikefarah/yq:${YQ_VERSION}")
                         .mountJenkinsUser().inside("--volume ${this.workspace}:/workdir -w /workdir"){
                         version = script.sh(script: "curl -s https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions -u ${auth} \
-  | jq -r '.[]' | sort -V | tail -1", returnStdout: true)
+  | yq 'sort_by(.) | .[-1]'", returnStdout: true)
                     }
                 } else {
                     version = parts[1]
