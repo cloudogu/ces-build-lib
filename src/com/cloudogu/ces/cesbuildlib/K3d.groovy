@@ -256,7 +256,7 @@ class K3d {
     void configureEcosystemCoreValues(config = [:]) {
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 5")
-
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator-crd.version", "2.10.0")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator.version", "3.15.0")
 
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", "2.0.1")
