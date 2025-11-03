@@ -372,6 +372,7 @@ class K3d {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
+            script.echo blueprintReady
             if (blueprintReady == "True True") {
                 return
             }
