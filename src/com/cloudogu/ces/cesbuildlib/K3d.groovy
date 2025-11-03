@@ -73,7 +73,7 @@ class K3d {
         this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
         this.docker = new Docker(script)
-        this.httpClient =  new HttpClient(this.script, "harbor-robot-trivy-cve")
+        this.httpClient =  new HttpClient(this.script, harborCredentialsID)
     }
 
     /**
