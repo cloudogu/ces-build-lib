@@ -640,6 +640,7 @@ data:
         script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: harborCredentialsID, usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD']]) {
             for (int i = 0; i < deps.size(); i++) {
                 String[] parts = deps[i].split(":")
+                script.echo parts
                 formatted += "      - name: ${parts[0]}\n" +
                     "        version: ${parts[1]}"
                 if ((i + 1) < deps.size()) {
