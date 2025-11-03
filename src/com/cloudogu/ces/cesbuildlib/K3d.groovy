@@ -146,7 +146,7 @@ class K3d {
             // Persists the cache of Jenkins agents pods for faster builds
             " -v /tmp:/tmp@server:0 " +
             // Disable traefik (no ingresses used so far)
-            //" --k3s-arg=--disable=traefik@all:* " +
+            //" --k3s-arg=--disable=traefik@all:* " +a
             // Disable servicelb (avoids "Pending" svclb pods and we use nodePorts right now anyway)
             //" --k3s-arg=--disable=servicelb@all:* " +
             // Pin k8s version to 1.21.2
@@ -341,7 +341,7 @@ class K3d {
         // install crd first
         helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
 
-        //prepatchFQDN()
+        kubectl("--namespace default create configmap global-config --from-literal=config.yaml='fqdn: ${externalIP}'")
 
         helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default --timeout 15m")
 
