@@ -655,7 +655,7 @@ data:
                 script.echo JsonOutput.toJson(tags)
                 def obj = new JsonSlurper().parseText(tags)
 
-                version = obj.tags.max { t -> parseTag(t) }
+                version = obj.tags.max { t -> script.parseTag("${t}") }
             } else {
                 version = parts[1]
             }
@@ -669,7 +669,7 @@ data:
         return formatted
     }
 
-    private String parseTag = { String tag ->
+    private String parseTag(String tag) {
         def m = (tag =~ /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(\d+))?$/)
         if (!m.matches()) {
             // Fallback: alles 0 setzen, damit „komische“ Tags nicht gewinnen
