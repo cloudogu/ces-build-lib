@@ -395,6 +395,12 @@ class K3d {
  * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
  */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+        docker.image("cloudogu/base:latest")
+            .mountJenkinsUser()
+            .inside("--volume ${this.workspace}:/workdir -w /workdir") {
+                String dogulist = this.sh.returnStdOut("cesapp list-remote")
+                script.echo dogulist
+            }
         assignExternalIP()
         configureEcosystemCoreValues(config)
         installAndTriggerSetup(tag, timout, interval)
