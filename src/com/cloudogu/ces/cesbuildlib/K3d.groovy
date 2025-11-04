@@ -655,7 +655,7 @@ data:
                 script.echo JsonOutput.toJson(tags)
                 def obj = new JsonSlurper().parseText(tags)
 
-                version = obj.tags.max { t -> script.parseTag("${t}") }
+                version = obj.tags.max { t -> parseTag("${t}") }
             } else {
                 version = parts[1]
             }
