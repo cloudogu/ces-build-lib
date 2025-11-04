@@ -59,7 +59,7 @@ class HttpClient implements Serializable {
     }
 
     private String getCurlCommand(String httpMethod, String url, String contentType, String data) {
-        return "curl -i " +
+        return "curl -i -X '" + escapeSingleQuotes(httpMethod) + "' " +
             (credentials ? getCurlAuthParam() : '') +
             (contentType ? "-H 'Content-Type: " + escapeSingleQuotes(contentType) + "' " : '') +
             (data ? "-d '" + escapeSingleQuotes(data) + "' " : '') +
@@ -67,7 +67,7 @@ class HttpClient implements Serializable {
     }
 
     private String getUploadFileCurlCommand(String httpMethod, String url, String contentType, String filePath) {
-        return "curl -i '" + escapeSingleQuotes(httpMethod) + "' " +
+        return "curl -i -X '" + escapeSingleQuotes(httpMethod) + "' " +
             (credentials ? getCurlAuthParam() : '') +
             (contentType ? "-H 'Content-Type: " + escapeSingleQuotes(contentType) + "' " : '') +
             (filePath ? "-T '" + escapeSingleQuotes(filePath) + "' " : '') +
