@@ -645,10 +645,10 @@ data:
         for (int i = 0; i < deps.size(); i++) {
             String[] parts = deps[i].split(":")
             script.echo "DEP: '${deps[i]}'"
-            String version = "";
+            String version;
             if (parts.length != 2 || parts[1] == "latest") {
                 String tags = "{}";
-                script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'cesmarvin-setup', usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
+                script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
                      tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${parts[0]}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
                 }
 
@@ -669,19 +669,19 @@ data:
         return formatted
     }
 
-    def parseTag = { String tag ->
+    private String parseTag = { String tag ->
         def m = (tag =~ /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(\d+))?$/)
         if (!m.matches()) {
             // Fallback: alles 0 setzen, damit „komische“ Tags nicht gewinnen
-            return [0,0,0,0]
+            return "00000.00000.00000.00000"
         }
-        // fehlende Gruppen als 0
-        return [
-            (m[0][1] as int),
-            (m[0][2] ? m[0][2] as int : 0),
-            (m[0][3] ? m[0][3] as int : 0),
-            (m[0][4] ? m[0][4] as int : 0)
-        ]
+        def major = (m[0][1] ?: "0") as int
+        def minor = (m[0][2] ?: "0") as int
+        def patch = (m[0][3] ?: "0") as int
+        def build = (m[0][4] ?: "0") as int
+
+        // Zero-padding → lexikografisch sortierbar
+        return sprintf("%05d.%05d.%05d.%05d", major, minor, patch, build)
     }
 
     private void writeBlueprintYaml(config) {
