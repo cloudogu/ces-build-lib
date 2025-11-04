@@ -2,7 +2,6 @@ package com.cloudogu.ces.cesbuildlib
 
 import com.cloudbees.groovy.cps.NonCPS
 import groovy.json.JsonOutput
-import com.cloudogu.ces.cesbuildlib.*
 import groovy.json.JsonSlurper
 
 class K3d {
@@ -15,7 +14,6 @@ class K3d {
      */
     private static String K3D_VERSION = "5.6.0"
     private static String K3D_LOG_FILENAME = "k8sLogs"
-    private static String K3D_SETUP_JSON_FILE = "k3d_setup.json"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
@@ -646,6 +644,7 @@ data:
             String[] parts = deps[i].split(":")
             script.echo "DEP: '${deps[i]}'"
             String version;
+            // "latest" needs to be replaced with actual last version
             if (parts.length != 2 || parts[1] == "latest") {
                 String tags = "{}";
                 script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
@@ -672,7 +671,7 @@ data:
     private String parseTag(String tag) {
         def m = (tag =~ /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(\d+))?$/)
         if (!m.matches()) {
-            // Fallback: alles 0 setzen, damit „komische“ Tags nicht gewinnen
+            // Fallback: set all to 0 to ingnore invalid tags
             return "00000.00000.00000.00000"
         }
         def major = (m[0][1] ?: "0") as int
@@ -680,7 +679,7 @@ data:
         def patch = (m[0][3] ?: "0") as int
         def build = (m[0][4] ?: "0") as int
 
-        // Zero-padding → lexikografisch sortierbar
+        // Zero-padding → lexicographically sortable
         return sprintf("%05d.%05d.%05d.%05d", major, minor, patch, build)
     }
 
@@ -697,7 +696,7 @@ metadata:
   name: blueprint-ces-module
   namespace: default
 spec:
-  displayName: "Blueprint Terraform CES-Module"
+  displayName: "Blueprint K3D CES-Module"
   blueprint:
     dogus:
 ${formattedDeps}
@@ -728,53 +727,6 @@ ${formattedDeps}
 """
     }
 
-    private void writeSetupJson(config) {
-        List<String> deps = config.dependencies + config.additionalDependencies
-        String formattedDeps = formatDependencies(deps)
-
-        script.writeFile file: K3D_SETUP_JSON_FILE, text: """
-{
-  "naming":{
-    "fqdn":"${externalIP}",
-    "hostname":"ces",
-    "domain":"ces.local",
-    "certificateType":"selfsigned",
-    "relayHost":"mail.ces.local",
-    "completed":true
-  },
-  "dogus":{
-    "defaultDogu":"${config.defaultDogu}",
-    "install":[
-       ${formattedDeps}
-    ],
-    "completed":true
-  },
-  "admin":{
-    "username":"${config.adminUsername}",
-    "mail":"ces-admin@cloudogu.com",
-    "password":"${config.adminPassword}",
-    "adminGroup":"${config.adminGroup}",
-    "adminMember":true,
-    "completed":true
-  },
-  "userBackend":{
-    "port":"389",
-    "useUserConnectionToFetchAttributes":true,
-    "dsType":"embedded",
-    "attributeID":"uid",
-    "attributeFullname":"cn",
-    "attributeMail":"mail",
-    "attributeGroup":"memberOf",
-    "searchFilter":"(objectClass=person)",
-    "host":"ldap",
-    "completed":true
-  },
-  "registryConfig": {${config.registryConfig}},
-  "registryConfigEncrypted": {${config.registryConfigEncrypted}}
-}"""
-    }
-
-
 /**
  * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
  *
@@ -785,9 +737,10 @@ ${formattedDeps}
             script.deleteDir()
         }
         script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
-        script.sh("rm -rf ${K3D_SETUP_JSON_FILE}".toString())
-        //script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
-        //script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
+        script.archiveArtifacts(artifacts: K3D_BLUEPRINT_FILE)
+        script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
+        script.archiveArtifacts(artifacts: K3D_VALUES_YAML_FILE)
+        script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
 
         collectResourcesSummaries()
         collectDoguDescriptions()
