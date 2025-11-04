@@ -39,10 +39,10 @@ class K3d {
         adminUsername          : "ces-admin",
         adminPassword          : "ecosystem2016",
         adminGroup             : "CesAdministrators",
-        dependencies           : ["official/ldap:2.6.8-4",
-                                  "official/cas:7.2.7.4",
-                                  "official/postfix:3.10.4.4-1",
-                                  "official/usermgt:1.20.0.5"],
+        dependencies           : ["official/ldap",
+                                  "official/cas",
+                                  "official/postfix",
+                                  "official/usermgt"],
         defaultDogu            : "",
         additionalDependencies : [],
         registryConfig         : "",
@@ -355,13 +355,13 @@ class K3d {
 
         kubectl("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
 
-        helm("registry logout ${registryUrl}")
-
         script.echo "Wait for setup-finisher to be executed..."
         waitForSetupToFinish(timeout, interval)
 
         script.echo "Wait for dogus to be ready..."
         waitForDogusToBeRolledOut(timeout, interval)
+
+        helm("registry logout ${registryUrl}")
     }
 
     void waitForDogusToBeRolledOut(Integer timeout, Integer interval) {
