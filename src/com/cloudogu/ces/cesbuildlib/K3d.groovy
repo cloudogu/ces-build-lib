@@ -31,7 +31,6 @@ class K3d {
     private String registryName
     private String workspace
     private Docker docker
-    private HttpClient httpClient
 
     def defaultSetupConfig = [
         adminUsername          : "ces-admin",
@@ -72,7 +71,6 @@ class K3d {
         this.harborCredentialsID = harborCredentialsID
         this.sh = new Sh(script)
         this.docker = new Docker(script)
-        this.httpClient =  new HttpClient(this.script, harborCredentialsID)
     }
 
     /**
