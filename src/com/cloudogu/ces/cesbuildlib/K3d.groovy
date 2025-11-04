@@ -640,7 +640,6 @@ data:
         String formatted = ""
         for (int i = 0; i < deps.size(); i++) {
             String[] parts = deps[i].split(":")
-            script.echo "DEP: '${deps[i]}'"
             String version;
             // "latest" needs to be replaced with actual last version
             if (parts.length != 2 || parts[1] == "latest") {
@@ -648,10 +647,7 @@ data:
                 script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
                      tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${parts[0]}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
                 }
-
-                script.echo JsonOutput.toJson(tags)
                 def obj = new JsonSlurper().parseText(tags)
-
                 version = obj.tags.max { t -> parseTag("${t}") }
             } else {
                 version = parts[1]
