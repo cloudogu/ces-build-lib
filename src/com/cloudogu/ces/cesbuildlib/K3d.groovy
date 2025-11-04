@@ -396,8 +396,7 @@ class K3d {
  */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
         script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'cesmarvin-setup', usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
-            script.sh "sudo cesapp login ${script.env.TOKEN_ID} ${script.env.TOKEN_SECRET}"
-            script.sh "sudo cesapp list-remote"
+            script.sh "curl https://registry.cloudogu.com/v2/official/postgresql/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}"
         }
         assignExternalIP()
         configureEcosystemCoreValues(config)
