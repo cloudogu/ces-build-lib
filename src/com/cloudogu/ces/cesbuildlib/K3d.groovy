@@ -3,6 +3,7 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 import groovy.json.JsonOutput
 import com.cloudogu.ces.cesbuildlib.*
+import groovy.json.JsonSlurper
 
 class K3d {
     /**
@@ -395,9 +396,6 @@ class K3d {
  * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
  */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
-        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'cesmarvin-setup', usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
-            script.sh "curl https://registry.cloudogu.com/v2/official/postgresql/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}"
-        }
         assignExternalIP()
         configureEcosystemCoreValues(config)
         installAndTriggerSetup(tag, timout, interval)
@@ -649,13 +647,15 @@ data:
             script.echo "DEP: '${deps[i]}'"
             String version = "";
             if (parts.length != 2 || parts[1] == "latest") {
-                def response = httpClient.get("https://dogu.cloudogu.com/api/v2/dogus/${parts[0]}/_versions")
-                script.echo response["httpCode"]
-                script.echo response["body"]
+                String tags = "{}";
+                script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: 'cesmarvin-setup', usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
+                     tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${parts[0]}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
+                }
 
-                script.echo JsonOutput.toJson(response["body"].toString())
-                def versions = script.readJSON text: response["body"], returnPojo: true
-                version = versions.getAt(0 as String)
+                script.echo JsonOutput.toJson(tags)
+                def obj = new JsonSlurper().parseText(tags)
+
+                version = obj.tags.max { t -> parseTag(t) }
             } else {
                 version = parts[1]
             }
@@ -667,6 +667,21 @@ data:
         }
 
         return formatted
+    }
+
+    def parseTag = { String tag ->
+        def m = (tag =~ /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(\d+))?$/)
+        if (!m.matches()) {
+            // Fallback: alles 0 setzen, damit „komische“ Tags nicht gewinnen
+            return [0,0,0,0]
+        }
+        // fehlende Gruppen als 0
+        return [
+            (m[0][1] as int),
+            (m[0][2] ? m[0][2] as int : 0),
+            (m[0][3] ? m[0][3] as int : 0),
+            (m[0][4] ? m[0][4] as int : 0)
+        ]
     }
 
     private void writeBlueprintYaml(config) {
