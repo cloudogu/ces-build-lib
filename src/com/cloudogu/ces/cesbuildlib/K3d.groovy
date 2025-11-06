@@ -1,7 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
 import com.cloudbees.groovy.cps.NonCPS
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
 class K3d {
@@ -17,6 +16,11 @@ class K3d {
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
+
+    private static String VERSION_K8S_DOGU_OPERATOR = "3.15.0"
+    private static String VERSION_K8S_DOGU_OPERATOR_CRD = "2.10.0"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR = "3.0.0-CR1"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR_CRD = "2.0.1"
 
     private String clusterName
     private script
@@ -254,14 +258,32 @@ class K3d {
         }
     }
 
+    /**
+     *  override component versions
+     */
+    static void setComponentVersions(String dogu_op = VERSION_K8S_DOGU_OPERATOR, String dogu_op_crd = VERSION_K8S_DOGU_OPERATOR_CRD, String blue_op = VERSION_K8S_BLUEPRINT_OPERATOR, String blue_op_crd = VERSION_K8S_BLUEPRINT_OPERATOR_CRD) {
+        if (dogu_op != null) {
+            VERSION_K8S_DOGU_OPERATOR = dogu_op
+        }
+        if (dogu_op_crd != null) {
+            VERSION_K8S_DOGU_OPERATOR_CRD = dogu_op_crd
+        }
+        if (blue_op != null) {
+            VERSION_K8S_BLUEPRINT_OPERATOR = blue_op
+        }
+        if (blue_op_crd != null) {
+            VERSION_K8S_BLUEPRINT_OPERATOR_CRD = blue_op_crd
+        }
+    }
+
     void configureEcosystemCoreValues(config = [:]) {
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 5")
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator-crd.version", "2.10.0")
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator.version", "3.15.0")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator-crd.version", VERSION_K8S_DOGU_OPERATOR_CRD)
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator.version", VERSION_K8S_DOGU_OPERATOR)
 
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", "2.0.1")
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", "3.0.0-CR1")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", VERSION_K8S_BLUEPRINT_OPERATOR_CRD)
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", VERSION_K8S_BLUEPRINT_OPERATOR)
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{\\\"name\\\": \\\"k8s-dogu-operator\\\"}, {\\\"name\\\": \\\"k8s-service-discovery\\\"}]")
 
@@ -373,9 +395,7 @@ class K3d {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
-            String dogus = kubectl("get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
             script.echo blueprintReady
-            script.echo dogus
             if (blueprintReady == "True True") {
                 return
             }
