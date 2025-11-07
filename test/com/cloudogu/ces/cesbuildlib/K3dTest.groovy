@@ -586,6 +586,34 @@ spec:
     }
 
     @Test
+    void testK3d_parseTags() {
+        // given
+        def workspaceDir = "leWorkspace"
+        def k3dWorkspaceDir = "leK3dWorkSpace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
+
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null", "{\"tags\": [\"1.0.0\", \"1.0.1\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null", "{\"tags\": [\"2.0.0\", \"invalid\", \"2.0.1\"]}")
+
+        List<String> deps = new ArrayList<>()
+        deps.add("official/cas")
+        deps.add("official/ldap:latest")
+        deps.add("official/usermgt:3.0.0")
+
+        // when
+        String formatted = sut.formatDependencies(deps)
+
+        // then
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null".trim())
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null".trim())
+        assertThat(formatted.contains("cas\n        version: 2.0.1"))
+        assertThat(formatted.contains("ldap\n        version: 1.0.1"))
+        assertThat(formatted.contains("usermgt\n        version: 3.0.0"))
+
+    }
+
+    @Test
     void testK3d_configureComponentOperatorVersion() {
         // given
         def workspaceDir = "leWorkspace"
