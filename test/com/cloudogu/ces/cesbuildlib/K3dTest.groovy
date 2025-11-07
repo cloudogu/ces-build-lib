@@ -614,6 +614,28 @@ spec:
     }
 
     @Test
+    void testK3d_setComponentVersion() {
+        // given
+
+        // when
+        K3d.setComponentVersions("1.0.0", "2.0.0", "3.0.0", "4.0.0")
+
+        // then
+        assertThat("1.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
+        assertThat("2.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
+        assertThat("3.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
+        assertThat("4.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
+
+        K3d.setComponentVersions()
+
+        // then
+        assertThat("1.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
+        assertThat("2.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
+        assertThat("3.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
+        assertThat("4.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
+    }
+
+    @Test
     void testK3d_configureComponentOperatorVersion() {
         // given
         def workspaceDir = "leWorkspace"
