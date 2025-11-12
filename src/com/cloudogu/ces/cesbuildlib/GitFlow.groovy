@@ -32,7 +32,7 @@ class GitFlow implements Serializable {
      *
      * @param releaseVersion the version that is going to be released
      */
-    void finishRelease(String releaseVersion, String productionBranch = "master") {
+    void finishRelease(String releaseVersion, String productionBranch = "master",  String developmentBranch = "develop") {
         String branchName = git.getBranchName()
 
         // Stop the build here if there is already a tag for this version on remote.
@@ -46,7 +46,7 @@ class GitFlow implements Serializable {
         git.fetch()
 
         // Stop the build if there are new changes on develop that are not merged into this feature branch.
-        if (git.originBranchesHaveDiverged(branchName, 'develop')) {
+        if (git.originBranchesHaveDiverged(branchName, developmentBranch)) {
             script.error('There are changes on develop branch that are not merged into release. Please merge and restart process.')
         }
 
@@ -56,7 +56,7 @@ class GitFlow implements Serializable {
         String releaseBranchAuthor = git.commitAuthorName
         String releaseBranchEmail = git.commitAuthorEmail
 
-        git.checkoutLatest('develop')
+        git.checkoutLatest(developmentBranch)
         git.checkoutLatest(productionBranch)
 
         // Merge release branch into productionBranch
@@ -65,7 +65,7 @@ class GitFlow implements Serializable {
         // Create tag. Use -f because the created tag will persist when build has failed.
         git.setTag(releaseVersion, "release version ${releaseVersion}", true)
         // Merge release branch into develop
-        git.checkout('develop')
+        git.checkout(developmentBranch)
         // Set author of release Branch as author of merge commit
         // Otherwise the author of the last commit on develop would author the commit, which is unexpected
         git.mergeNoFastForward(branchName, releaseBranchAuthor, releaseBranchEmail)
@@ -77,7 +77,7 @@ class GitFlow implements Serializable {
         git.checkout(releaseVersion)
 
         // Push changes and tags
-        git.push("origin ${productionBranch} develop ${releaseVersion}")
+        git.push("origin ${productionBranch} ${developmentBranch} ${releaseVersion}")
         git.deleteOriginBranch(branchName)
     }
 }

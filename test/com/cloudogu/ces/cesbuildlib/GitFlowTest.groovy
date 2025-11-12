@@ -141,6 +141,61 @@ class GitFlowTest {
     }
 
     @Test
+    void testFinishReleaseWithCustomMainAndDevelopBranch() {
+        String releaseBranchAuthorName = 'release'
+        String releaseBranchEmail = 'rele@s.e'
+        String releaseBranchAuthor = createGitAuthorString(releaseBranchAuthorName, releaseBranchEmail)
+        String developBranchAuthorName = 'develop'
+        String developBranchEmail = 'develop@a.a'
+        String developBranchAuthor = createGitAuthorString(developBranchAuthorName, developBranchEmail)
+        scriptMock.expectedShRetValueForScript.put('git --no-pager show -s --format=\'%an <%ae>\' HEAD',
+            [releaseBranchAuthor, releaseBranchAuthor, releaseBranchAuthor, releaseBranchAuthor,
+             // these two are the ones where the release branch author is stored:
+             releaseBranchAuthor, releaseBranchAuthor,
+             developBranchAuthor, developBranchAuthor
+            ])
+        scriptMock.expectedShRetValueForScript.put('git push origin main/1.0 dev/1.0 myVersion', 0)
+
+        scriptMock.expectedDefaultShRetValue = ""
+        scriptMock.env.BRANCH_NAME = "myReleaseBranch"
+        Git git = new Git(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git)
+        gitflow.finishRelease("myVersion", "main/1.0", "dev/1.0")
+
+        scriptMock.allActualArgs.removeAll("echo ")
+        scriptMock.allActualArgs.removeAll("git --no-pager show -s --format='%an <%ae>' HEAD")
+        int i = 0
+        assertEquals("git ls-remote origin refs/tags/myVersion", scriptMock.allActualArgs[i++])
+        assertEquals("git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'", scriptMock.allActualArgs[i++])
+        assertEquals("git fetch --all", scriptMock.allActualArgs[i++])
+        assertEquals("git log origin/myReleaseBranch..origin/dev/1.0 --oneline", scriptMock.allActualArgs[i++])
+        assertEquals("git checkout myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertEquals("git reset --hard origin/myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertEquals("git checkout dev/1.0", scriptMock.allActualArgs[i++])
+        assertEquals("git reset --hard origin/dev/1.0", scriptMock.allActualArgs[i++])
+        assertEquals("git checkout main/1.0", scriptMock.allActualArgs[i++])
+        assertEquals("git reset --hard origin/main/1.0", scriptMock.allActualArgs[i++])
+
+        // Author & Email 1 (calls 'git --no-pager...' twice)
+        assertEquals("git merge --no-ff myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertAuthor(0, releaseBranchAuthorName, releaseBranchEmail)
+
+        // Author & Email 2 (calls 'git --no-pager...' twice)
+        assertEquals("git tag -f -m \"release version myVersion\" myVersion", scriptMock.allActualArgs[i++])
+        assertAuthor(1, releaseBranchAuthorName, releaseBranchEmail)
+
+        assertEquals("git checkout dev/1.0", scriptMock.allActualArgs[i++])
+        // Author & Email 3 (calls 'git --no-pager...' twice)
+        assertEquals("git merge --no-ff myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertAuthor(2, releaseBranchAuthorName, releaseBranchEmail)
+
+        assertEquals("git branch -d myReleaseBranch", scriptMock.allActualArgs[i++])
+        assertEquals("git checkout myVersion", scriptMock.allActualArgs[i++])
+        assertEquals("git push origin main/1.0 dev/1.0 myVersion", scriptMock.allActualArgs[i++])
+        assertEquals("git push --delete origin myReleaseBranch", scriptMock.allActualArgs[i++])
+    }
+
+    @Test
     void testThrowsErrorWhenTagAlreadyExists() {
         scriptMock.expectedShRetValueForScript.put('git ls-remote origin refs/tags/myVersion', 'thisIsATag')
         Git git = new Git(scriptMock)
