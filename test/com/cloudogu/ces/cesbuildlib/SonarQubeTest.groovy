@@ -39,14 +39,14 @@ class SonarQubeTest {
 
         def branchName = 'develop.Or:somehing-completely_.different'
         scriptMock.env = [
-                SONAR_AUTH_TOKEN: 'auth',
+                SONAR_AUTH_TOKEN: 'sqa_b8a90ec...',
                 BRANCH_NAME     : branchName
         ]
 
         sonarQube.analyzeWith(mavenMock)
 
         assert mavenMock.args ==
-                'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.login=auth '
+                'sonar:sonar -Dsonar.host.url=http://ces/sonar -Dsonar.token=sqa_b8a90ec... '
         assertBranchName(branchName, mavenMock)
         assert scriptMock.actualStringArgs['credentialsId'] == 'secretTextCred'
     }
