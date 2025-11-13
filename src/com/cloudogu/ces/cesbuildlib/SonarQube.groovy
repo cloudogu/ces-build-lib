@@ -184,7 +184,12 @@ class SonarQube implements Serializable {
         protected analyzeWith(Maven mvn, String sonarMavenGoal, String sonarHostUrl, String sonarLogin,
                               String sonarExtraProps = '') {
 
-            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}"
+            String sonarAuthProperty = "-Dsonar.login=${sonarLogin}"
+            if (config['token'] != "") {
+                sonarAuthProperty = "-Dsonar.token=${sonarLogin}"
+            }
+
+            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} ${sonarAuthProperty} ${sonarExtraProps}"
         }
     }
 

@@ -850,7 +850,7 @@ sonarQube.analyzeWith(mvn)
 Recommendation: Use Jenkins' replay feature for this. Then commit the `Jenkinsfile` with `isUsingBranchPlugin`.
 
 An alternative is running the first analysis locally, e.g. with maven
-`mvn clean install sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=YOUR-ORG -Dsonar.login=YOUR-TOKEN`
+`mvn clean install sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.organization=YOUR-ORG -Dsonar.token=YOUR-TOKEN`
  
 ## SonarCloud
 
