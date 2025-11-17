@@ -4,11 +4,17 @@ class GitFlow implements Serializable {
     private def script
     private Git git
     Sh sh
+    private Makefile makefile
 
     GitFlow(script, Git git) {
         this.script = script
         this.git = git
         this.sh = new Sh(script)
+    }
+
+    GitFlow(script, Git git, Makefile makefile) {
+        this(script, git)
+        this.makefile = makefile
     }
 
     /**
@@ -44,6 +50,15 @@ class GitFlow implements Serializable {
 
         // Make sure all branches are fetched
         git.fetch()
+
+        // Check if a backport release is configured by setting BASE_VERSION inside Makefile
+        if (makefile != null) {
+            def baseVersion = makefile.getBaseVersion()
+            if (baseVersion != null && baseVersion != "") {
+                productionBranch = makefile.getMainBranchName()
+                developmentBranch = makefile.getDevelopBranchName()
+            }
+        }
 
         // Stop the build if there are new changes on develop that are not merged into this feature branch.
         if (git.originBranchesHaveDiverged(branchName, developmentBranch)) {

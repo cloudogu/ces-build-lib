@@ -500,4 +500,9 @@ class Git implements Serializable {
         script.echo commandOutput
         return commandOutput
     }
+
+    boolean branchExists(String branch) {
+        def branchFound = this.executeGitWithCredentials("show-ref refs/remotes/origin/${branch}")
+        return branchFound != null && branchFound.length() > 0
+    }
 }
