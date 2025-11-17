@@ -17,10 +17,12 @@ class K3d {
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
 
+    private static String VERSION_ECOSYSTEM_CORE = "1.1.0"
+    private static String VERSION_K8s_COMPONENT_OPERATOR_CRD = "1.10.1"
     private static String VERSION_K8S_DOGU_OPERATOR = "3.15.0"
     private static String VERSION_K8S_DOGU_OPERATOR_CRD = "2.10.0"
-    private static String VERSION_K8S_BLUEPRINT_OPERATOR = "3.0.0-CR1"
-    private static String VERSION_K8S_BLUEPRINT_OPERATOR_CRD = "2.0.1"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR = "3.1.0"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR_CRD = "3.1.0"
 
     private String clusterName
     private script
@@ -362,11 +364,11 @@ class K3d {
         }
 
         // install crd first
-        helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version 1.10.0 --namespace default")
+        helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  --version ${VERSION_K8s_COMPONENT_OPERATOR_CRD} --namespace default")
 
         kubectl("--namespace default create configmap global-config --from-literal=config.yaml='fqdn: ${externalIP}'")
 
-        helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version 0.4.0 --namespace default --timeout 15m")
+        helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core --version ${VERSION_ECOSYSTEM_CORE} --namespace default --timeout 15m")
 
         script.echo "Wait for blueprint-operator to be ready..."
         waitForDeploymentRollout("k8s-blueprint-operator-controller-manager", timeout, interval)
