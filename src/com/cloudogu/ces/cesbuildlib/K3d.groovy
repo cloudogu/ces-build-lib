@@ -706,7 +706,7 @@ data:
         List<String> deps = config.dependencies + config.additionalDependencies
         String formattedDeps = formatDependencies(deps)
         script.writeFile file: K3D_BLUEPRINT_FILE, text: """
-apiVersion: k8s.cloudogu.com/v2
+apiVersion: k8s.cloudogu.com/v3
 kind: Blueprint
 metadata:
   labels:
