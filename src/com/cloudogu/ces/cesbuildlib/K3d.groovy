@@ -21,7 +21,7 @@ class K3d {
     private static String VERSION_K8s_COMPONENT_OPERATOR_CRD = "1.10.1"
     private static String VERSION_K8S_DOGU_OPERATOR = "3.15.0"
     private static String VERSION_K8S_DOGU_OPERATOR_CRD = "2.10.0"
-    private static String VERSION_K8S_BLUEPRINT_OPERATOR = "3.1.0"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR = "3.0.2"
     private static String VERSION_K8S_BLUEPRINT_OPERATOR_CRD = "3.1.0"
 
     private String clusterName
@@ -49,7 +49,9 @@ class K3d {
         defaultDogu            : "",
         additionalDependencies : [],
         registryConfig         : "",
-        registryConfigEncrypted: ""
+        registryConfigEncrypted: "",
+        "enableBackup"         : false,
+        "enableMonitoring"     : false
     ]
 
     String getRegistryName() {
@@ -279,6 +281,8 @@ class K3d {
     }
 
     void configureEcosystemCoreValues(config = [:]) {
+        // Merge default config with the one passed as parameter
+        config = defaultSetupConfig << config
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 5")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator-crd.version", VERSION_K8S_DOGU_OPERATOR_CRD)
@@ -287,19 +291,18 @@ class K3d {
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", VERSION_K8S_BLUEPRINT_OPERATOR_CRD)
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", VERSION_K8S_BLUEPRINT_OPERATOR)
 
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-ces-control.disabled = true")
+
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{\\\"name\\\": \\\"k8s-dogu-operator\\\"}, {\\\"name\\\": \\\"k8s-service-discovery\\\"}]")
 
 
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy", "Cluster")
 
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".backup.enabled = false")
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".monitoring.enabled = false")
-
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".backup.enabled = ${config.enableBackup}")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".monitoring.enabled = ${config.enableMonitoring}")
 
         script.echo "configuring ecosystem core..."
-        // Merge default config with the one passed as parameter
-        config = defaultSetupConfig << config
         writeBlueprintYaml(config)
     }
 
