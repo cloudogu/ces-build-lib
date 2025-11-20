@@ -17,7 +17,7 @@ class K3d {
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
 
-    private static String VERSION_ECOSYSTEM_CORE = "1.1.0"
+    private static String VERSION_ECOSYSTEM_CORE = "1.2.0"
     private static String VERSION_K8s_COMPONENT_OPERATOR_CRD = "1.10.1"
     private static String VERSION_K8S_DOGU_OPERATOR = "3.15.0"
     private static String VERSION_K8S_DOGU_OPERATOR_CRD = "2.10.0"
