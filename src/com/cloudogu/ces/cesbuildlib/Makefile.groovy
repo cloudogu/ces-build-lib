@@ -29,9 +29,9 @@ class Makefile {
     }
 
     /**
-     * Creates the develop branch for Git Flow based on the base version.
+     * Determines the develop branch for Git Flow based on the base version.
      */
-    String getGitFlowDevelopBranch() {
+    String determineGitFlowDevelopBranch() {
         def develop = "develop"
         def baseVersion = getBaseVersion()
         if (baseVersion != null && baseVersion != "") {
@@ -41,9 +41,9 @@ class Makefile {
     }
 
     /**
-     * Creates the main branch for Git Flow based on the base version.
+     * Determines the main branch for Git Flow based on the base version.
      */
-    String getGitFlowMainBranch(defaultBranch="main") {
+    String determineGitFlowMainBranch(defaultBranch="main") {
         def baseVersion = getBaseVersion()
         if (baseVersion != null && baseVersion != "") {
             // The master branch is legacy so we don't create one here, even if it was passed as parameter.
