@@ -31,6 +31,16 @@ class GitFlow implements Serializable {
         return git.getSimpleBranchName().equals("develop")
     }
 
+    boolean isUnallowedBackportRelease(String productionBranch, String developmentBranch) {
+        if (makefile != null) {
+            def baseVersion = makefile.getBaseVersion()
+            if (baseVersion != null && baseVersion != "" && (!productionBranch.contains(baseVersion) || !developmentBranch.contains(baseVersion)))  {
+                return true
+            }
+        }
+        return false
+    }
+
     /**
      * Finishes a git flow release and pushes all merged branches to remote
      *
@@ -52,12 +62,8 @@ class GitFlow implements Serializable {
         git.fetch()
 
         // Check if a backport release is configured by setting BASE_VERSION inside Makefile
-        if (makefile != null) {
-            def baseVersion = makefile.getBaseVersion()
-            if (baseVersion != null && baseVersion != "") {
-                productionBranch = makefile.getMainBranchName()
-                developmentBranch = makefile.getDevelopBranchName()
-            }
+        if (isUnallowedBackportRelease(productionBranch, developmentBranch)) {
+            script.error('The Variable BASE_VERSION is set in the Makefile. The release should not be merged into main / master / develop or other backport branches.')
         }
 
         // Stop the build if there are new changes on develop that are not merged into this feature branch.

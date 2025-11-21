@@ -227,8 +227,6 @@ class GitFlowTest {
         assertEquals("git config 'remote.origin.fetch' '+refs/heads/*:refs/remotes/origin/*'", scriptMock.allActualArgs[i++])
         assertEquals("git fetch --all", scriptMock.allActualArgs[i++])
         assertEquals("grep -e \"^BASE_VERSION=\" Makefile | sed \"s/BASE_VERSION=//g\"", scriptMock.allActualArgs[i++])
-        assertEquals("grep -e \"^BASE_VERSION=\" Makefile | sed \"s/BASE_VERSION=//g\"", scriptMock.allActualArgs[i++])
-        assertEquals("grep -e \"^BASE_VERSION=\" Makefile | sed \"s/BASE_VERSION=//g\"", scriptMock.allActualArgs[i++])
         assertEquals("git log origin/myReleaseBranch..origin/4.2.2/develop --oneline", scriptMock.allActualArgs[i++])
         assertEquals("git checkout myReleaseBranch", scriptMock.allActualArgs[i++])
         assertEquals("git reset --hard origin/myReleaseBranch", scriptMock.allActualArgs[i++])
@@ -279,7 +277,7 @@ class GitFlowTest {
         Git git = new Git(scriptMock)
         Makefile makefile = new Makefile(scriptMock)
         GitFlow gitflow = new GitFlow(scriptMock, git, makefile)
-        gitflow.finishRelease("myVersion", )
+        gitflow.finishRelease("myVersion")
 
         scriptMock.allActualArgs.removeAll("echo ")
         scriptMock.allActualArgs.removeAll("git --no-pager show -s --format='%an <%ae>' HEAD")
@@ -337,6 +335,55 @@ class GitFlowTest {
         }
         assertEquals("There are changes on develop branch that are not merged into release. Please merge and restart process.", err.getMessage())
     }
+
+    @Test
+    void testIsUnallowedBackportReleaseIsUnallowedStandardBranches() {
+        scriptMock.expectedShRetValueForScript.put('grep -e "^BASE_VERSION=" Makefile | sed "s/BASE_VERSION=//g"'.toString(), "4.2".toString())
+
+        Git git = new Git(scriptMock)
+        Makefile makefile = new Makefile(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git, makefile)
+        def result = gitflow.isUnallowedBackportRelease("main", "develop")
+
+        assertEquals(true, result)
+    }
+
+    @Test
+    void testIsUnallowedBackportReleaseIsUnallowedStandardBranches2() {
+        scriptMock.expectedShRetValueForScript.put('grep -e "^BASE_VERSION=" Makefile | sed "s/BASE_VERSION=//g"'.toString(), "4.2".toString())
+
+        Git git = new Git(scriptMock)
+        Makefile makefile = new Makefile(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git, makefile)
+        def result = gitflow.isUnallowedBackportRelease("master", "develop")
+
+        assertEquals(true, result)
+    }
+
+    @Test
+    void testIsUnallowedBackportReleaseIsUnallowedWrongVersionBranches() {
+        scriptMock.expectedShRetValueForScript.put('grep -e "^BASE_VERSION=" Makefile | sed "s/BASE_VERSION=//g"'.toString(), "4.2".toString())
+
+        Git git = new Git(scriptMock)
+        Makefile makefile = new Makefile(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git, makefile)
+        def result = gitflow.isUnallowedBackportRelease("4.3/main", "4.3/develop")
+
+        assertEquals(true, result)
+    }
+
+    @Test
+    void testIsUnallowedBackportReleaseIsAllowed() {
+        scriptMock.expectedShRetValueForScript.put('grep -e "^BASE_VERSION=" Makefile | sed "s/BASE_VERSION=//g"'.toString(), "4.2".toString())
+
+        Git git = new Git(scriptMock)
+        Makefile makefile = new Makefile(scriptMock)
+        GitFlow gitflow = new GitFlow(scriptMock, git, makefile)
+        def result = gitflow.isUnallowedBackportRelease("4.2/main", "4.2/develop")
+
+        assertEquals(false, result)
+    }
+
 
     void assertAuthor(int withEnvInvocationIndex, String author, String email) {
         def withEnvMap = scriptMock.actualWithEnvAsMap(withEnvInvocationIndex)
