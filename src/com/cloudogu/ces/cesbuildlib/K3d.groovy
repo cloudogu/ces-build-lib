@@ -293,9 +293,6 @@ class K3d {
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-ces-control.disabled = true")
 
-        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.valuesObject.healthConfig.components.required = [{\\\"name\\\": \\\"k8s-dogu-operator\\\"}, {\\\"name\\\": \\\"k8s-service-discovery\\\"}]")
-
-
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
         appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy", "Cluster")
 
@@ -309,31 +306,6 @@ class K3d {
     @Deprecated
     void configureSetupJson(config = [:]) {
         configureEcosystemCoreValues(config)
-    }
-
-    void configureSetupImage(String image) {
-        String hostKey = ".setup.image.registry"
-        String repositoryKey = ".setup.image.repository"
-        String tagKey = ".setup.image.tag"
-        def repositorySeparatorIndex = image.indexOf("/")
-        def tagSeparatorIndex = image.lastIndexOf(":")
-
-        appendToYamlFile(K3D_VALUES_YAML_FILE, hostKey, image.substring(0, repositorySeparatorIndex))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(repositorySeparatorIndex + 1, tagSeparatorIndex))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(tagSeparatorIndex + 1, image.length()))
-    }
-
-    void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
-        String componentOpKey = ".component_operator_chart"
-        String componentCRDKey = ".component_operator_crd_chart"
-
-
-        def builder = new StringBuilder(namespace)
-        String operatorValue = builder.append("/k8s-component-operator:").append(operatorVersion).toString()
-        appendToYamlFile(K3D_VALUES_YAML_FILE, componentOpKey, operatorValue)
-        builder.delete(0, builder.length());
-        String crdValue = builder.append(namespace).append("/k8s-component-operator-crd:").append(crdVersion).toString()
-        appendToYamlFile(K3D_VALUES_YAML_FILE, componentCRDKey, crdValue)
     }
 
     void configureComponents(components = [:]) {
@@ -352,10 +324,6 @@ class K3d {
         if (evals.size() > 0) {
             yqEvalYamlFile(K3D_VALUES_YAML_FILE, evals.join(" | "))
         }
-    }
-
-    void configureLogLevel(String loglevel) {
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".logLevel", loglevel)
     }
 
     void installAndTriggerSetup(String tag, Integer timeout = 300, Integer interval = 5) {
@@ -410,10 +378,10 @@ class K3d {
     }
 
 /**
- * Installs the setup to the cluster. Creates an example setup.json with usermgt as dogu and executes the setup.
- * After that the method will wait until the dogu-operator is ready.
- * @param tag Tag of the setup e. g. "v0.6.0"
- * @param timout Timeout in seconds for the setup process e. g. 300
+ * Installs the ecosystem-core-setup to the cluster. Creates an example values.yaml and a blueprint-file with usermgt as dogu and executes the ecosystem-core-setup.
+ * After that the method will wait until the blueprint is ready.
+ * @param tag Tag of ecosystem-core e. g. "v1.4.0"
+ * @param timout Timeout in seconds for the installation process e. g. 300
  * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
  */
     void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
@@ -668,12 +636,7 @@ data:
             String version;
             // "latest" needs to be replaced with actual last version
             if (parts.length != 2 || parts[1] == "latest") {
-                String tags = "{}";
-                script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
-                     tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${parts[0]}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
-                }
-                def obj = new JsonSlurper().parseText(tags)
-                version = obj.tags.max { t -> parseTag("${t}") }
+                version = this.getLatestVersion(parts[0])
             } else {
                 version = parts[1]
             }
@@ -685,6 +648,15 @@ data:
         }
 
         return formatted
+    }
+
+    private String getLatestVersion(String doguName) {
+        String tags = "{}";
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
+            tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${doguName}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
+        }
+        def obj = new JsonSlurper().parseText(tags)
+        return obj.tags.max { t -> parseTag("${t}") }
     }
 
     private String parseTag(String tag) {
