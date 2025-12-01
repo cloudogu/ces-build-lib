@@ -404,7 +404,7 @@ class K3d {
     void installDogu(String dogu, String image, String doguYaml) {
         String[] IpPort = getRegistryIpAndPort()
         String imageUrl = image.split(":")[0]
-        //patchCoreDNS(IpPort[0], imageUrl)
+        patchCoreDNS(IpPort[0], imageUrl)
 
         applyDevDoguDescriptor(dogu, imageUrl, IpPort[1])
         kubectl("apply -f ${doguYaml}")
@@ -447,7 +447,7 @@ spec:
         docker.image("mikefarah/yq:${YQ_VERSION}")
             .mountJenkinsUser()
             .inside("--volume ${this.workspace}:/workdir -w /workdir") {
-                imageDev = this.sh.returnStdOut("yq -oy -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}:${port}\\1|g'")
+                imageDev = this.sh.returnStdOut("yq -oy -e '.Image' dogu.json | sed 's|registry\\.cloudogu\\.com\\(.\\+\\)|${imageUrl}.local:${port}\\1|g'")
                 script.sh "yq -oj '.Image=\"${imageDev}\"' dogu.json > ${doguJsonDevFile}"
             }
         kubectl("create configmap ${dogu}-descriptor --from-file=${doguJsonDevFile}")
