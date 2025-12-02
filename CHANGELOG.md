@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [4.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.4.0) - 2025-08-21
 ### Changed
 - Set development branch on finishing gitflow release
 
