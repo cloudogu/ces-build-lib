@@ -557,35 +557,6 @@ spec:
     }
 
     @Test
-    void testK3d_configureSetupImage() {
-        // given
-        def workspaceDir = "leWorkspace"
-        def k3dWorkspaceDir = "leK3dWorkSpace"
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
-
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml", "foo")
-
-        // when
-        sut.configureSetupImage("docker.io/foo/image:1.2.3")
-
-        // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
-    }
-
-    @Test
     void testK3d_parseTags() {
         // given
         def workspaceDir = "leWorkspace"
@@ -646,52 +617,6 @@ spec:
         assertThat("6.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
         assertThat("7.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
         assertThat("8.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
-    }
-
-    @Test
-    void testK3d_configureComponentOperatorVersion() {
-        // given
-        def workspaceDir = "leWorkspace"
-        def k3dWorkspaceDir = "leK3dWorkSpace"
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
-
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".component_operator_chart = \\\"test_ns/k8s-component-operator:1.2.3\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml", "foo")
-
-        // when
-        sut.configureComponentOperatorVersion('1.2.3', '4.5.6', 'test_ns')
-
-        // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".component_operator_chart = \\\"test_ns/k8s-component-operator:1.2.3\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml".trim())
-    }
-
-    @Test
-    void testK3d_configureLogLevel() {
-        // given
-        def workspaceDir = "leWorkspace"
-        def k3dWorkspaceDir = "leK3dWorkSpace"
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
-
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".logLevel = \\\"SUPER_ERROR\\\"\" k3d_values.yaml", "foo")
-
-        // when
-        sut.configureLogLevel("SUPER_ERROR")
-
-        // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".logLevel = \\\"SUPER_ERROR\\\"\" k3d_values.yaml".trim())
     }
 
     @Test
