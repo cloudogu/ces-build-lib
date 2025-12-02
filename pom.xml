@@ -19,7 +19,7 @@
     <groupId>com.cloudogu.ces</groupId>
     <artifactId>ces-build-lib</artifactId>
     <name>ces-build-lib</name>
-    <version>4.3.0</version>
+    <version>4.4.0</version>
 
 
     <properties>
