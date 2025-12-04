@@ -589,34 +589,16 @@ spec:
         // given
 
         // when
-        K3d.setComponentVersions("1.0.0", "2.0.0", "3.0.0", "4.0.0")
+        K3d.setVersionDoguOperator("1.0.0")
+        K3d.setVersionDoguOperatorCrd("2.0.0")
+        K3d.setVersionBlueprintOperator("3.0.0")
+        K3d.setVersionBlueprintOperatorCrd("4.0.0")
 
         // then
         assertThat("1.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
         assertThat("2.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
         assertThat("3.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
         assertThat("4.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
-
-        K3d.setComponentVersions()
-
-        // then
-        assertThat("1.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
-        assertThat("2.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
-        assertThat("3.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
-        assertThat("4.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
-
-        K3d.@VERSION_K8S_DOGU_OPERATOR = "5.0.0"
-        K3d.@VERSION_K8S_DOGU_OPERATOR_CRD = "6.0.0"
-        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR = "7.0.0"
-        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD = "8.0.0"
-
-        K3d.setComponentVersions(null, null, null, null)
-
-        // then
-        assertThat("5.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
-        assertThat("6.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
-        assertThat("7.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
-        assertThat("8.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
     }
 
     @Test
