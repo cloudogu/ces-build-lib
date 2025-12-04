@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
@@ -14,6 +15,17 @@ import static org.junit.jupiter.api.Assertions.*
 import static groovy.test.GroovyAssert.shouldFail
 
 class K3dTest {
+
+    @BeforeEach
+    void beforeTest() {
+        K3d.@VERSION_ECOSYSTEM_CORE = null;
+        K3d.@VERSION_K8S_COMPONENT_OPERATOR_CRD = null;
+        // configured by values.yaml
+        K3d.@VERSION_K8S_DOGU_OPERATOR = null;
+        K3d.@VERSION_K8S_DOGU_OPERATOR_CRD = null;
+        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR = null;
+        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD = null;
+    }
 
     @Test
     void testCreateClusterName() {
@@ -236,22 +248,25 @@ class K3dTest {
 
 
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
+        // need to be installed before apply values.yaml
+
 
         // when
         sut.setup(tag, [:], 1, 1)
 
         // then
-        for (int i = 0; i < 10; i++) {
+        int i = 0
+        for (i = 0; i < 7; i++) {
             assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
         }
-        assertThat(scriptMock.actualEcho.get(10)).isEqualTo("configuring ecosystem core...")
-        assertThat(scriptMock.actualEcho.get(11)).isEqualTo("Installing setup...")
-        assertThat(scriptMock.actualEcho.get(12)).isEqualTo("Wait for blueprint-operator to be ready...")
-        assertThat(scriptMock.actualEcho.get(13)).isEqualTo("Wait for setup-finisher to be executed...")
-        assertThat(scriptMock.actualEcho.get(14)).isEqualTo("True True")
-        assertThat(scriptMock.actualEcho.get(15)).isEqualTo("Wait for dogus to be ready...")
-        assertThat(scriptMock.actualEcho.get(16)).isEqualTo("Wait for cas to be rolled out...")
-        assertThat(scriptMock.actualEcho.get(17)).isEqualTo("Wait for ldap to be rolled out...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for blueprint-operator to be ready...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for setup-finisher to be executed...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("True True")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for dogus to be ready...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for cas to be rolled out...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for ldap to be rolled out...")
 
         assertThat(scriptMock.writeFileParams.get(0)).isNotNull()
         String setupYaml = scriptMock.writeFileParams.get(1)
@@ -285,8 +300,8 @@ class K3dTest {
         // then
         assertThat(errorMsg.getMessage()).isEqualTo("failed to wait for deployment/k8s-blueprint-operator-controller-manager rollout: timeout")
 
-        assertThat(scriptMock.actualEcho.get(10)).isEqualTo("configuring ecosystem core...")
-        assertThat(scriptMock.actualEcho.get(11)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(7)).isEqualTo("configuring ecosystem core...")
+        assertThat(scriptMock.actualEcho.get(8)).isEqualTo("Installing setup...")
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
