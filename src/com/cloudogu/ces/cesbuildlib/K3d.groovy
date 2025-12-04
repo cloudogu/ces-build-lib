@@ -263,30 +263,24 @@ class K3d {
         }
     }
 
+
+    static void setVersionEcosystemCore(String v) {
+        VERSION_ECOSYSTEM_CORE = v;
+    }
+    static void setVersionComponentOperatorCrd(String v) {
+        VERSION_K8S_COMPONENT_OPERATOR_CRD = v;
+    }
     static void setVersionDoguOperator(String v) {
         VERSION_K8S_DOGU_OPERATOR = v;
     }
     static void setVersionDoguOperatorCrd(String v) {
         VERSION_K8S_DOGU_OPERATOR_CRD = v;
     }
-
-
-    /**
-     *  override component versions
-     */
-    static void setComponentVersions(String dogu_op = VERSION_K8S_DOGU_OPERATOR, String dogu_op_crd = VERSION_K8S_DOGU_OPERATOR_CRD, String blue_op = VERSION_K8S_BLUEPRINT_OPERATOR, String blue_op_crd = VERSION_K8S_BLUEPRINT_OPERATOR_CRD) {
-        if (dogu_op != null) {
-            VERSION_K8S_DOGU_OPERATOR = dogu_op
-        }
-        if (dogu_op_crd != null) {
-            VERSION_K8S_DOGU_OPERATOR_CRD = dogu_op_crd
-        }
-        if (blue_op != null) {
-            VERSION_K8S_BLUEPRINT_OPERATOR = blue_op
-        }
-        if (blue_op_crd != null) {
-            VERSION_K8S_BLUEPRINT_OPERATOR_CRD = blue_op_crd
-        }
+    static void setVersionBlueprintOperator(String v) {
+        VERSION_K8S_BLUEPRINT_OPERATOR = v;
+    }
+    static void setVersionBlueprintOperatorCrd(String v) {
+        VERSION_K8S_BLUEPRINT_OPERATOR_CRD = v;
     }
 
     void configureEcosystemCoreValues(config = [:]) {
