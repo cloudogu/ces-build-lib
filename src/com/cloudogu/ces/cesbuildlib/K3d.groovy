@@ -299,10 +299,8 @@ class K3d {
             appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", VERSION_K8S_BLUEPRINT_OPERATOR_CRD)
         }
         if (VERSION_K8S_BLUEPRINT_OPERATOR != null) {
-            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", VERSION_K8S_BLUEPRINT_OPERATOR)
+            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", VERSION_K8S_BLUEPRINT_OPERATOR)
         }
-
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", VERSION_K8S_BLUEPRINT_OPERATOR)
 
         yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-ces-control.disabled = true")
 
