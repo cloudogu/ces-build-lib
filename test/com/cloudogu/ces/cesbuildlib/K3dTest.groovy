@@ -224,7 +224,6 @@ class K3dTest {
     void testSetup() {
         // given
         def workspaceEnvDir = "leK3dWorkSpace"
-        String tag = "v0.6.0"
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
         scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null", "{\"tags\": [\"1.0.0\"]}")
@@ -250,14 +249,16 @@ class K3dTest {
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
         // need to be installed before apply values.yaml
 
-
         // when
-        sut.setup(tag, [:], 1, 1)
+        sut.setup([:], 1, 1)
 
         // then
         int i = 0
+        assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
         for (i = 0; i < 7; i++) {
-            assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
+            if (!"create values.yaml for setup deployment".equals(scriptMock.actualEcho.get(i))) {
+                break
+            }
         }
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
@@ -277,7 +278,6 @@ class K3dTest {
     @Test
     void testSetupShouldThrowExceptionOnDoguOperatorRollout() {
         // given
-        String tag = "v0.6.0"
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
         scriptMock.expectedShRetValueForScript.put("whoami", "jenkins")
@@ -294,14 +294,22 @@ class K3dTest {
 
         // when
         def errorMsg = shouldFail(RuntimeException) {
-            sut.setup(tag, [:], 1, 1)
+            sut.setup([:], 1, 1)
         }
 
         // then
         assertThat(errorMsg.getMessage()).isEqualTo("failed to wait for deployment/k8s-blueprint-operator-controller-manager rollout: timeout")
 
-        assertThat(scriptMock.actualEcho.get(7)).isEqualTo("configuring ecosystem core...")
-        assertThat(scriptMock.actualEcho.get(8)).isEqualTo("Installing setup...")
+        int i = 0
+        assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
+        for (i = 0; i < 7; i++) {
+            if (!"create values.yaml for setup deployment".equals(scriptMock.actualEcho.get(i))) {
+                break
+            }
+        }
+
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
