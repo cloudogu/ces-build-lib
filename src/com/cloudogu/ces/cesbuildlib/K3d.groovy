@@ -337,7 +337,7 @@ class K3d {
         }
     }
 
-    void installAndTriggerSetup(String tag, Integer timeout = 300, Integer interval = 5) {
+    void installAndTriggerSetup(Integer timeout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
         String registryUrl = "registry.cloudogu.com"
         String registryNamespace = "k8s"
@@ -393,14 +393,13 @@ class K3d {
 /**
  * Installs the ecosystem-core-setup to the cluster. Creates an example values.yaml and a blueprint-file with usermgt as dogu and executes the ecosystem-core-setup.
  * After that the method will wait until the blueprint is ready.
- * @param tag Tag of ecosystem-core e. g. "v1.4.0"
  * @param timout Timeout in seconds for the installation process e. g. 300
  * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
  */
-    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+    void setup(config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
         configureEcosystemCoreValues(config)
-        installAndTriggerSetup(tag, timout, interval)
+        installAndTriggerSetup(timout, interval)
     }
 
 
