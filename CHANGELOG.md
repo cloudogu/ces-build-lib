@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - use ecosystem-core instead of k8e-ces-setup to install cluster
 
+## [4.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.4.0) - 2025-08-21
+### Changed
+- Set development branch on finishing gitflow release
 
 ## [4.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.3.0) - 2025-08-21
 ### Changed
@@ -259,4 +262,6 @@ the login data used for the dogu-registry; #75
 - Add gpg class to perform gpp based task such as signing; #64
 - Add option to upload artifacts to a GitHub release; #64
 
-## v0.0.1 - v1.47.1 /
+## v0.0.1 - v1.47.1 / previous versions
+
+Up till version v1.47.1 there was no change log
