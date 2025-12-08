@@ -359,8 +359,8 @@ class K3d {
 
         kubectl("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
 
-        script.echo "Wait for setup-finisher to be executed..."
-        waitForSetupToFinish(timeout, interval)
+        script.echo "Wait for blueprint to be ready..."
+        waitForBlueprintToBeReady(timeout, interval)
 
         script.echo "Wait for dogus to be ready..."
         waitForDogusToBeRolledOut(timeout, interval)
@@ -377,7 +377,7 @@ class K3d {
         }
     }
 
-    void waitForSetupToFinish(Integer timeout, Integer interval) {
+    void waitForBlueprintToBeReady(Integer timeout, Integer interval) {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
             String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
