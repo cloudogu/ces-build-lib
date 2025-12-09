@@ -1,6 +1,7 @@
 package com.cloudogu.ces.cesbuildlib
 
 import com.cloudbees.groovy.cps.NonCPS
+import groovy.json.JsonSlurper
 
 class K3d {
     /**
@@ -12,9 +13,17 @@ class K3d {
      */
     private static String K3D_VERSION = "5.6.0"
     private static String K3D_LOG_FILENAME = "k8sLogs"
-    private static String K3D_SETUP_JSON_FILE = "k3d_setup.json"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
+    private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.40.5"
+    // need to be installed before apply values.yaml
+    private static String VERSION_ECOSYSTEM_CORE; // e.g.  "1.2.0"
+    private static String VERSION_K8S_COMPONENT_OPERATOR_CRD; // e.g.  "1.10.1"
+    // configured by values.yaml
+    private static String VERSION_K8S_DOGU_OPERATOR; // e.g.  "3.15.0"
+    private static String VERSION_K8S_DOGU_OPERATOR_CRD; // e.g.  "2.10.0"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR; // e.g.  "3.0.2"
+    private static String VERSION_K8S_BLUEPRINT_OPERATOR_CRD ; // e.g. "3.1.0"
 
     private String clusterName
     private script
@@ -36,14 +45,14 @@ class K3d {
         adminGroup             : "CesAdministrators",
         dependencies           : ["official/ldap",
                                   "official/cas",
-                                  "k8s/nginx-ingress",
-                                  "k8s/nginx-static",
                                   "official/postfix",
                                   "official/usermgt"],
         defaultDogu            : "",
         additionalDependencies : [],
         registryConfig         : "",
-        registryConfigEncrypted: ""
+        registryConfigEncrypted: "",
+        "enableBackup"         : false,
+        "enableMonitoring"     : false
     ]
 
     String getRegistryName() {
@@ -254,40 +263,60 @@ class K3d {
         }
     }
 
-    void configureSetupJson(config = [:]) {
-        String setupJsonConfigKey = ".setup_json"
 
-        script.echo "configuring setup..."
+    static void setVersionEcosystemCore(String v) {
+        VERSION_ECOSYSTEM_CORE = v;
+    }
+    static void setVersionComponentOperatorCrd(String v) {
+        VERSION_K8S_COMPONENT_OPERATOR_CRD = v;
+    }
+    static void setVersionDoguOperator(String v) {
+        VERSION_K8S_DOGU_OPERATOR = v;
+    }
+    static void setVersionDoguOperatorCrd(String v) {
+        VERSION_K8S_DOGU_OPERATOR_CRD = v;
+    }
+    static void setVersionBlueprintOperator(String v) {
+        VERSION_K8S_BLUEPRINT_OPERATOR = v;
+    }
+    static void setVersionBlueprintOperatorCrd(String v) {
+        VERSION_K8S_BLUEPRINT_OPERATOR_CRD = v;
+    }
+
+    void configureEcosystemCoreValues(config = [:]) {
         // Merge default config with the one passed as parameter
         config = defaultSetupConfig << config
-        writeSetupJson(config)
 
-        appendFileToYamlFile(K3D_VALUES_YAML_FILE, setupJsonConfigKey, K3D_SETUP_JSON_FILE)
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".defaultConfig.env.waitTimeoutMinutes = 5")
+
+        if (VERSION_K8S_DOGU_OPERATOR_CRD != null) {
+            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator-crd.version", VERSION_K8S_DOGU_OPERATOR_CRD)
+        }
+        if (VERSION_K8S_DOGU_OPERATOR != null) {
+            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-dogu-operator.version", VERSION_K8S_DOGU_OPERATOR)
+        }
+        if (VERSION_K8S_BLUEPRINT_OPERATOR_CRD != null) {
+            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator-crd.version", VERSION_K8S_BLUEPRINT_OPERATOR_CRD)
+        }
+        if (VERSION_K8S_BLUEPRINT_OPERATOR != null) {
+            appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-blueprint-operator.version", VERSION_K8S_BLUEPRINT_OPERATOR)
+        }
+
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-ces-control.disabled = true")
+
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.internalTrafficPolicy", "Cluster")
+        appendToYamlFile(K3D_VALUES_YAML_FILE, ".components.k8s-service-discovery.valuesObject.loadBalancerService.externalTrafficPolicy", "Cluster")
+
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".backup.enabled = ${config.enableBackup}")
+        yqEvalYamlFile(K3D_VALUES_YAML_FILE, ".monitoring.enabled = ${config.enableMonitoring}")
+
+        script.echo "configuring ecosystem core..."
+        writeBlueprintYaml(config)
     }
 
-    void configureSetupImage(String image) {
-        String hostKey = ".setup.image.registry"
-        String repositoryKey = ".setup.image.repository"
-        String tagKey = ".setup.image.tag"
-        def repositorySeparatorIndex = image.indexOf("/")
-        def tagSeparatorIndex = image.lastIndexOf(":")
-
-        appendToYamlFile(K3D_VALUES_YAML_FILE, hostKey, image.substring(0, repositorySeparatorIndex))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, repositoryKey, image.substring(repositorySeparatorIndex + 1, tagSeparatorIndex))
-        appendToYamlFile(K3D_VALUES_YAML_FILE, tagKey, image.substring(tagSeparatorIndex + 1, image.length()))
-    }
-
-    void configureComponentOperatorVersion(String operatorVersion, String crdVersion = operatorVersion, String namespace = "k8s") {
-        String componentOpKey = ".component_operator_chart"
-        String componentCRDKey = ".component_operator_crd_chart"
-
-
-        def builder = new StringBuilder(namespace)
-        String operatorValue = builder.append("/k8s-component-operator:").append(operatorVersion).toString()
-        appendToYamlFile(K3D_VALUES_YAML_FILE, componentOpKey, operatorValue)
-        builder.delete(0, builder.length());
-        String crdValue = builder.append(namespace).append("/k8s-component-operator-crd:").append(crdVersion).toString()
-        appendToYamlFile(K3D_VALUES_YAML_FILE, componentCRDKey, crdValue)
+    @Deprecated
+    void configureSetupJson(config = [:]) {
+        configureEcosystemCoreValues(config)
     }
 
     void configureComponents(components = [:]) {
@@ -308,11 +337,7 @@ class K3d {
         }
     }
 
-    void configureLogLevel(String loglevel) {
-        appendToYamlFile(K3D_VALUES_YAML_FILE, ".logLevel", loglevel)
-    }
-
-    void installAndTriggerSetup(String tag, Integer timeout = 300, Integer interval = 5) {
+    void installAndTriggerSetup(Integer timeout = 300, Integer interval = 5) {
         script.echo "Installing setup..."
         String registryUrl = "registry.cloudogu.com"
         String registryNamespace = "k8s"
@@ -320,51 +345,61 @@ class K3d {
             helm("registry login ${registryUrl} --username '${script.env.HARBOR_USERNAME}' --password '${script.env.HARBOR_PASSWORD}'")
         }
 
-        helm("install -f ${K3D_VALUES_YAML_FILE} k8s-ces-setup oci://${registryUrl}/${registryNamespace}/k8s-ces-setup --version ${tag} --namespace default")
-        helm("registry logout ${registryUrl}")
+        // install crd first
+        String comp_crd_version = VERSION_K8S_COMPONENT_OPERATOR_CRD == null ? "" : " --version ${VERSION_K8S_COMPONENT_OPERATOR_CRD}"
+        helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  ${comp_crd_version} --namespace default")
 
-        script.echo "Wait for dogu-operator to be ready..."
-        waitForDeploymentRollout("k8s-dogu-operator-controller-manager", timeout, interval)
+        kubectl("--namespace default create configmap global-config --from-literal=config.yaml='fqdn: ${externalIP}'")
 
-        script.echo "Wait for setup-finisher to be executed..."
-        waitForSetupToFinish(timeout, interval)
+        String eco_core_version = VERSION_ECOSYSTEM_CORE == null ? "" : " --version ${VERSION_ECOSYSTEM_CORE}"
+        helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core ${eco_core_version} --namespace default --timeout 15m")
+
+        script.echo "Wait for blueprint-operator to be ready..."
+        waitForDeploymentRollout("k8s-blueprint-operator-controller-manager", timeout, interval)
+
+        kubectl("apply -f ${K3D_BLUEPRINT_FILE} --namespace default")
+
+        script.echo "Wait for blueprint to be ready..."
+        waitForBlueprintToBeReady(timeout, interval)
 
         script.echo "Wait for dogus to be ready..."
         waitForDogusToBeRolledOut(timeout, interval)
+
+        helm("registry logout ${registryUrl}")
     }
 
     void waitForDogusToBeRolledOut(Integer timeout, Integer interval) {
         String dogus = kubectl("get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
-        String[] doguList = dogus.split("\n")
+        String[] doguList = dogus.trim().split("\n")
         for (String dogu : doguList) {
             script.echo "Wait for $dogu to be rolled out..."
             waitForDeploymentRollout(dogu, timeout, interval)
         }
     }
 
-    void waitForSetupToFinish(Integer timeout, Integer interval) {
+    void waitForBlueprintToBeReady(Integer timeout, Integer interval) {
         for (int i = 0; i < timeout / interval; i++) {
             script.sh("sleep ${interval}s")
-            String deploys = kubectl("get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'", true)
-            if (!deploys.contains("k8s-ces-setup")) {
+            String blueprintReady = kubectl("get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'", true)
+            script.echo blueprintReady
+            if (blueprintReady == "True True") {
                 return
             }
         }
 
-        this.script.error "failed to wait for setup to finish: timeout"
+        this.script.error "failed to wait for ecosystem-core setup to finish: timeout"
     }
 
 /**
- * Installs the setup to the cluster. Creates an example setup.json with usermgt as dogu and executes the setup.
- * After that the method will wait until the dogu-operator is ready.
- * @param tag Tag of the setup e. g. "v0.6.0"
- * @param timout Timeout in seconds for the setup process e. g. 300
+ * Installs the ecosystem-core-setup to the cluster. Creates an example values.yaml and a blueprint-file with usermgt as dogu and executes the ecosystem-core-setup.
+ * After that the method will wait until the blueprint is ready.
+ * @param timout Timeout in seconds for the installation process e. g. 300
  * @param interval Interval in seconds for querying the actual state of the setup e. g. 2
  */
-    void setup(String tag, config = [:], Integer timout = 300, Integer interval = 5) {
+    void setup(config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
-        configureSetupJson(config)
-        installAndTriggerSetup(tag, timout, interval)
+        configureEcosystemCoreValues(config)
+        installAndTriggerSetup(timout, interval)
     }
 
 
@@ -606,66 +641,94 @@ data:
         return [registryIp, registryPort]
     }
 
-    static String formatDependencies(List<String> deps) {
+    String formatDependencies(List<String> deps) {
         String formatted = ""
-
         for (int i = 0; i < deps.size(); i++) {
-            formatted += "\"${deps[i]}\""
-
+            String[] parts = deps[i].split(":")
+            String version;
+            // "latest" needs to be replaced with actual last version
+            if (parts.length != 2 || parts[1] == "latest") {
+                version = this.getLatestVersion(parts[0])
+            } else {
+                version = parts[1]
+            }
+            formatted += "      - name: ${parts[0]}\n" +
+                "        version: ${version}"
             if ((i + 1) < deps.size()) {
-                formatted += ', '
+                formatted += '\n'
             }
         }
 
         return formatted
     }
 
-    private void writeSetupJson(config) {
-        List<String> deps = config.dependencies + config.additionalDependencies
-        String formattedDeps = formatDependencies(deps)
-
-        script.writeFile file: K3D_SETUP_JSON_FILE, text: """
-{
-  "naming":{
-    "fqdn":"${externalIP}",
-    "hostname":"ces",
-    "domain":"ces.local",
-    "certificateType":"selfsigned",
-    "relayHost":"mail.ces.local",
-    "completed":true
-  },
-  "dogus":{
-    "defaultDogu":"${config.defaultDogu}",
-    "install":[
-       ${formattedDeps}
-    ],
-    "completed":true
-  },
-  "admin":{
-    "username":"${config.adminUsername}",
-    "mail":"ces-admin@cloudogu.com",
-    "password":"${config.adminPassword}",
-    "adminGroup":"${config.adminGroup}",
-    "adminMember":true,
-    "completed":true
-  },
-  "userBackend":{
-    "port":"389",
-    "useUserConnectionToFetchAttributes":true,
-    "dsType":"embedded",
-    "attributeID":"uid",
-    "attributeFullname":"cn",
-    "attributeMail":"mail",
-    "attributeGroup":"memberOf",
-    "searchFilter":"(objectClass=person)",
-    "host":"ldap",
-    "completed":true
-  },
-  "registryConfig": {${config.registryConfig}},
-  "registryConfigEncrypted": {${config.registryConfigEncrypted}}
-}"""
+    private String getLatestVersion(String doguName) {
+        String tags = "{}";
+        script.withCredentials([[$class: 'UsernamePasswordMultiBinding', credentialsId: this.backendCredentialsID, usernameVariable: 'TOKEN_ID', passwordVariable: 'TOKEN_SECRET']]) {
+            tags = this.sh.returnStdOut("curl https://registry.cloudogu.com/v2/${doguName}/tags/list -u ${script.env.TOKEN_ID}:${script.env.TOKEN_SECRET}").trim()
+        }
+        def obj = new JsonSlurper().parseText(tags)
+        return obj.tags.max { t -> parseTag("${t}") }
     }
 
+    private String parseTag(String tag) {
+        def m = (tag =~ /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(\d+))?$/)
+        if (!m.matches()) {
+            // Fallback: set all to 0 to ingnore invalid tags
+            return "00000.00000.00000.00000"
+        }
+        def major = (m[0][1] ?: "0") as int
+        def minor = (m[0][2] ?: "0") as int
+        def patch = (m[0][3] ?: "0") as int
+        def build = (m[0][4] ?: "0") as int
+
+        // Zero-padding → lexicographically sortable
+        return sprintf("%05d.%05d.%05d.%05d", major, minor, patch, build)
+    }
+
+    private void writeBlueprintYaml(config) {
+        List<String> deps = config.dependencies + config.additionalDependencies
+        String formattedDeps = formatDependencies(deps)
+        script.writeFile file: K3D_BLUEPRINT_FILE, text: """
+apiVersion: k8s.cloudogu.com/v3
+kind: Blueprint
+metadata:
+  labels:
+    app: ces
+    app.kubernetes.io/name: k8s-blueprint-lib
+  name: blueprint-ces-module
+  namespace: default
+spec:
+  displayName: "Blueprint K3D CES-Module"
+  blueprint:
+    dogus:
+${formattedDeps}
+    config:
+      dogus:
+        ldap:
+          - key: admin_username
+            value: "${config.adminUsername}"
+          - key: admin_mail
+            value: "ces-admin@cloudogu.com"
+          - key: admin_member
+            value: "true"
+          - key: admin_password
+            value: "${config.adminPassword}"
+      global:
+        - key: fqdn
+          value: "${externalIP}"
+        - key: domain
+          value: "ces.local"
+        - key: certificate/type
+          value: "selfsigned"
+        - key: k8s/use_internal_ip
+          value: "false"
+        - key: internalIp
+          value: ""
+        - key: admin_group
+          value: "${config.adminGroup}"
+"""
+    }
 
 /**
  * Collects all necessary resources and log information used to identify problems with our kubernetes cluster.
@@ -677,7 +740,9 @@ data:
             script.deleteDir()
         }
         script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
-        script.sh("rm -rf ${K3D_SETUP_JSON_FILE}".toString())
+        script.archiveArtifacts(artifacts: K3D_BLUEPRINT_FILE)
+        script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
+        script.archiveArtifacts(artifacts: K3D_VALUES_YAML_FILE)
         script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
 
         collectResourcesSummaries()
