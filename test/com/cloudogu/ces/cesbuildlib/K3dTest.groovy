@@ -263,7 +263,7 @@ class K3dTest {
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for blueprint-operator to be ready...")
-        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for setup-finisher to be executed...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for blueprint to be ready...")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("True True")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for dogus to be ready...")
         assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for cas to be rolled out...")
