@@ -1,5 +1,6 @@
 package com.cloudogu.ces.cesbuildlib
 
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 import org.mockito.invocation.InvocationOnMock
@@ -14,6 +15,17 @@ import static org.junit.jupiter.api.Assertions.*
 import static groovy.test.GroovyAssert.shouldFail
 
 class K3dTest {
+
+    @BeforeEach
+    void beforeTest() {
+        K3d.@VERSION_ECOSYSTEM_CORE = null;
+        K3d.@VERSION_K8S_COMPONENT_OPERATOR_CRD = null;
+        // configured by values.yaml
+        K3d.@VERSION_K8S_DOGU_OPERATOR = null;
+        K3d.@VERSION_K8S_DOGU_OPERATOR_CRD = null;
+        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR = null;
+        K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD = null;
+    }
 
     @Test
     void testCreateClusterName() {
@@ -212,51 +224,50 @@ class K3dTest {
     void testSetup() {
         // given
         def workspaceEnvDir = "leK3dWorkSpace"
-        String tag = "v0.6.0"
         def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null", "{\"tags\": [\"1.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null", "{\"tags\": [\"2.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/postfix/tags/list -u null:null", "{\"tags\": [\"3.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/usermgt/tags/list -u null:null", "{\"tags\": [\"4.0.0\"]}")
+
+
         scriptMock.expectedShRetValueForScript.put("whoami", "jenkins")
         scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
         scriptMock.expectedShRetValueForScript.put("yq -i '.setup_json = load_str(\"k3d_setup.json\")' k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("curl -s https://raw.githubusercontent.com/cloudogu/k8s-ces-setup/${tag}/k8s/k8s-ces-setup.yaml".toString(), "fake setup yaml with {{ .Namespace }}")
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".toString(), "successfully rolled out")
-        scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-blueprint-operator-controller-manager".toString(), "successfully rolled out")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get blueprint -n=default blueprint-ces-module -o jsonpath='{.status.conditions[?(@.type==\"EcosystemHealthy\")].status}{\" \"}{.status.conditions[?(@.type==\"Completed\")].status}'".toString(), "True True")
+
+
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'".toString(), "k8s-dogu-operator\nk8s-service-discovery")
-        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'".toString(), "cas\nnginx-ingress")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'".toString(), "cas\nldap")
         scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/cas".toString(), "successfully rolled out")
-        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/nginx-ingress".toString(), "successfully rolled out")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/ldap".toString(), "successfully rolled out")
 
 
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
+        // need to be installed before apply values.yaml
 
         // when
-        sut.setup(tag, [:], 1, 1)
+        sut.setup([:], 1, 1)
 
         // then
-        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("configuring setup...")
-        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("create values.yaml for setup deployment")
-        assertThat(scriptMock.actualEcho.get(2)).isEqualTo("Installing setup...")
-        assertThat(scriptMock.actualEcho.get(3)).isEqualTo("Wait for dogu-operator to be ready...")
-        assertThat(scriptMock.actualEcho.get(4)).isEqualTo("Wait for setup-finisher to be executed...")
-        assertThat(scriptMock.actualEcho.get(5)).isEqualTo("Wait for dogus to be ready...")
-        assertThat(scriptMock.actualEcho.get(6)).isEqualTo("Wait for cas to be rolled out...")
-        assertThat(scriptMock.actualEcho.get(7)).isEqualTo("Wait for nginx-ingress to be rolled out...")
-
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("yq -i '.setup_json = load_str(\"k3d_setup.json\")' k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm registry login registry.cloudogu.com --username 'null' --password 'null'".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm install -f k3d_values.yaml k8s-ces-setup oci://registry.cloudogu.com/k8s/k8s-ces-setup --version v0.6.0 --namespace default".trim())
-        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config helm registry logout registry.cloudogu.com".trim())
-        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("sleep 1s")
-        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/k8s-dogu-operator-controller-manager".trim())
-        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("sleep 1s")
-        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get deployments --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'")
-        assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl get dogus --template '{{range .items}}{{.metadata.name}}{{\"\\n\"}}{{end}}'")
-        assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sleep 1s")
-        assertThat(scriptMock.allActualArgs[13].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/cas")
-        assertThat(scriptMock.allActualArgs[14].trim()).isEqualTo("sleep 1s")
-        assertThat(scriptMock.allActualArgs[15].trim()).isEqualTo("sudo KUBECONFIG=${workspaceEnvDir}/.k3d/.kube/config kubectl rollout status deployment/nginx-ingress")
+        int i = 0
+        assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
+        for (i = 0; i < 7; i++) {
+            if (!"create values.yaml for setup deployment".equals(scriptMock.actualEcho.get(i))) {
+                break
+            }
+        }
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for blueprint-operator to be ready...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for blueprint to be ready...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("True True")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for dogus to be ready...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for cas to be rolled out...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Wait for ldap to be rolled out...")
 
         assertThat(scriptMock.writeFileParams.get(0)).isNotNull()
         String setupYaml = scriptMock.writeFileParams.get(1)
@@ -267,26 +278,38 @@ class K3dTest {
     @Test
     void testSetupShouldThrowExceptionOnDoguOperatorRollout() {
         // given
-        String tag = "v0.6.0"
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
         scriptMock.expectedShRetValueForScript.put("whoami", "jenkins")
         scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
         scriptMock.expectedShRetValueForScript.put("yq -i '.setup_json = load_str(\"k3d_setup.json\")' k3d_values.yaml", "fake")
+        scriptMock.expectedShRetValueForScript.put("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip", "192.168.56.2")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null", "{\"tags\": [\"1.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null", "{\"tags\": [\"2.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/postfix/tags/list -u null:null", "{\"tags\": [\"3.0.0\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/usermgt/tags/list -u null:null", "{\"tags\": [\"4.0.0\"]}")
 
 
         K3d sut = new K3d(scriptMock, "leWorkSpace", "leK3dWorkSpace", "path")
 
         // when
         def errorMsg = shouldFail(RuntimeException) {
-            sut.setup(tag, [:], 1, 1)
+            sut.setup([:], 1, 1)
         }
 
         // then
-        assertThat(errorMsg.getMessage()).isEqualTo("failed to wait for deployment/k8s-dogu-operator-controller-manager rollout: timeout")
+        assertThat(errorMsg.getMessage()).isEqualTo("failed to wait for deployment/k8s-blueprint-operator-controller-manager rollout: timeout")
 
-        assertThat(scriptMock.actualEcho.get(0)).isEqualTo("configuring setup...")
-        assertThat(scriptMock.actualEcho.get(1)).isEqualTo("create values.yaml for setup deployment")
+        int i = 0
+        assertThat(scriptMock.actualEcho.get(i)).isEqualTo("create values.yaml for setup deployment")
+        for (i = 0; i < 7; i++) {
+            if (!"create values.yaml for setup deployment".equals(scriptMock.actualEcho.get(i))) {
+                break
+            }
+        }
+
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("configuring ecosystem core...")
+        assertThat(scriptMock.actualEcho.get(i++)).isEqualTo("Installing setup...")
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl -H \"Metadata-Flavor: Google\" http://169.254.169.254/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("whoami".trim())
@@ -433,7 +456,7 @@ spec:
         int fileCounter = 0
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("called deleteDir()")
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf k8sLogs.zip")
-        assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf k3d_setup.json")
+        assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf k3d_blueprint.yaml")
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("rm -rf k3d_values.yaml")
 
         assertThat(scriptMock.allActualArgs[i++].trim()).contains("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get persistentvolumeclaim --show-kind --ignore-not-found -l app=ces -o yaml || true")
@@ -514,8 +537,10 @@ spec:
 
         assertThat(scriptMock.zipParams.size()).isEqualTo(1)
         assertThat(scriptMock.zipParams[0]).isEqualTo(["archive":"false", "dir":"k8sLogs", "zipFile":"k8sLogs.zip"])
-        assertThat(scriptMock.archivedArtifacts.size()).isEqualTo(1)
-        assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
+        assertThat(scriptMock.archivedArtifacts.size()).isEqualTo(3)
+        assertThat(scriptMock.archivedArtifacts[0]).isEqualTo(["artifacts":"k3d_blueprint.yaml"])
+        assertThat(scriptMock.archivedArtifacts[1]).isEqualTo(["artifacts":"k3d_values.yaml"])
+        assertThat(scriptMock.archivedArtifacts[2]).isEqualTo(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
 
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
         assertThat(scriptMock.writeFileParams.size()).isEqualTo(25)
@@ -555,78 +580,48 @@ spec:
     }
 
     @Test
-    void testK3d_configureSetupImage() {
+    void testK3d_parseTags() {
         // given
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
         def scriptMock = new ScriptMock()
         K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
 
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml", "foo")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null", "{\"tags\": [\"1.0.0\", \"1.0.1\"]}")
+        scriptMock.expectedShRetValueForScript.put("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null", "{\"tags\": [\"2.0.0\", \"invalid\", \"2.0.1\"]}")
+
+        List<String> deps = new ArrayList<>()
+        deps.add("official/cas")
+        deps.add("official/ldap:latest")
+        deps.add("official/usermgt:3.0.0")
 
         // when
-        sut.configureSetupImage("docker.io/foo/image:1.2.3")
+        String formatted = sut.formatDependencies(deps)
 
         // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".setup.image.registry = \\\"docker.io\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".setup.image.repository = \\\"foo/image\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[7].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("yq -i \".setup.image.tag = \\\"1.2.3\\\"\" k3d_values.yaml".trim())
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("curl https://registry.cloudogu.com/v2/official/cas/tags/list -u null:null".trim())
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("curl https://registry.cloudogu.com/v2/official/ldap/tags/list -u null:null".trim())
+        assertThat(formatted.contains("cas\n        version: 2.0.1"))
+        assertThat(formatted.contains("ldap\n        version: 1.0.1"))
+        assertThat(formatted.contains("usermgt\n        version: 3.0.0"))
+
     }
 
     @Test
-    void testK3d_configureComponentOperatorVersion() {
+    void testK3d_setComponentVersion() {
         // given
-        def workspaceDir = "leWorkspace"
-        def k3dWorkspaceDir = "leK3dWorkSpace"
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
-
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".component_operator_chart = \\\"test_ns/k8s-component-operator:1.2.3\\\"\" k3d_values.yaml", "foo")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml", "foo")
 
         // when
-        sut.configureComponentOperatorVersion('1.2.3', '4.5.6', 'test_ns')
+        K3d.setVersionDoguOperator("1.0.0")
+        K3d.setVersionDoguOperatorCrd("2.0.0")
+        K3d.setVersionBlueprintOperator("3.0.0")
+        K3d.setVersionBlueprintOperatorCrd("4.0.0")
 
         // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".component_operator_chart = \\\"test_ns/k8s-component-operator:1.2.3\\\"\" k3d_values.yaml".trim())
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("yq -i \".component_operator_crd_chart = \\\"test_ns/k8s-component-operator-crd:4.5.6\\\"\" k3d_values.yaml".trim())
-    }
-
-    @Test
-    void testK3d_configureLogLevel() {
-        // given
-        def workspaceDir = "leWorkspace"
-        def k3dWorkspaceDir = "leK3dWorkSpace"
-        def scriptMock = new ScriptMock()
-        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
-
-        scriptMock.expectedShRetValueForScript.put("whoami".toString(), "jenkins")
-        scriptMock.expectedShRetValueForScript.put("cat /etc/passwd | grep jenkins", "jenkins:x:1000:1000:jenkins,,,:/home/jenkins:/bin/bash")
-        scriptMock.expectedShRetValueForScript.put("yq -i \".logLevel = \\\"SUPER_ERROR\\\"\" k3d_values.yaml", "foo")
-
-        // when
-        sut.configureLogLevel("SUPER_ERROR")
-
-        // then
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("whoami".trim())
-        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("cat /etc/passwd | grep jenkins".trim())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("yq -i \".logLevel = \\\"SUPER_ERROR\\\"\" k3d_values.yaml".trim())
+        assertThat("1.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR))
+        assertThat("2.0.0".equals(K3d.@VERSION_K8S_DOGU_OPERATOR_CRD))
+        assertThat("3.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR))
+        assertThat("4.0.0".equals(K3d.@VERSION_K8S_BLUEPRINT_OPERATOR_CRD))
     }
 
     @Test
