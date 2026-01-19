@@ -7,15 +7,15 @@ class K3d {
     /**
      * The image of the k3s version defining the targeted k8s version
      */
-    private static String K8S_IMAGE = "rancher/k3s:v1.28.5-k3s1"
+    private static String K8S_IMAGE = "rancher/k3s:v1.35.0-k3s1"
     /**
      * The version of k3d to be installed
      */
-    private static String K3D_VERSION = "5.6.0"
+    private static String K3D_VERSION = "5.8.3"
     private static String K3D_LOG_FILENAME = "k8sLogs"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
-    private static String YQ_VERSION = "4.40.5"
+    private static String YQ_VERSION = "4.50.1"
     // need to be installed before apply values.yaml
     private static String VERSION_ECOSYSTEM_CORE; // e.g.  "1.2.0"
     private static String VERSION_K8S_COMPONENT_OPERATOR_CRD; // e.g.  "1.10.1"

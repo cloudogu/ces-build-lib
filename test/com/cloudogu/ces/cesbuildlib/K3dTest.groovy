@@ -111,7 +111,7 @@ class K3dTest {
     void testStartK3d() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
-        def expectedK3dVer = "5.6.0"
+        def expectedK3dVer = "5.8.3"
 
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
@@ -149,7 +149,7 @@ class K3dTest {
     void testStartK3dWithCustomCredentials() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "path"
-        def expectedK3dVer = "5.6.0"
+        def expectedK3dVer = "5.8.3"
 
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
