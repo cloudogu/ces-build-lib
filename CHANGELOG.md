@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+### Changed
+- [#157] Update k3d, k8s and yq versions
 
 ## [5.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.0.0) - 2025-12-09
 ### Changed
