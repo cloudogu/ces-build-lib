@@ -982,9 +982,10 @@ stage('Gitflow') {
 ```
 
 * `gitflow.isReleaseBranch()` - Checks if the currently checked out branch is a gitflow release branch.
-* `gitflow.finishRelease(releaseVersion [, productionBranch])` - Finishes a git release by merging into develop and production release branch (default: "master").
+* `gitflow.finishRelease(releaseVersion [, productionBranch] [, developmentBranch])` - Finishes a git release by merging into development (default: "develop") and production release branch (default: "master").
    * Use the `releaseVersion` (String) as the name of the new git release.
    * Optionally, use `productionBranch` (String) as the name of the production release branch. This defaults to `master`.
+   * Optionally, use `developmentBranch` (String) as the name of the development branch. This defaults to `develop`.
    
 # SCM-Manager
 
