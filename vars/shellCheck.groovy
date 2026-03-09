@@ -30,6 +30,6 @@ def call() {
 */
 private def executeWithDocker(fileList){
     docker.image('koalaman/shellcheck-alpine:stable').inside(){
-        sh "/bin/shellcheck ${fileList}"
+        sh "/bin/shellcheck -P SCRIPTDIR ${fileList}"
     }
 }
