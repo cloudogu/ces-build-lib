@@ -47,7 +47,7 @@ node('docker') {
 
         stage('SonarQube') {
             generateCoverageReportForSonarQube(mvn)
-            def sonarQube = cesBuildLib.SonarQube.new(this, 'ces-sonar')
+            def sonarQube = cesBuildLib.SonarQube.new(this, [sonarQubeEnv: 'ces-sonar'])
             sonarQube.updateAnalysisResultOfPullRequestsToGitHub('sonarqube-gh-token')
 
             // SonarQube >= v25.01 needs JDK 17

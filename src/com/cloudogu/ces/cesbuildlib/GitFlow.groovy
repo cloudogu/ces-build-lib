@@ -4,11 +4,17 @@ class GitFlow implements Serializable {
     private def script
     private Git git
     Sh sh
+    private Makefile makefile
 
     GitFlow(script, Git git) {
         this.script = script
         this.git = git
         this.sh = new Sh(script)
+    }
+
+    GitFlow(script, Git git, Makefile makefile) {
+        this(script, git)
+        this.makefile = makefile
     }
 
     /**
@@ -25,6 +31,16 @@ class GitFlow implements Serializable {
         return git.getSimpleBranchName().equals("develop")
     }
 
+    boolean isUnallowedBackportRelease(String productionBranch, String developmentBranch) {
+        if (makefile != null) {
+            def baseVersion = makefile.getBaseVersion()
+            if (baseVersion != null && baseVersion != "" && (!productionBranch.contains(baseVersion) || !developmentBranch.contains(baseVersion)))  {
+                return true
+            }
+        }
+        return false
+    }
+
     /**
      * Finishes a git flow release and pushes all merged branches to remote
      *
@@ -32,7 +48,7 @@ class GitFlow implements Serializable {
      *
      * @param releaseVersion the version that is going to be released
      */
-    void finishRelease(String releaseVersion, String productionBranch = "master") {
+    void finishRelease(String releaseVersion, String productionBranch = "master",  String developmentBranch = "develop") {
         String branchName = git.getBranchName()
 
         // Stop the build here if there is already a tag for this version on remote.
@@ -45,8 +61,13 @@ class GitFlow implements Serializable {
         // Make sure all branches are fetched
         git.fetch()
 
+        // Check if a backport release is configured by setting BASE_VERSION inside Makefile
+        if (isUnallowedBackportRelease(productionBranch, developmentBranch)) {
+            script.error('The Variable BASE_VERSION is set in the Makefile. The release should not be merged into main / master / develop or other backport branches.')
+        }
+
         // Stop the build if there are new changes on develop that are not merged into this feature branch.
-        if (git.originBranchesHaveDiverged(branchName, 'develop')) {
+        if (git.originBranchesHaveDiverged(branchName, developmentBranch)) {
             script.error('There are changes on develop branch that are not merged into release. Please merge and restart process.')
         }
 
@@ -56,7 +77,7 @@ class GitFlow implements Serializable {
         String releaseBranchAuthor = git.commitAuthorName
         String releaseBranchEmail = git.commitAuthorEmail
 
-        git.checkoutLatest('develop')
+        git.checkoutLatest(developmentBranch)
         git.checkoutLatest(productionBranch)
 
         // Merge release branch into productionBranch
@@ -65,7 +86,7 @@ class GitFlow implements Serializable {
         // Create tag. Use -f because the created tag will persist when build has failed.
         git.setTag(releaseVersion, "release version ${releaseVersion}", true)
         // Merge release branch into develop
-        git.checkout('develop')
+        git.checkout(developmentBranch)
         // Set author of release Branch as author of merge commit
         // Otherwise the author of the last commit on develop would author the commit, which is unexpected
         git.mergeNoFastForward(branchName, releaseBranchAuthor, releaseBranchEmail)
@@ -77,7 +98,7 @@ class GitFlow implements Serializable {
         git.checkout(releaseVersion)
 
         // Push changes and tags
-        git.push("origin ${productionBranch} develop ${releaseVersion}")
+        git.push("origin ${productionBranch} ${developmentBranch} ${releaseVersion}")
         git.deleteOriginBranch(branchName)
     }
 }

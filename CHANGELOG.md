@@ -9,8 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - SonarQube's `analyzeWith(mvn)` credential usage for tokens changed to avoid authentication errors
-  - With SonarQube 25.x the regular maven goal `sonar:sonar` changed the used authentication style because username/password no longer work. 
-  - Instead, a SonarQube authentication token must be generated on the personal security profile page and used without username. This works best with setting the used credential to the config map entry `token`
+    - With SonarQube 25.x the regular maven goal `sonar:sonar` changed the used authentication style because username/password no longer work.
+    - Instead, a SonarQube authentication token must be generated on the personal security profile page and used without username. This works best with setting the used credential to the config map entry `token`
+- Upgrade Trivy to v0.69.3
+
+## [5.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.1.0) - 2026-01-19
+### Changed
+- [#157] Update k3d, k8s and yq versions
+
+## [5.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.0.0) - 2025-12-09
+### Changed
+- use ecosystem-core instead of k8e-ces-setup to install cluster
+
+## [4.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.4.0) - 2025-08-21
+### Changed
+- Set development branch on finishing gitflow release
 
 ## [4.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/4.3.0) - 2025-08-21
 ### Changed
