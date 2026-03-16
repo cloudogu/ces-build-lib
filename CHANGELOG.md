@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SonarQube's `analyzeWith(mvn)` credential usage for tokens changed to avoid authentication errors
     - With SonarQube 25.x the regular maven goal `sonar:sonar` changed the used authentication style because username/password no longer work.
     - Instead, a SonarQube authentication token must be generated on the personal security profile page and used without username. This works best with setting the used credential to the config map entry `token`
+
+## [5.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.2.0) - 2026-03-13
+### Changed
+- Let shellcheck search sourced files in script dir
 - Upgrade Trivy to v0.69.3
 
 ## [5.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.1.0) - 2026-01-19
