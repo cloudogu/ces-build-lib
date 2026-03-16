@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [5.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.3.0) - 2026-03-16
 ### Changed
 - SonarQube's `analyzeWith(mvn)` credential usage for tokens changed to avoid authentication errors
     - With SonarQube 25.x the regular maven goal `sonar:sonar` changed the used authentication style because username/password no longer work.
