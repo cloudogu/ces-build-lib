@@ -174,9 +174,11 @@ class SonarQube implements Serializable {
     private static abstract class AnalysisStrategy {
 
         def script
+        def useTokenAuth
 
-        AnalysisStrategy(script) {
+        AnalysisStrategy(script, useTokenAuth=false) {
             this.script = script
+            this.useTokenAuth = useTokenAuth
         }
 
         abstract executeWith(Maven mvn)
@@ -184,7 +186,12 @@ class SonarQube implements Serializable {
         protected analyzeWith(Maven mvn, String sonarMavenGoal, String sonarHostUrl, String sonarLogin,
                               String sonarExtraProps = '') {
 
-            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} -Dsonar.login=${sonarLogin} ${sonarExtraProps}"
+            String sonarAuthProperty = "-Dsonar.login=${sonarLogin}"
+            if (useTokenAuth) {
+                sonarAuthProperty = "-Dsonar.token=${sonarLogin}"
+            }
+
+            mvn "${sonarMavenGoal} -Dsonar.host.url=${sonarHostUrl} ${sonarAuthProperty} ${sonarExtraProps}"
         }
     }
 
@@ -216,7 +223,7 @@ class SonarQube implements Serializable {
         String host
 
         TokenAnalysisStrategy(script, String tokenCredential, String host) {
-            super(script)
+            super(script, true)
             this.token = tokenCredential
             this.host = host
         }
