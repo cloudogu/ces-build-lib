@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- [#162] Fix `k3d.collectAndArchiveLogs` to not fail when a logfile cannot be deleted.
+- [#162] Fix `k3d.collectAndArchiveLogs` to not fail when a logfile to archive was not created
 
 ## [5.3.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.3.0) - 2026-03-16
 ### Changed
