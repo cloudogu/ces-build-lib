@@ -739,11 +739,20 @@ ${formattedDeps}
         script.dir(K3D_LOG_FILENAME) {
             script.deleteDir()
         }
-        script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
-        script.archiveArtifacts(artifacts: K3D_BLUEPRINT_FILE)
-        script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
-        script.archiveArtifacts(artifacts: K3D_VALUES_YAML_FILE)
-        script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
+
+        if (script.fileExists(K3D_LOG_FILENAME)) {
+            script.sh("rm -rf ${K3D_LOG_FILENAME}.zip".toString())
+        }
+
+        if (script.fileExists(K3D_BLUEPRINT_FILE)) {
+            script.archiveArtifacts(artifacts: K3D_BLUEPRINT_FILE)
+            script.sh("rm -rf ${K3D_BLUEPRINT_FILE}".toString())
+        }
+
+        if (script.fileExists(K3D_VALUES_YAML_FILE)) {
+            script.archiveArtifacts(artifacts: K3D_VALUES_YAML_FILE)
+            script.sh("rm -rf ${K3D_VALUES_YAML_FILE}".toString())
+        }
 
         collectResourcesSummaries()
         collectDoguDescriptions()

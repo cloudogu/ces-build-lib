@@ -433,6 +433,9 @@ spec:
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
         def scriptMock = new ScriptMock()
+        scriptMock.files.put("k8sLogs", "")
+        scriptMock.files.put("k3d_blueprint.yaml", "blueprint")
+        scriptMock.files.put("k3d_values.yaml", "values")
         K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
 
         def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod","configmap","persistentvolume","ingress","ingressclass"]
@@ -545,6 +548,61 @@ spec:
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(i)
         assertThat(scriptMock.writeFileParams.size()).isEqualTo(25)
         assertThat(fileCounter).isEqualTo(25)
+    }
+
+    @Test
+    void testK3d_collectAndArchiveLogs_withoutExistingArtifacts() {
+        // given
+        def workspaceDir = "leWorkspace"
+        def k3dWorkspaceDir = "leK3dWorkSpace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
+
+        def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod","configmap","persistentvolume","ingress","ingressclass"]
+        for(def resource : relevantResources) {
+            scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true".toString(), "value for ${resource}")
+            scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe ${resource} -l app=ces || true".toString(), "value for ${resource}")
+        }
+
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get dogu --ignore-not-found -o name || true".toString(), "k8s.cloudogu.com/testdogu")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe k8s.cloudogu.com/testdogu || true".toString(), "this is the description of a dogu")
+
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pods -o name || true".toString(), "pod/testpod-1234")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl logs pod/testpod-1234 || true".toString(), "this is the log from testpod")
+
+        // when
+        sut.collectAndArchiveLogs()
+
+        // then
+        assertThat(scriptMock.writeFileParams).isNotEmpty()
+        assertThat(scriptMock.zipParams[0]).isEqualTo(["archive":"false", "dir":"k8sLogs", "zipFile":"k8sLogs.zip"])
+        assertThat(scriptMock.allActualArgs).doesNotContain("rm -rf k8sLogs.zip")
+        assertThat(scriptMock.archivedArtifacts).containsExactly(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
+    }
+
+    @Test
+    void testK3d_collectAndArchiveLogs_skipsMissingArtifacts() {
+        // given
+        def workspaceDir = "leWorkspace"
+        def k3dWorkspaceDir = "leK3dWorkSpace"
+        def scriptMock = new ScriptMock()
+        K3d sut = new K3d(scriptMock, workspaceDir, k3dWorkspaceDir, "path")
+
+        def relevantResources = ["persistentvolumeclaim","statefulset","replicaset","deployment","service","secret","pod","configmap","persistentvolume","ingress","ingressclass"]
+        for(def resource : relevantResources) {
+            scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get ${resource} --show-kind --ignore-not-found -l app=ces -o yaml || true".toString(), "value for ${resource}")
+            scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl describe ${resource} -l app=ces || true".toString(), "value for ${resource}")
+        }
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get dogu --ignore-not-found -o name || true".toString(), "")
+        scriptMock.expectedShRetValueForScript.put("sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl get pods -o name || true".toString(), "")
+
+        // when
+        sut.collectAndArchiveLogs()
+
+        // then
+        assertThat(scriptMock.archivedArtifacts).containsExactly(["allowEmptyArchive":"true", "artifacts":"k8sLogs.zip"])
+        assertThat(scriptMock.allActualArgs).doesNotContain("rm -rf k3d_blueprint.yaml")
+        assertThat(scriptMock.allActualArgs).doesNotContain("rm -rf k3d_values.yaml")
     }
 
     @Test
