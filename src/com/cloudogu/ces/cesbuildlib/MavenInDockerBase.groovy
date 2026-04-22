@@ -46,7 +46,7 @@ abstract class MavenInDockerBase extends Maven {
 
     protected void inDocker(String imageId, Closure closure) {
         if (this.credentialsId) {
-            docker.withRegistry("https://${imageId}", this.credentialsId) {
+            docker.withRegistry("https://registry.cloudogu.com/${imageId}", this.credentialsId) {
                 dockerImageBuilder(imageId, closure)
             }
         } else {
