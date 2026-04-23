@@ -11,10 +11,10 @@ class MavenWrapperInDocker extends MavenInDockerBase {
     /** The docker image to use, e.g. {@code adoptopenjdk/openjdk11:jdk-11.0.1.13-alpine} **/
     private String imageId
 
-    MavenWrapperInDocker(script, String imageId, String credentialsId = null ) {
+    MavenWrapperInDocker(script, String imageId, String registryCredentialsId = null ) {
         super(script)
         this.imageId = imageId
-        this.credentialsId = credentialsId
+        this.registryCredentialsId = registryCredentialsId
     }
 
     @Override

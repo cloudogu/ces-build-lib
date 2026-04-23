@@ -4,7 +4,11 @@ package com.cloudogu.ces.cesbuildlib
  */
 abstract class MavenInDockerBase extends Maven {
 
-    public String credentialsId = null
+    public String registryCredentialsId = null
+
+    public String jenkinsCredentialsId = "jenkins"
+
+    public String registryUrl = null
 
     /** Setting this to {@code true} allows the maven build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
@@ -44,10 +48,25 @@ abstract class MavenInDockerBase extends Maven {
         return runArgs
     }
 
+    /**
+     * The Deprecated way to use with credentialsID is to pass the registryUrl as part of the ImageId
+     * @param imageId the imageId to use for the docker container. If credentialsId is set, the registryUrl is either expected to be part of the imageId or set separately via setRegistryUrl.
+     * @param closure
+     */
     protected void inDocker(String imageId, Closure closure) {
-        if (this.credentialsId) {
-            docker.withRegistry("https://registry.cloudogu.com/${imageId}", this.credentialsId) {
-                dockerImageBuilder(imageId, closure)
+        if (this.registryCredentialsId) {
+            String validRegistryUrl = this.registryUrl
+
+            if (this.registryUrl != null && !this.registryUrl.endsWith("/")) {
+                validRegistryUrl += "/"
+            }
+
+            docker.withRegistry(this.registryUrl == null ? "https://${imageId}" : validRegistryUrl + imageId, this.registryCredentialsId) {
+                if (this.registryUrl == null) {
+                    dockerImageBuilder(imageId, closure)
+                } else {
+                    dockerImageBuilder(validRegistryUrl + imageId, closure)
+                }
             }
         } else {
             dockerImageBuilder(imageId, closure)
@@ -62,5 +81,9 @@ abstract class MavenInDockerBase extends Maven {
             .inside(createDockerRunArgs()) {
                 closure.call()
             }
+    }
+
+    public void setRegistryUrl(String registryUrl) {
+        this.registryUrl = registryUrl
     }
 }
