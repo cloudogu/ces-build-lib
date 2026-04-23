@@ -83,7 +83,4 @@ abstract class MavenInDockerBase extends Maven {
             }
     }
 
-    public void setRegistryUrl(String registryUrl) {
-        this.registryUrl = registryUrl
-    }
 }
