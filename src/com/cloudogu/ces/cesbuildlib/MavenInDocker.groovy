@@ -50,7 +50,7 @@ class MavenInDocker extends MavenInDockerBase {
     @Override
     def call(Closure closure, boolean printStdOut) {
         inDocker(getMavenImage()) {
-            sh("mvn ${createCommandLineArgs(closure.call())}", printStdOut)
+            sh("mvn ${createCommandLineArgs(closure.call())} -s ${this.script.pwd()}/.m2/settings.xml", printStdOut)
         }
     }
 
