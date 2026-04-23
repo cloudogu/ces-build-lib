@@ -198,10 +198,16 @@ Run maven in a docker container. This can be helpful, when
 
 The builds are run inside the official maven containers from [Dockerhub](https://hub.docker.com/_/maven/)
 
+You can also provide a registryUrl, registryCredentialsId and jenkinsCredentials.
+
+registryUrl is used if you want an image from a custom registry.
+registryCredentialsId is the credentialsId to authenticate in the given registryUrl
+jenkinsCredentials is the credentialsId used to get stored in the local .m2 settings.xml. This is useful if you have a private maven repository that requires authentication.
+
 See [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 ```
-Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8")
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8", (OPTIONAL) registryUrl, (OPTIONAL) registryCredentialsId, (OPTIONAL) jenkinsCredentials)
 
 stage('Build') {
     mvn 'clean install'
