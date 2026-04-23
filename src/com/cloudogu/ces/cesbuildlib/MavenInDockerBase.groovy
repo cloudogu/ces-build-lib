@@ -49,11 +49,28 @@ abstract class MavenInDockerBase extends Maven {
     }
 
     /**
-     * The Deprecated way to use with credentialsID is to pass the registryUrl as part of the ImageId
-     * @param imageId the imageId to use for the docker container. If credentialsId is set, the registryUrl is either expected to be part of the imageId or set separately via setRegistryUrl.
+     * The Deprecated way to use with registryCredentialsId is to pass the registryUrl as part of the ImageName
+     * @param imageName the imageName to use for the docker container. If registryCredentialsId is set, the registryUrl is either expected to be part of the imageName or set separately via setRegistryUrl.
      * @param closure
      */
-    protected void inDocker(String imageId, Closure closure) {
+    protected void inDocker(String imageName, Closure closure) {
+        this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
+            passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
+
+            // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
+            String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
+            this.script.writeFile file: settingsXmlPath, text: """
+    <settings>
+        <servers>
+          <server>
+            <id>ecosystem.cloudogu.com</id>
+            <username>${this.script.env.MAVEN_SETTINGS_USER}</username>
+            <password><![CDATA[${this.script.env.MAVEN_SETTINGS_PASSWORD}]]></password>
+          </server>
+        </servers>
+    </settings>"""
+
+        }
         if (this.registryCredentialsId) {
             String validRegistryUrl = this.registryUrl
 
@@ -61,20 +78,22 @@ abstract class MavenInDockerBase extends Maven {
                 validRegistryUrl += "/"
             }
 
-            docker.withRegistry(this.registryUrl == null ? "https://${imageId}" : validRegistryUrl + imageId, this.registryCredentialsId) {
+            docker.withRegistry(this.registryUrl == null ? "https://${imageName}" : validRegistryUrl + imageName, this.registryCredentialsId) {
                 if (this.registryUrl == null) {
-                    dockerImageBuilder(imageId, closure)
+                    dockerImageBuilder(imageName, closure)
                 } else {
-                    dockerImageBuilder(validRegistryUrl + imageId, closure)
+                    dockerImageBuilder(validRegistryUrl + imageName, closure)
                 }
             }
         } else {
-            dockerImageBuilder(imageId, closure)
+            dockerImageBuilder(imageName, closure)
         }
+
+        sh("rm ${this.script.pwd()}/.m2/settings.xml", false)
     }
 
-    protected void dockerImageBuilder(String imageId , closure) {
-        docker.image(imageId)
+    protected void dockerImageBuilder(String imageName , closure) {
+        docker.image(imageName)
         // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
             .mountJenkinsUser(true)
             .mountDockerSocket(enableDockerHost)
