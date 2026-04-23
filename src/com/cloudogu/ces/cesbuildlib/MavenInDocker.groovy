@@ -28,12 +28,17 @@ class MavenInDocker extends MavenInDockerBase {
         this.registryUrl = registryUrl
         this.jenkinsCredentialsId = jenkinsCredentialsId
 
-        this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
-            passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
+    }
 
-            // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
-            String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
-            this.script.writeFile file: settingsXmlPath, text: """
+    @Override
+    def call(Closure closure, boolean printStdOut) {
+        inDocker(getMavenImage()) {
+            this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
+                passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
+
+                // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
+                String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
+                this.script.writeFile file: settingsXmlPath, text: """
     <settings>
         <servers>
           <server>
@@ -44,12 +49,7 @@ class MavenInDocker extends MavenInDockerBase {
         </servers>
     </settings>"""
 
-        }
-    }
-
-    @Override
-    def call(Closure closure, boolean printStdOut) {
-        inDocker(getMavenImage()) {
+            }
             sh("mvn ${createCommandLineArgs(closure.call())} -s ${this.script.pwd()}/.m2/settings.xml", printStdOut)
         }
     }
