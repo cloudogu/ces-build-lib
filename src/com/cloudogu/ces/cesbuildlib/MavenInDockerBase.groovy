@@ -54,30 +54,23 @@ abstract class MavenInDockerBase extends Maven {
      * @param closure
      */
     protected void inDocker(String imageName, Closure closure) {
-        this.script.withCredentials([this.script.usernamePassword(
-            credentialsId: this.jenkinsCredentialsId,
-            usernameVariable: 'MAVEN_SETTINGS_USER',
-            passwordVariable: 'MAVEN_SETTINGS_PASSWORD'
-        )]) {
+        this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
+            passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
 
+            // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
             String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
+            this.script.writeFile file: settingsXmlPath, text: """
+    <settings>
+        <servers>
+          <server>
+            <id>ecosystem.cloudogu.com</id>
+            <username>${this.script.env.MAVEN_SETTINGS_USER}</username>
+            <password><![CDATA[${this.script.env.MAVEN_SETTINGS_PASSWORD}]]></password>
+          </server>
+        </servers>
+    </settings>"""
 
-            this.script.sh """
-        mkdir -p \$(dirname '${settingsXmlPath}')
-        cat > '${settingsXmlPath}' <<EOF
-        <settings>
-            <servers>
-                <server>
-                    <id>ecosystem.cloudogu.com</id>
-                    <username>\$MAVEN_SETTINGS_USER</username>
-                    <password>\$MAVEN_SETTINGS_PASSWORD</password>
-                </server>
-            </servers>
-        </settings>
-       EOF
-    """
         }
-
         if (this.registryCredentialsId) {
             String validRegistryUrl = this.registryUrl
 
