@@ -20,6 +20,7 @@ class MavenInDocker extends MavenInDockerBase {
      * @param mavenImage the version of the maven docker image to use, e.g. {@code 3.5.0-jdk-8}
      * @param registryCredentialsId the registryCredentialsId (From Jenkins) to use for authenticating to the registry, if the mavenImage is not public.
      * @param registryUrl the registryUrl to use for getting the image
+     * @param jenkinsCredentialsId the credentialsId (From Jenkins) to use for authenticating to the private nexus repository, if required.
      */
     MavenInDocker(script, String mavenImage, String registryCredentialsId = null, String registryUrl = null, String jenkinsCredentialsId = "jenkins") {
         super(script)
@@ -51,6 +52,7 @@ class MavenInDocker extends MavenInDockerBase {
 
             }
             sh("mvn ${createCommandLineArgs(closure.call())} -s ${this.script.pwd()}/.m2/settings.xml", printStdOut)
+            sh("rm ${this.script.pwd()}/.m2/settings.xml", false)
         }
     }
 
