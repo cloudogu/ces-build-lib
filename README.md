@@ -207,7 +207,7 @@ jenkinsCredentials is the credentialsId used to get stored in the local .m2 sett
 See [MavenInDocker](src/com/cloudogu/ces/cesbuildlib/MavenInDocker.groovy)
 
 ```
-Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8", (OPTIONAL) registryUrl, (OPTIONAL) registryCredentialsId, (OPTIONAL) jenkinsCredentials)
+Maven mvn = new MavenInDocker(this, "3.5.0-jdk-8", (OPTIONAL) registryCredentialsId, (OPTIONAL) registryUrl, (OPTIONAL) jenkinsCredentials)
 
 stage('Build') {
     mvn 'clean install'
