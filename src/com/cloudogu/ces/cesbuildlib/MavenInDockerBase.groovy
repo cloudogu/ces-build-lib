@@ -53,7 +53,7 @@ abstract class MavenInDockerBase extends Maven {
      * @param imageName the imageName to use for the docker container. If registryCredentialsId is set, the registryUrl is either expected to be part of the imageName or set separately via setRegistryUrl.
      * @param closure
      */
-    protected void inDocker(String imageName, Closure closure) {
+    protected def inDocker(String imageName, Closure closure) {
         this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
             passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
 
@@ -71,29 +71,35 @@ abstract class MavenInDockerBase extends Maven {
     </settings>"""
 
         }
-        if (this.registryCredentialsId) {
-            String validRegistryUrl = this.registryUrl
+        def result
+        try {
+            if (this.registryCredentialsId) {
+                String validRegistryUrl = this.registryUrl
 
-            if (this.registryUrl != null && !this.registryUrl.endsWith("/")) {
-                validRegistryUrl += "/"
-            }
-
-            docker.withRegistry(this.registryUrl == null ? "https://${imageName}" : validRegistryUrl + imageName, this.registryCredentialsId) {
-                if (this.registryUrl == null) {
-                    dockerImageBuilder(imageName, closure)
-                } else {
-                    dockerImageBuilder(validRegistryUrl + imageName, closure)
+                if (this.registryUrl != null && !this.registryUrl.endsWith("/")) {
+                    validRegistryUrl += "/"
                 }
-            }
-        } else {
-            dockerImageBuilder(imageName, closure)
-        }
 
-        sh("rm ${this.script.pwd()}/.m2/settings.xml", true)
+                result = docker.withRegistry(this.registryUrl == null ? "https://${imageName}" : validRegistryUrl + imageName, this.registryCredentialsId) {
+                    if (this.registryUrl == null) {
+                        dockerImageBuilder(imageName, closure)
+                    } else {
+                        dockerImageBuilder(validRegistryUrl + imageName, closure)
+                    }
+                }
+            } else {
+                result = dockerImageBuilder(imageName, closure)
+            }
+
+            return result
+        } finally {
+            sh("rm ${this.script.pwd()}/.m2/settings.xml", false)
+        }
+        
     }
 
-    protected void dockerImageBuilder(String imageName , closure) {
-        docker.image(imageName)
+    protected def dockerImageBuilder(String imageName , closure) {
+        return docker.image(imageName)
         // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
             .mountJenkinsUser(true)
             .mountDockerSocket(enableDockerHost)
