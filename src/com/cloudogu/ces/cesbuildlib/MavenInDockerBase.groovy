@@ -89,7 +89,7 @@ abstract class MavenInDockerBase extends Maven {
             dockerImageBuilder(imageName, closure)
         }
 
-        sh("rm ${this.script.pwd()}/.m2/settings.xml", false)
+        sh("rm ${this.script.pwd()}/.m2/settings.xml", true)
     }
 
     protected void dockerImageBuilder(String imageName , closure) {
