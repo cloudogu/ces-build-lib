@@ -54,11 +54,12 @@ abstract class MavenInDockerBase extends Maven {
      * @param closure
      */
     protected def inDocker(String imageName, Closure closure) {
+        String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
+
         this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
             passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
 
             // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
-            String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
             this.script.writeFile file: settingsXmlPath, text: """
     <settings>
         <servers>
@@ -93,7 +94,7 @@ abstract class MavenInDockerBase extends Maven {
 
             return result
         } finally {
-            sh("rm ${this.script.pwd()}/.m2/settings.xml", false)
+            sh("rm -f ${settingsXmlPath}", false)
         }
         
     }
