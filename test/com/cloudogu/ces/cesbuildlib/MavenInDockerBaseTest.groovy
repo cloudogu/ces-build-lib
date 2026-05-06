@@ -61,7 +61,7 @@ class MavenInDockerBaseTest {
     @Test
     void inDockerWithRegistry() {
 
-        mvn.credentialsId = 'myCreds'
+        mvn.registryCredentialsId = 'myCreds'
         boolean closureCalled = false
         
         mvn.inDocker(IMAGE_ID, {
