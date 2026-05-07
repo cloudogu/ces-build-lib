@@ -18,17 +18,23 @@ class MavenInDocker extends MavenInDockerBase {
     /**
      * @param script the Jenkinsfile instance ({@code this} in Jenkinsfile)
      * @param mavenImage the version of the maven docker image to use, e.g. {@code 3.5.0-jdk-8}
+     * @param registryCredentialsId the registryCredentialsId (From Jenkins) to use for authenticating to the registry, if the mavenImage is not public.
+     * @param registryUrl the registryUrl to use for getting the image
+     * @param jenkinsCredentialsId the credentialsId (From Jenkins) to use for authenticating to the private nexus repository, if required.
      */
-    MavenInDocker(script, String mavenImage, String credentialsId = null) {
+    MavenInDocker(script, String mavenImage, String registryCredentialsId = null, String registryUrl = null, String jenkinsCredentialsId = "jenkins") {
         super(script)
         this.mavenImage = mavenImage
-        this.credentialsId = credentialsId
+        this.registryCredentialsId = registryCredentialsId
+        this.registryUrl = registryUrl
+        this.jenkinsCredentialsId = jenkinsCredentialsId
+
     }
 
     @Override
     def call(Closure closure, boolean printStdOut) {
         inDocker(getMavenImage()) {
-            sh("mvn ${createCommandLineArgs(closure.call())}", printStdOut)
+            sh("mvn ${createCommandLineArgs(closure.call())} -s ${this.script.pwd()}/.m2/settings.xml", printStdOut)
         }
     }
 

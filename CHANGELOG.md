@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.4.0) - 2026-05-07
+### Added
+- Added registryUrl and jenkinsCredentialsId parameters to MavenInDocker and MavenWrapperInDocker
+- Changed parameter naming in MavenInDocker and MavenWrapperInDocker to be more consistent
+
 ## [5.3.1](https://github.com/cloudogu/ces-build-lib/releases/tag/5.3.1) - 2026-03-18
 ### Fixed
 - [#162] Fix `k3d.collectAndArchiveLogs` to not fail when a logfile to archive was not created

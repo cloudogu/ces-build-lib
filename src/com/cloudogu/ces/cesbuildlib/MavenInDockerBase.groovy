@@ -4,7 +4,11 @@ package com.cloudogu.ces.cesbuildlib
  */
 abstract class MavenInDockerBase extends Maven {
 
-    public String credentialsId = null
+    public String registryCredentialsId = null
+
+    public String jenkinsCredentialsId = "jenkins"
+
+    public String registryUrl = null
 
     /** Setting this to {@code true} allows the maven build to access the docker host, i.e. to start other containers.*/
     boolean enableDockerHost = false
@@ -44,18 +48,59 @@ abstract class MavenInDockerBase extends Maven {
         return runArgs
     }
 
-    protected void inDocker(String imageId, Closure closure) {
-        if (this.credentialsId) {
-            docker.withRegistry("https://${imageId}", this.credentialsId) {
-                dockerImageBuilder(imageId, closure)
-            }
-        } else {
-            dockerImageBuilder(imageId, closure)
+    /**
+     * The Deprecated way to use with registryCredentialsId is to pass the registryUrl as part of the ImageName
+     * @param imageName the imageName to use for the docker container. If registryCredentialsId is set, the registryUrl is either expected to be part of the imageName or set separately via setRegistryUrl.
+     * @param closure
+     */
+    protected def inDocker(String imageName, Closure closure) {
+        String settingsXmlPath = "${this.script.pwd()}/.m2/settings.xml"
+
+        this.script.withCredentials([this.script.usernamePassword(credentialsId: this.jenkinsCredentialsId,
+            passwordVariable: 'MAVEN_SETTINGS_PASSWORD', usernameVariable: 'MAVEN_SETTINGS_USER')]) {
+
+            // we are creating a maven settings.xml and store it in the m2 folder. this is due to our private nexus repository where mandatory dependencies are stored for our spi's
+            this.script.writeFile file: settingsXmlPath, text: """
+    <settings>
+        <servers>
+          <server>
+            <id>ecosystem.cloudogu.com</id>
+            <username>${this.script.env.MAVEN_SETTINGS_USER}</username>
+            <password><![CDATA[${this.script.env.MAVEN_SETTINGS_PASSWORD}]]></password>
+          </server>
+        </servers>
+    </settings>"""
+
         }
+        def result
+        try {
+            if (this.registryCredentialsId) {
+                String validRegistryUrl = this.registryUrl
+
+                if (this.registryUrl != null && !this.registryUrl.endsWith("/")) {
+                    validRegistryUrl += "/"
+                }
+
+                result = docker.withRegistry(this.registryUrl == null ? "https://${imageName}" : validRegistryUrl + imageName, this.registryCredentialsId) {
+                    if (this.registryUrl == null) {
+                        dockerImageBuilder(imageName, closure)
+                    } else {
+                        dockerImageBuilder(validRegistryUrl + imageName, closure)
+                    }
+                }
+            } else {
+                result = dockerImageBuilder(imageName, closure)
+            }
+
+            return result
+        } finally {
+            sh("rm -f ${settingsXmlPath}", false)
+        }
+        
     }
 
-    protected void dockerImageBuilder(String imageId , closure) {
-        docker.image(imageId)
+    protected def dockerImageBuilder(String imageName , closure) {
+        return docker.image(imageName)
         // Mount user and set HOME, which results in the workspace being user.home. Otherwise '?' might be the user.home.
             .mountJenkinsUser(true)
             .mountDockerSocket(enableDockerHost)
@@ -63,4 +108,5 @@ abstract class MavenInDockerBase extends Maven {
                 closure.call()
             }
     }
+
 }
