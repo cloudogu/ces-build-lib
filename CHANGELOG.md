@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [5.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.4.0) - 2026-05-07
 ### Added
 - Added registryUrl and jenkinsCredentialsId parameters to MavenInDocker and MavenWrapperInDocker
 - Changed parameter naming in MavenInDocker and MavenWrapperInDocker to be more consistent
