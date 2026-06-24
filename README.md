@@ -1120,6 +1120,13 @@ try {
         // the image name can be applied to your cluster as usual, f. i. with k3d.kubectl() with a customized K8s resource 
     }
 
+    stage('push an already-built image to the local registry') {
+        // use k3d.registry.pushToLocalRegistry() when the image already exists locally
+        String clusterImageRef = k3d.registry.pushToLocalRegistry("registry.example.com/my/image:1.0.0", "my/image", "1.0.0")
+        // clusterImageRef looks like: k3d-citest-xxx:PORT/my/image:1.0.0
+        // use it e.g. as helm value: --set image.registry=k3d.registry.imageRegistryInternalWithPort
+    }
+
     stage('configure components'){
         // add additional components
         k3d.configureComponents(["k8s-minio"             : ["version": "latest", "helmRepositoryNamespace": "k8s"],
