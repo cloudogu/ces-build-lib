@@ -37,6 +37,23 @@ class K3dRegistry {
         return this.imageRegistryInternalHandle
     }
 
+    String getLocalRegistryPort() {
+        return this.localRegistryPort
+    }
+
+    /**
+     * Tags an existing image and pushes it to the local registry.
+     * @param sourceImage the source image reference, e.g. "registry.cloudogu.com/official/cas:7.2.7-19"
+     * @param repositoryName the target repository name inside the registry, e.g. "local-smoke/cas"
+     * @param tag the image tag, e.g. "7.2.7-19"
+     * @return the image reference as seen from inside the cluster, e.g. "k3d-citest-xxx:59437/local-smoke/cas:7.2.7-19"
+     */
+    def pushToLocalRegistry(def sourceImage, def repositoryName, def tag) {
+        script.sh "docker tag ${sourceImage} ${imageRegistryExternalHandle}/${repositoryName}:${tag}"
+        script.sh "docker push ${imageRegistryExternalHandle}/${repositoryName}:${tag}"
+        return "${imageRegistryInternalHandle}/${repositoryName}:${tag}"
+    }
+
     /**
      * builds an image with the given image name and image tag and pushes it to the local image registry
      * @param imageName the image name
