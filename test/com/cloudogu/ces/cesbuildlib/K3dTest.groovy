@@ -60,6 +60,24 @@ class K3dTest {
     }
 
     @Test
+    void testPushToLocalRegistry() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put('echo -n $(python3 -c \'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()\');'.toString(), "54321")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+        sut.startK3d()
+
+        // when
+        def result = sut.registry.pushToLocalRegistry("registry.cloudogu.com/official/cas:7.2.7-19", "local-smoke/cas", "7.2.7-19")
+
+        // then
+        assertThat(scriptMock.allActualArgs[22].trim()).isEqualTo("docker tag registry.cloudogu.com/official/cas:7.2.7-19 localhost:54321/local-smoke/cas:7.2.7-19")
+        assertThat(scriptMock.allActualArgs[23].trim()).isEqualTo("docker push localhost:54321/local-smoke/cas:7.2.7-19")
+        assertThat(result.toString()).matches("k3d-citest-[0-9a-f]+:54321/local-smoke/cas:7.2.7-19")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(24)
+    }
+
+    @Test
     void testKubectl() {
         // given
         String workspaceDir = "leWorkspace"

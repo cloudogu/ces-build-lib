@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.5.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.5.0) - 2026-06-24
+### Added
+- `K3dRegistry.pushToLocalRegistry(sourceImage, repositoryName, tag)`: Tags an existing image and pushes it to the local k3d registry. Returns the cluster-internal image reference (e.g. `k3d-citest-xxx:PORT/repo:tag`). 
+  - Useful when the image is already built and only needs to be made available inside the cluster.
+- `K3d.registry` is now a public field, allowing direct access to all `K3dRegistry` methods (e.g. `k3d.registry.pushToLocalRegistry(...)`, `k3d.registry.imageRegistryInternalWithPort`).
+
 ## [5.4.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.4.0) - 2026-05-07
 ### Added
 - Added registryUrl and jenkinsCredentialsId parameters to MavenInDocker and MavenWrapperInDocker

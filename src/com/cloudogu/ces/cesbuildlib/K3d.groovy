@@ -34,7 +34,7 @@ class K3d {
     private String harborCredentialsID
     private String externalIP
     private Sh sh
-    private K3dRegistry registry
+    K3dRegistry registry
     private String registryName
     private String workspace
     private Docker docker
