@@ -126,6 +126,73 @@ class K3dTest {
     }
 
     @Test
+    void testInstallKubectlManually_initially() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("mktemp", "/tmp/kubectl123")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installKubectlManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(4)
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("mktemp")
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("curl -f -o /tmp/kubectl123 https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl")
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("sudo mv /tmp/kubectl123 /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
+    }
+
+    @Test
+    void testInstallKubectlManually_alreadyInstalled() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.files.put("/usr/local/bin/kubectl", "")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installKubectlManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs).isEmpty()
+        assertThat(scriptMock.actualEcho).contains("kubectl already installed")
+    }
+
+    @Test
+    void testInstallHelmManually_initially() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("mktemp --suffix=.tar.gz", "/tmp/helm.tar.gz")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installHelmManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(5)
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("mktemp --suffix=.tar.gz")
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("curl -f -o /tmp/helm.tar.gz https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz")
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("sudo tar -xzf /tmp/helm.tar.gz -C /usr/local/bin --strip-components=1 linux-amd64/helm")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("rm -f /tmp/helm.tar.gz")
+        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
+    }
+
+    @Test
+    void testInstallHelmManually_alreadyInstalled() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.files.put("/usr/local/bin/helm", "")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installHelmManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs).isEmpty()
+        assertThat(scriptMock.actualEcho).contains("helm already installed")
+    }
+
+    @Test
     void testStartK3d() {
         def workspaceDir = "leWorkspace"
         def k3dWorkspaceDir = "leK3dWorkSpace"
