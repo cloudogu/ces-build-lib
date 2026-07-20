@@ -519,9 +519,9 @@ spec:
  * Installs kubectl
  */
     private void installKubectl() {
-        def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
-        if (kubectlStatusCode == 0) {
-            script.echo "Kubectl already installed"
+        def statusCode = script.sh script: "command -V kubectl", returnStatus: true
+        if (statusCode == 0 || statusCode.equals("0")) {
+            script.echo "kubectl already installed"
             return
         }
 
@@ -532,8 +532,8 @@ spec:
  * Installs helm
  */
     void installHelm() {
-        def helmStatusCode = script.sh script: "snap list helm", returnStatus: true
-        if (helmStatusCode == 0 || helmStatusCode.equals("0")) {
+        def statusCode = script.sh script: "command -V helm", returnStatus: true
+        if (statusCode == 0 || statusCode.equals("0")) {
             script.echo "helm already installed"
             return
         }
@@ -546,7 +546,8 @@ spec:
  * Install kubectl directly, without package manager
  */
     private void installKubectlManually() {
-        if (script.fileExists("/usr/local/bin/kubectl")) {
+        def statusCode = script.sh script: "command -V kubectl", returnStatus: true
+        if (statusCode == 0 || statusCode.equals("0")) {
             script.echo "kubectl already installed"
             return
         }
@@ -562,7 +563,8 @@ spec:
  * Install helm directly, without package manager
  */
     void installHelmManually() {
-        if (script.fileExists("/usr/local/bin/helm")) {
+        def statusCode = script.sh script: "command -V helm", returnStatus: true
+        if (statusCode == 0 || statusCode.equals("0")) {
             script.echo "helm already installed"
             return
         }
