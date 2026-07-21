@@ -136,12 +136,13 @@ class K3dTest {
         sut.installKubectlManually()
 
         // then
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(5)
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(6)
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("command -V kubectl")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mktemp")
         assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -f -o /tmp/kubectl123 https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl")
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("sudo mv /tmp/kubectl123 /usr/local/bin/kubectl")
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo \"1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82  /tmp/kubectl123\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo mv /tmp/kubectl123 /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
     }
 
     @Test
@@ -170,13 +171,14 @@ class K3dTest {
         sut.installHelmManually()
 
         // then
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(6)
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(7)
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("command -V helm")
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mktemp --suffix=.tar.gz")
         assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -f -o /tmp/helm.tar.gz https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz")
-        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("sudo tar -xzf /tmp/helm.tar.gz -C /usr/local/bin --strip-components=1 linux-amd64/helm")
-        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("rm -f /tmp/helm.tar.gz")
-        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo \"e9b88b4ee95b18c706839c28d3a0220e5bc470e9cd9262410c90793c45ff8b7c  /tmp/helm.tar.gz\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo tar -xzf /tmp/helm.tar.gz -C /usr/local/bin --strip-components=1 linux-amd64/helm")
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("rm -f /tmp/helm.tar.gz")
+        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
     }
 
     @Test
