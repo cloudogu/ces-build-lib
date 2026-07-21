@@ -557,7 +557,7 @@ spec:
 /**
  * Install kubectl directly, without package manager
  */
-    private void installKubectlManually() {
+    void installKubectlManually() {
         if (isAlreadyInstalled(script, "kubectl")) {
             return
         }
