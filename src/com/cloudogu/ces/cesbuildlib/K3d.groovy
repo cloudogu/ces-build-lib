@@ -16,6 +16,10 @@ class K3d {
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
     private static String YQ_VERSION = "4.50.1"
+    private static String KUBECTL_VERSION = "1.36.2"
+    private static String KUBECTL_SHA256 = "1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82"
+    private static String HELM_VERSION = "4.2.3"
+    private static String HELM_SHA256 = "e9b88b4ee95b18c706839c28d3a0220e5bc470e9cd9262410c90793c45ff8b7c"
     // need to be installed before apply values.yaml
     private static String VERSION_ECOSYSTEM_CORE; // e.g.  "1.2.0"
     private static String VERSION_K8S_COMPONENT_OPERATOR_CRD; // e.g.  "1.10.1"
@@ -514,12 +518,24 @@ spec:
     }
 
 /**
+ * Checks whether the given command is already available and, if so, echoes a corresponding message.
+ *
+ * @return true if the command is already installed
+ */
+    private static boolean isAlreadyInstalled(script, String command) {
+        def statusCode = script.sh script: "command -V ${command}", returnStatus: true
+        if (statusCode == 0 || statusCode.equals("0")) {
+            script.echo "${command} already installed"
+            return true
+        }
+        return false
+    }
+
+/**
  * Installs kubectl
  */
     private void installKubectl() {
-        def kubectlStatusCode = script.sh script: "snap list kubectl", returnStatus: true
-        if (kubectlStatusCode == 0) {
-            script.echo "Kubectl already installed"
+        if (isAlreadyInstalled(script, "kubectl")) {
             return
         }
 
@@ -530,14 +546,45 @@ spec:
  * Installs helm
  */
     void installHelm() {
-        def helmStatusCode = script.sh script: "snap list helm", returnStatus: true
-        if (helmStatusCode == 0 || helmStatusCode.equals("0")) {
-            script.echo "helm already installed"
+        if (isAlreadyInstalled(script, "helm")) {
             return
         }
 
         script.echo "Installing helm..."
         script.sh script: "sudo snap install helm --classic"
+    }
+
+/**
+ * Install kubectl directly, without package manager
+ */
+    void installKubectlManually() {
+        if (isAlreadyInstalled(script, "kubectl")) {
+            return
+        }
+
+        script.echo "Installing kubectl..."
+        String kubectlFile = this.sh.returnStdOut("mktemp")
+        script.sh "curl -f -o ${kubectlFile} https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+        script.sh "echo \"${KUBECTL_SHA256}  ${kubectlFile}\" | sha256sum -c -"
+        script.sh "sudo mv ${kubectlFile} /usr/local/bin/kubectl"
+        script.sh "sudo chmod +x /usr/local/bin/kubectl"
+    }
+
+/**
+ * Install helm directly, without package manager
+ */
+    void installHelmManually() {
+        if (isAlreadyInstalled(script, "helm")) {
+            return
+        }
+
+        script.echo "Installing helm..."
+        String helmArchive = this.sh.returnStdOut("mktemp --suffix=.tar.gz")
+        script.sh "curl -f -o ${helmArchive} https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+        script.sh "echo \"${HELM_SHA256}  ${helmArchive}\" | sha256sum -c -"
+        script.sh "sudo tar -xzf ${helmArchive} -C /usr/local/bin --strip-components=1 linux-amd64/helm"
+        script.sh "rm -f ${helmArchive}"
+        script.sh "sudo chmod +x /usr/local/bin/helm"
     }
 
     private String getExecPodName(String dogu, Integer timeout, Integer interval) {

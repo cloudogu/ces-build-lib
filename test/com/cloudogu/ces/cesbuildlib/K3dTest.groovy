@@ -121,8 +121,79 @@ class K3dTest {
 
         // then
         assertThat(scriptMock.allActualArgs.size()).isEqualTo(2)
-        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("snap list helm".trim())
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("command -V helm".trim())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("sudo snap install helm --classic".trim())
+    }
+
+    @Test
+    void testInstallKubectlManually_initially() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("mktemp", "/tmp/kubectl123")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installKubectlManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(6)
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("command -V kubectl")
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mktemp")
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -f -o /tmp/kubectl123 https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo \"1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82  /tmp/kubectl123\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo mv /tmp/kubectl123 /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
+    }
+
+    @Test
+    void testInstallKubectlManually_alreadyInstalled() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("command -V kubectl", 0)
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installKubectlManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs).containsExactly("command -V kubectl")
+        assertThat(scriptMock.actualEcho).contains("kubectl already installed")
+    }
+
+    @Test
+    void testInstallHelmManually_initially() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("mktemp --suffix=.tar.gz", "/tmp/helm.tar.gz")
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installHelmManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(7)
+        assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("command -V helm")
+        assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mktemp --suffix=.tar.gz")
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -f -o /tmp/helm.tar.gz https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz")
+        assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo \"e9b88b4ee95b18c706839c28d3a0220e5bc470e9cd9262410c90793c45ff8b7c  /tmp/helm.tar.gz\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[4].trim()).isEqualTo("sudo tar -xzf /tmp/helm.tar.gz -C /usr/local/bin --strip-components=1 linux-amd64/helm")
+        assertThat(scriptMock.allActualArgs[5].trim()).isEqualTo("rm -f /tmp/helm.tar.gz")
+        assertThat(scriptMock.allActualArgs[6].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
+    }
+
+    @Test
+    void testInstallHelmManually_alreadyInstalled() {
+        // given
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("command -V helm", 0)
+        K3d sut = new K3d(scriptMock, "leWorkspace", "leK3dWorkSpace", "path")
+
+        // when
+        sut.installHelmManually()
+
+        // then
+        assertThat(scriptMock.allActualArgs).containsExactly("command -V helm")
+        assertThat(scriptMock.actualEcho).contains("helm already installed")
     }
 
     @Test
@@ -145,9 +216,9 @@ class K3dTest {
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.allActualArgs[6].trim()).startsWith("k3d kubeconfig merge citest-")
-        assertThat(scriptMock.allActualArgs[7].trim()).startsWith("snap list kubectl")
+        assertThat(scriptMock.allActualArgs[7].trim()).startsWith("command -V kubectl")
         assertThat(scriptMock.allActualArgs[8].trim()).startsWith("sudo snap install kubectl --classic")
-        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("snap list helm")
+        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("command -V helm")
         assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm --classic")
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: cesmarvin-setup\"")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
@@ -183,9 +254,9 @@ class K3dTest {
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.allActualArgs[6].trim()).startsWith("k3d kubeconfig merge citest-")
-        assertThat(scriptMock.allActualArgs[7].trim()).startsWith("snap list kubectl")
+        assertThat(scriptMock.allActualArgs[7].trim()).startsWith("command -V kubectl")
         assertThat(scriptMock.allActualArgs[8].trim()).startsWith("sudo snap install kubectl")
-        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("snap list helm")
+        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("command -V helm")
         assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm")
         assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: myBackendCredentialsID\"")
         assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")

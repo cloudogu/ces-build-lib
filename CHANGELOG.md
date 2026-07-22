@@ -5,8 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [Unreleased]
+
+## [5.6.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.6.0) - 2026-07-22
+### Added
+- [#171] `K3d.installKubectlManually()` / `K3d.installHelmManually()` for installing kubectl/helm directly via curl.
+- [#171] `K3d.isAlreadyInstalled(script, String command)` to check whether a given command is already available.
 
 ## [5.5.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.5.0) - 2026-06-24
 ### Added
