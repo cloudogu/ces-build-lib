@@ -514,7 +514,7 @@ spec:
         String k3dInstallArguments = "${tagArgument} ${tagK3dInstallDir}"
 
         script.echo "Installing K3d Version: ${K3D_VERSION}"
-        script.sh "curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
+        script.sh "curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | ${k3dInstallArguments} bash -s -- --no-sudo"
     }
 
 /**

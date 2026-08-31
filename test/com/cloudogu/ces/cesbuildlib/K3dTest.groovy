@@ -211,7 +211,7 @@ class K3dTest {
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("rm -rf ${k3dWorkspaceDir}/.k3d".toString())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mkdir -p ${k3dWorkspaceDir}/.k3d/bin".toString())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo -n \$(python3 -c 'import socket; s=socket.socket(); s.bind((\"\", 0)); print(s.getsockname()[1]); s.close()');")
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
@@ -249,7 +249,7 @@ class K3dTest {
 
         assertThat(scriptMock.allActualArgs[0].trim()).isEqualTo("rm -rf ${k3dWorkspaceDir}/.k3d".toString())
         assertThat(scriptMock.allActualArgs[1].trim()).isEqualTo("mkdir -p ${k3dWorkspaceDir}/.k3d/bin".toString())
-        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
+        assertThat(scriptMock.allActualArgs[2].trim()).isEqualTo("curl -fsSL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v${expectedK3dVer} K3D_INSTALL_DIR=${k3dWorkspaceDir}/.k3d/bin bash -s -- --no-sudo".toString())
         assertThat(scriptMock.allActualArgs[3].trim()).isEqualTo("echo -n \$(python3 -c 'import socket; s=socket.socket(); s.bind((\"\", 0)); print(s.getsockname()[1]); s.close()');")
         assertThat(scriptMock.allActualArgs[4].trim()).matches("k3d registry create citest-[0-9a-f]+ --port 54321")
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
