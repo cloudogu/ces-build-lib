@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [#173] Fix the k3d install script URL, which moved from `rancher/k3d` to `k3d-io/k3d`.
 
+### Changed
+- [#173] Update k3d from `5.8.3` to `5.9.0`.
+
 ## [5.6.0](https://github.com/cloudogu/ces-build-lib/releases/tag/5.6.0) - 2026-07-22
 ### Added
 - [#171] `K3d.installKubectlManually()` / `K3d.installHelmManually()` for installing kubectl/helm directly via curl.

@@ -11,7 +11,7 @@ class K3d {
     /**
      * The version of k3d to be installed
      */
-    private static String K3D_VERSION = "5.8.3"
+    private static String K3D_VERSION = "5.9.0"
     private static String K3D_LOG_FILENAME = "k8sLogs"
     private static String K3D_VALUES_YAML_FILE = "k3d_values.yaml"
     private static String K3D_BLUEPRINT_FILE = "k3d_blueprint.yaml"
