@@ -58,6 +58,32 @@ class MarkdownTest {
     }
 
     @Test
+    void deadLinksFailBuildWithFailStrategy() {
+        Docker dockerMock = DockerMock.create("ghcr.io/tcort/markdown-link-check:stable")
+        ScriptMock scriptMock = new ScriptMock(dockerMock)
+        scriptMock.expectedDefaultShRetValue = 123
+        Markdown markdown = new Markdown(scriptMock)
+
+        markdown.docker = dockerMock
+
+        assertThrows(RuntimeException.class, { markdown.check(MarkdownCheckStrategy.FAIL) })
+        assert !scriptMock.unstable
+    }
+
+    @Test
+    void unknownStrategyFailsBuild() {
+        Docker dockerMock = DockerMock.create("ghcr.io/tcort/markdown-link-check:stable")
+        ScriptMock scriptMock = new ScriptMock(dockerMock)
+        scriptMock.expectedDefaultShRetValue = 123
+        Markdown markdown = new Markdown(scriptMock)
+
+        markdown.docker = dockerMock
+
+        assertThrows(RuntimeException.class, { markdown.check("bogus") })
+        assert !scriptMock.unstable
+    }
+
+    @Test
     void otherExitCodeFailsBuild() {
         Docker dockerMock = DockerMock.create("ghcr.io/tcort/markdown-link-check:stable")
         ScriptMock scriptMock = new ScriptMock(dockerMock)

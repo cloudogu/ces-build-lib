@@ -13,7 +13,12 @@ class Markdown implements Serializable {
         this.tag = tag
     }
 
-    def check(){
+    /**
+     * Checks all Markdown files in the docs directory for offline links.
+     *
+     * @param strategy The strategy to follow if offline links are found. Should the build become unstable or failed? (@see MarkdownCheckStrategy)
+     */
+    def check(String strategy = MarkdownCheckStrategy.UNSTABLE){
         def exitCode
         this.docker.image("ghcr.io/tcort/markdown-link-check:${this.tag}")
             .mountJenkinsUser()
@@ -23,7 +28,16 @@ class Markdown implements Serializable {
             }
         // xargs exits 123 if any markdown-link-check found dead links
         if (exitCode == 123) {
-            this.script.unstable("Found offline Markdown links!")
+            switch (strategy) {
+                case MarkdownCheckStrategy.UNSTABLE:
+                    this.script.unstable("Found offline Markdown links!")
+                    break
+                case MarkdownCheckStrategy.FAIL:
+                    this.script.error("Found offline Markdown links!")
+                    break
+                default:
+                    this.script.error("Unknown Markdown check strategy: ${strategy}")
+            }
         } else if (exitCode != 0) {
             this.script.error("Markdown link check failed with exit code ${exitCode}")
         }
