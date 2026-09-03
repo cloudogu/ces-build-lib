@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `MarkdownCheckStrategy` to configure how the pipeline reacts to offline links found by `Markdown.check()`:
+  `UNSTABLE` (default) marks the build unstable, `FAIL` fails it.
+
+### Changed
+- `Markdown.check()` marks the build unstable instead of failing it when offline links are found.
+  Use `Markdown.check(MarkdownCheckStrategy.FAIL)` to keep the previous behavior.
 
 ## [5.6.1](https://github.com/cloudogu/ces-build-lib/releases/tag/5.6.1) - 2026-08-31
 ### Fixed
