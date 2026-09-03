@@ -109,8 +109,8 @@ class K3d {
             installK3d()
             installLocalRegistry()
             initializeCluster()
-            installKubectl()
-            installHelm()
+            installKubectlManually()
+            installHelmManually()
             loginBackend()
         }
     }

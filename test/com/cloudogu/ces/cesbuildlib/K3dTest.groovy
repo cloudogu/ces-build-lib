@@ -54,9 +54,9 @@ class K3dTest {
         sut.deleteK3d()
 
         // then
-        assertThat(scriptMock.allActualArgs[22].trim()).contains("k3d registry delete citest-")
-        assertThat(scriptMock.allActualArgs[23].trim()).contains("k3d cluster delete citest-")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(24)
+        assertThat(scriptMock.allActualArgs[31].trim()).contains("k3d registry delete citest-")
+        assertThat(scriptMock.allActualArgs[32].trim()).contains("k3d cluster delete citest-")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(33)
     }
 
     @Test
@@ -71,10 +71,10 @@ class K3dTest {
         def result = sut.registry.pushToLocalRegistry("registry.cloudogu.com/official/cas:7.2.7-19", "local-smoke/cas", "7.2.7-19")
 
         // then
-        assertThat(scriptMock.allActualArgs[22].trim()).isEqualTo("docker tag registry.cloudogu.com/official/cas:7.2.7-19 localhost:54321/local-smoke/cas:7.2.7-19")
-        assertThat(scriptMock.allActualArgs[23].trim()).isEqualTo("docker push localhost:54321/local-smoke/cas:7.2.7-19")
+        assertThat(scriptMock.allActualArgs[31].trim()).isEqualTo("docker tag registry.cloudogu.com/official/cas:7.2.7-19 localhost:54321/local-smoke/cas:7.2.7-19")
+        assertThat(scriptMock.allActualArgs[32].trim()).isEqualTo("docker push localhost:54321/local-smoke/cas:7.2.7-19")
         assertThat(result.toString()).matches("k3d-citest-[0-9a-f]+:54321/local-smoke/cas:7.2.7-19")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(24)
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(33)
     }
 
     @Test
@@ -217,21 +217,30 @@ class K3dTest {
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.allActualArgs[6].trim()).startsWith("k3d kubeconfig merge citest-")
         assertThat(scriptMock.allActualArgs[7].trim()).startsWith("command -V kubectl")
-        assertThat(scriptMock.allActualArgs[8].trim()).startsWith("sudo snap install kubectl --classic")
-        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("command -V helm")
-        assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm --classic")
-        assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: cesmarvin-setup\"")
-        assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
-        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
-        assertThat(scriptMock.allActualArgs[14].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
-        assertThat(scriptMock.allActualArgs[16].trim()).startsWith("echo \"Using credentials: harborhelmchartpush\"")
-        assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
-        assertThat(scriptMock.allActualArgs[18].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
-        assertThat(scriptMock.allActualArgs[19].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
-        assertThat(scriptMock.allActualArgs[20].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
-        assertThat(scriptMock.allActualArgs[21].trim()).startsWith("set +x; sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(22)
+        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("mktemp")
+        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("curl -f -o null https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl")
+        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("echo \"1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82  null\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo mv null /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("command -V helm")
+        assertThat(scriptMock.allActualArgs[14].trim()).isEqualTo("mktemp --suffix=.tar.gz")
+        assertThat(scriptMock.allActualArgs[15].trim()).isEqualTo("curl -f -o null https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz")
+        assertThat(scriptMock.allActualArgs[16].trim()).isEqualTo("echo \"e9b88b4ee95b18c706839c28d3a0220e5bc470e9cd9262410c90793c45ff8b7c  null\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[17].trim()).isEqualTo("sudo tar -xzf null -C /usr/local/bin --strip-components=1 linux-amd64/helm")
+        assertThat(scriptMock.allActualArgs[18].trim()).isEqualTo("rm -f null")
+        assertThat(scriptMock.allActualArgs[19].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
+        assertThat(scriptMock.allActualArgs[20].trim()).startsWith("echo \"Using credentials: cesmarvin-setup\"")
+        assertThat(scriptMock.allActualArgs[21].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
+        assertThat(scriptMock.allActualArgs[22].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
+        assertThat(scriptMock.allActualArgs[23].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
+        assertThat(scriptMock.allActualArgs[24].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.allActualArgs[25].trim()).startsWith("echo \"Using credentials: harborhelmchartpush\"")
+        assertThat(scriptMock.allActualArgs[26].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
+        assertThat(scriptMock.allActualArgs[27].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
+        assertThat(scriptMock.allActualArgs[28].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
+        assertThat(scriptMock.allActualArgs[29].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
+        assertThat(scriptMock.allActualArgs[30].trim()).startsWith("set +x; sudo KUBECONFIG=leK3dWorkSpace/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(31)
     }
 
     @Test
@@ -255,21 +264,30 @@ class K3dTest {
         assertThat(scriptMock.allActualArgs[5].trim()).startsWith("k3d cluster create citest-")
         assertThat(scriptMock.allActualArgs[6].trim()).startsWith("k3d kubeconfig merge citest-")
         assertThat(scriptMock.allActualArgs[7].trim()).startsWith("command -V kubectl")
-        assertThat(scriptMock.allActualArgs[8].trim()).startsWith("sudo snap install kubectl")
-        assertThat(scriptMock.allActualArgs[9].trim()).startsWith("command -V helm")
-        assertThat(scriptMock.allActualArgs[10].trim()).startsWith("sudo snap install helm")
-        assertThat(scriptMock.allActualArgs[11].trim()).startsWith("echo \"Using credentials: myBackendCredentialsID\"")
-        assertThat(scriptMock.allActualArgs[12].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
-        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
-        assertThat(scriptMock.allActualArgs[14].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
-        assertThat(scriptMock.allActualArgs[15].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
-        assertThat(scriptMock.allActualArgs[16].trim()).startsWith("echo \"Using credentials: myHarborCredentials\"")
-        assertThat(scriptMock.allActualArgs[17].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
-        assertThat(scriptMock.allActualArgs[18].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
-        assertThat(scriptMock.allActualArgs[19].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
-        assertThat(scriptMock.allActualArgs[20].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
-        assertThat(scriptMock.allActualArgs[21].trim()).startsWith("set +x; sudo KUBECONFIG=path/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(22)
+        assertThat(scriptMock.allActualArgs[8].trim()).isEqualTo("mktemp")
+        assertThat(scriptMock.allActualArgs[9].trim()).isEqualTo("curl -f -o null https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl")
+        assertThat(scriptMock.allActualArgs[10].trim()).isEqualTo("echo \"1e9045ec32bea85da43de85f0065358529ea7c7a152eca78154fba5b58c27d82  null\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[11].trim()).isEqualTo("sudo mv null /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[12].trim()).isEqualTo("sudo chmod +x /usr/local/bin/kubectl")
+        assertThat(scriptMock.allActualArgs[13].trim()).startsWith("command -V helm")
+        assertThat(scriptMock.allActualArgs[14].trim()).isEqualTo("mktemp --suffix=.tar.gz")
+        assertThat(scriptMock.allActualArgs[15].trim()).isEqualTo("curl -f -o null https://get.helm.sh/helm-v4.2.3-linux-amd64.tar.gz")
+        assertThat(scriptMock.allActualArgs[16].trim()).isEqualTo("echo \"e9b88b4ee95b18c706839c28d3a0220e5bc470e9cd9262410c90793c45ff8b7c  null\" | sha256sum -c -")
+        assertThat(scriptMock.allActualArgs[17].trim()).isEqualTo("sudo tar -xzf null -C /usr/local/bin --strip-components=1 linux-amd64/helm")
+        assertThat(scriptMock.allActualArgs[18].trim()).isEqualTo("rm -f null")
+        assertThat(scriptMock.allActualArgs[19].trim()).isEqualTo("sudo chmod +x /usr/local/bin/helm")
+        assertThat(scriptMock.allActualArgs[20].trim()).startsWith("echo \"Using credentials: myBackendCredentialsID\"")
+        assertThat(scriptMock.allActualArgs[21].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret k8s-dogu-operator-dogu-registry || true")
+        assertThat(scriptMock.allActualArgs[22].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret ces-container-registries || true")
+        assertThat(scriptMock.allActualArgs[23].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret generic k8s-dogu-operator-dogu-registry --from-literal=endpoint=\"https://dogu.cloudogu.com/api/v2/dogus\" --from-literal=username=\"null\" --from-literal=password=\"null\"")
+        assertThat(scriptMock.allActualArgs[24].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create secret docker-registry ces-container-registries --docker-server=\"registry.cloudogu.com\" --docker-username=\"null\" --docker-email=\"a@b.c\" --docker-password=\"null\"")
+        assertThat(scriptMock.allActualArgs[25].trim()).startsWith("echo \"Using credentials: myHarborCredentials\"")
+        assertThat(scriptMock.allActualArgs[26].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete configmap component-operator-helm-repository || true")
+        assertThat(scriptMock.allActualArgs[27].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl delete secret component-operator-helm-registry || true")
+        assertThat(scriptMock.allActualArgs[28].trim()).startsWith("sudo KUBECONFIG=${k3dWorkspaceDir}/.k3d/.kube/config kubectl create configmap component-operator-helm-repository --from-literal=endpoint=\"registry.cloudogu.com\" --from-literal=schema=\"oci\" --from-literal=plainHttp=\"false\"")
+        assertThat(scriptMock.allActualArgs[29].trim()).startsWith("printf '%s:%s' 'null' 'null' | base64")
+        assertThat(scriptMock.allActualArgs[30].trim()).startsWith("set +x; sudo KUBECONFIG=path/.k3d/.kube/config kubectl create secret generic component-operator-helm-registry --from-literal=config.json='{\"auths\": {\"registry.cloudogu.com\": {\"auth\": \"null\"}}}'")
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(31)
     }
 
     @Test
@@ -305,8 +323,8 @@ class K3dTest {
         sut.buildAndPushToLocalRegistry(imageName, imageTag)
 
         // then
-        assertThat(scriptMock.allActualArgs[22].trim()).isEqualTo("image pushed".toString())
-        assertThat(scriptMock.allActualArgs.size()).isEqualTo(23)
+        assertThat(scriptMock.allActualArgs[31].trim()).isEqualTo("image pushed".toString())
+        assertThat(scriptMock.allActualArgs.size()).isEqualTo(32)
     }
 
     @Test
