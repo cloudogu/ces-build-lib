@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0](https://github.com/cloudogu/ces-build-lib/releases/tag/6.0.0) - 2026-09-03
+### Added
+- `MarkdownCheckStrategy` to configure how the pipeline reacts to offline links found by `Markdown.check()`:
+  `UNSTABLE` (default) marks the build unstable, `FAIL` fails it.
+
+### Changed
+- `Markdown.check()` marks the build unstable instead of failing it when offline links are found.
+  Use `Markdown.check(MarkdownCheckStrategy.FAIL)` to keep the previous behavior.
+
 ## [5.6.1](https://github.com/cloudogu/ces-build-lib/releases/tag/5.6.1) - 2026-08-31
 ### Fixed
 - [#173] Fix the k3d install script URL, which moved from `rancher/k3d` to `k3d-io/k3d`.
