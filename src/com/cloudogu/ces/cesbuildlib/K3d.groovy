@@ -698,11 +698,33 @@ data:
  * the other only keeps the hosts entry from whichever ran last. Re-apply after any later call
  * to installDogu() (or patchCoreDNS()) if this mapping still needs to be in place afterward.
  *
+ * targetService isn't necessarily created by "helm install ecosystem-core" itself - e.g.
+ * ces-loadbalancer is created by k8s-service-discovery reconciling afterward, not by the
+ * chart's own templates - so this waits for it to exist rather than assuming a fixed point
+ * in the setup sequence is late enough.
+ *
  * @param hostname the hostname dogus have been configured to use as their fqdn
  * @param targetService the k8s Service name to resolve it to (namespace "default")
+ * @param timeout seconds to wait for targetService to exist
+ * @param interval seconds between checks
  */
-    void patchCoreDnsForFqdn(String hostname, String targetService = "ces-loadbalancer") {
-        String clusterIP = kubectl("get svc ${targetService} -n default -o jsonpath='{.spec.clusterIP}'", true).trim()
+    void patchCoreDnsForFqdn(String hostname, String targetService = "ces-loadbalancer", Integer timeout = 120, Integer interval = 5) {
+        String clusterIP = ""
+        for (int i = 0; i < timeout / interval; i++) {
+            script.sh("sleep ${interval}s")
+            try {
+                clusterIP = kubectl("get svc ${targetService} -n default -o jsonpath='{.spec.clusterIP}'", true).trim()
+                if (clusterIP) {
+                    break
+                }
+            } catch (ignored) {
+                // Service doesn't exist yet - keep waiting.
+            }
+        }
+        if (!clusterIP) {
+            this.script.error "failed to wait for service/${targetService} to exist: timeout"
+        }
+
         String fileName = "coreDNSFqdnPatch.yaml"
         script.writeFile file: fileName, text: """
 data:
