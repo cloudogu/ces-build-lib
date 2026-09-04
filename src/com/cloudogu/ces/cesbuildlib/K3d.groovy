@@ -37,6 +37,12 @@ class K3d {
     private String backendCredentialsID
     private String harborCredentialsID
     private String externalIP
+    // The fqdn used in dogu-facing config (Blueprint's global.fqdn, global-config configmap).
+    // Defaults to externalIP; setup()'s config.fqdnHostname can override it to a hostname that
+    // patchCoreDnsForFqdn() resolves internally, for setups where the real external IP doesn't
+    // hairpin back into the cluster (e.g. a local k3d cluster behind a plain Docker port
+    // mapping, unlike a real cloud load balancer).
+    private String fqdn
     private Sh sh
     K3dRegistry registry
     private String registryName
@@ -353,10 +359,17 @@ class K3d {
         String comp_crd_version = VERSION_K8S_COMPONENT_OPERATOR_CRD == null ? "" : " --version ${VERSION_K8S_COMPONENT_OPERATOR_CRD}"
         helm("install k8s-component-operator-crd oci://${registryUrl}/${registryNamespace}/k8s-component-operator-crd  ${comp_crd_version} --namespace default")
 
-        kubectl("--namespace default create configmap global-config --from-literal=config.yaml='fqdn: ${externalIP}'")
+        kubectl("--namespace default create configmap global-config --from-literal=config.yaml='fqdn: ${fqdn}'")
 
         String eco_core_version = VERSION_ECOSYSTEM_CORE == null ? "" : " --version ${VERSION_ECOSYSTEM_CORE}"
         helm("install -f ${K3D_VALUES_YAML_FILE} ecosystem-core oci://${registryUrl}/${registryNamespace}/ecosystem-core ${eco_core_version} --namespace default --timeout 15m")
+
+        if (fqdn != externalIP) {
+            // fqdn is a hostname override, not the real external IP - route it internally to
+            // the ecosystem's own gateway before any dogu (e.g. redmine/easyredmine, which
+            // self-check against their configured fqdn on startup) tries to reach it.
+            patchCoreDnsForFqdn(fqdn)
+        }
 
         script.echo "Wait for blueprint-operator to be ready..."
         waitForDeploymentRollout("k8s-blueprint-operator-controller-manager", timeout, interval)
@@ -402,6 +415,7 @@ class K3d {
  */
     void setup(config = [:], Integer timout = 300, Integer interval = 5) {
         assignExternalIP()
+        this.fqdn = config.fqdnHostname ?: externalIP
         configureEcosystemCoreValues(config)
         installAndTriggerSetup(timout, interval)
     }
@@ -673,6 +687,57 @@ data:
         kubectl("rollout restart -n kube-system deployment/coredns")
     }
 
+/**
+ * Routes a hostname to an internal cluster Service via CoreDNS, for setups where dogus need
+ * to reach the ecosystem's own externally-configured fqdn from inside the cluster (e.g.
+ * redmine/easyredmine self-check against their configured fqdn on startup) and the real
+ * external IP doesn't hairpin back in - such as a local k3d cluster behind a plain Docker
+ * port mapping, unlike a real cloud load balancer.
+ *
+ * Overwrites the whole CoreDNS Corefile, same as patchCoreDNS() - calling either one after
+ * the other only keeps the hosts entry from whichever ran last. Re-apply after any later call
+ * to installDogu() (or patchCoreDNS()) if this mapping still needs to be in place afterward.
+ *
+ * @param hostname the hostname dogus have been configured to use as their fqdn
+ * @param targetService the k8s Service name to resolve it to (namespace "default")
+ */
+    void patchCoreDnsForFqdn(String hostname, String targetService = "ces-loadbalancer") {
+        String clusterIP = kubectl("get svc ${targetService} -n default -o jsonpath='{.spec.clusterIP}'", true).trim()
+        String fileName = "coreDNSFqdnPatch.yaml"
+        script.writeFile file: fileName, text: """
+data:
+    Corefile: |
+        ${hostname}:53 {
+            hosts {
+                ${clusterIP} ${hostname}
+            }
+        }
+        .:53 {
+            errors
+            health
+            ready
+            kubernetes cluster.local in-addr.arpa ip6.arpa {
+                pods insecure
+                fallthrough in-addr.arpa ip6.arpa
+            }
+            hosts /etc/coredns/NodeHosts {
+                reload 1s
+                fallthrough
+            }
+            prometheus :9153
+            forward . /etc/resolv.conf
+            cache 30
+            loop
+            reload
+            loadbalance
+        }
+"""
+
+        kubectl("-n kube-system patch cm coredns --patch-file ${fileName}")
+        kubectl("rollout restart -n kube-system deployment/coredns")
+        kubectl("rollout status -n kube-system deployment/coredns")
+    }
+
     private String[] getRegistryIpAndPort() {
         String registryIp
         String registryPortProtocol
@@ -763,7 +828,7 @@ ${formattedDeps}
             value: "${config.adminPassword}"
       global:
         - key: fqdn
-          value: "${externalIP}"
+          value: "${fqdn}"
         - key: domain
           value: "ces.local"
         - key: certificate/type
