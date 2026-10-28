@@ -156,6 +156,27 @@ class Trivy implements Serializable {
         script.archiveArtifacts artifacts: "${trivyDirectory}/*", allowEmptyArchive: true
     }
 
+    /**
+     * Uploads a Trivy report to S3-compatible object storage, e.g. to retain scan results.
+     *
+     * @param objectUrl Full URL of the target object, e.g. "https://<bucket-endpoint>/dogus/official/cas/<commit>.json"
+     * @param credentialsId Jenkins username/password credentials: access key as username, secret key as password
+     * @param awsSigV4 Provider and region for curl's --aws-sigv4, e.g. "aws:amz:fsn1:s3"
+     * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
+     */
+    void archiveReport(String objectUrl, String credentialsId, String awsSigV4, String trivyReportFile = "trivy/trivyReport.json") {
+        script.withCredentials([script.usernamePassword(credentialsId: credentialsId, usernameVariable: 'ACCESS_KEY', passwordVariable: 'SECRET_KEY')]) {
+            script.withEnv(["TRIVY_ARCHIVE_URL=${objectUrl}", "TRIVY_ARCHIVE_SIGV4=${awsSigV4}", "TRIVY_REPORT_FILE=${trivyReportFile}"]) {
+                // --fail: a rejected upload (4xx/5xx) must fail the build instead of passing silently
+                script.sh '''curl --fail --silent --show-error "$TRIVY_ARCHIVE_URL" \
+  --upload-file "$TRIVY_REPORT_FILE" \
+  --user "$ACCESS_KEY:$SECRET_KEY" \
+  --aws-sigv4 "$TRIVY_ARCHIVE_SIGV4" \
+  --header "x-amz-content-sha256: UNSIGNED-PAYLOAD"'''
+            }
+        }
+    }
+
     private static String getFileExtension(String format) {
         return TrivyScanFormat.isStandardScanFormat(format) ? "." + format : ".txt"
     }

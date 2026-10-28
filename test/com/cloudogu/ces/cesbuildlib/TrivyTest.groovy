@@ -232,4 +232,21 @@ class TrivyTest {
         Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
         return trivy
     }
+
+    @Test
+    void testArchiveReport() {
+        def scriptMock = new ScriptMock()
+        Trivy trivy = new Trivy(scriptMock)
+
+        trivy.archiveReport("https://bucket.example/dogus/official/cas/abc123.json", "s3-keys", "aws:amz:fsn1:s3")
+
+        assertEquals("s3-keys", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
+        assertEquals(["TRIVY_ARCHIVE_URL=https://bucket.example/dogus/official/cas/abc123.json",
+                      "TRIVY_ARCHIVE_SIGV4=aws:amz:fsn1:s3",
+                      "TRIVY_REPORT_FILE=trivy/trivyReport.json"], scriptMock.actualWithEnv.collect { it.toString() })
+        String curl = scriptMock.actualShStringArgs[0]
+        assertTrue(curl.startsWith("curl --fail "))
+        assertTrue(curl.contains('--upload-file "$TRIVY_REPORT_FILE"'))
+        assertTrue(curl.contains('--user "$ACCESS_KEY:$SECRET_KEY"'))
+    }
 }

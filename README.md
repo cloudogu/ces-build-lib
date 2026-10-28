@@ -1388,6 +1388,19 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.JSON)
 trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ```
 
+## Archive a Trivy report
+
+`archiveReport()` uploads a Trivy report to S3-compatible object storage, e.g. to retain scan results.
+It fails the build if the upload is rejected.
+
+```groovy
+trivy.scanDogu(".")
+trivy.archiveReport(
+    "https://<bucket-endpoint>/dogus/official/cas/${git.getCommitHash()}.json",
+    "trivy-archive-s3-keys", // username/password credentials: access key, secret key
+    "aws:amz:fsn1:s3")       // provider and region for curl's --aws-sigv4
+```
+
 ## Ignore / allowlist
 
 If you want to ignore / allow certain vulnerabilities, please use a `.trivyignore` file.
