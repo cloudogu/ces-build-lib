@@ -234,14 +234,14 @@ class TrivyTest {
     }
 
     @Test
-    void testArchiveReport() {
+    void testArchiveDoguReport() {
         def scriptMock = new ScriptMock()
         Trivy trivy = new Trivy(scriptMock)
 
-        trivy.archiveReport("https://bucket.example/dogus/official/cas/abc123.json", "s3-keys", "aws:amz:fsn1:s3")
+        trivy.archiveDoguReport("official", "cas", "abc123")
 
-        assertEquals("s3-keys", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
-        assertEquals(["TRIVY_ARCHIVE_URL=https://bucket.example/dogus/official/cas/abc123.json",
+        assertEquals("trivy-archive-s3-keys", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
+        assertEquals(["TRIVY_ARCHIVE_URL=https://trivy.fsn1.your-objectstorage.com/dogus/official/cas/abc123.json",
                       "TRIVY_ARCHIVE_SIGV4=aws:amz:fsn1:s3",
                       "TRIVY_REPORT_FILE=trivy/trivyReport.json"], scriptMock.actualWithEnv.collect { it.toString() })
         String curl = scriptMock.actualShStringArgs[0]

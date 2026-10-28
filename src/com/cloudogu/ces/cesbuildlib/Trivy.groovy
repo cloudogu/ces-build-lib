@@ -157,14 +157,23 @@ class Trivy implements Serializable {
     }
 
     /**
-     * Uploads a Trivy report to S3-compatible object storage, e.g. to retain scan results.
+     * Uploads a dogu's Trivy report to S3-compatible object storage, e.g. to retain scan results.
+     * The report is stored as "<bucketUrl>/dogus/<doguNamespace>/<doguName>/<commitHash>.json".
      *
-     * @param objectUrl Full URL of the target object, e.g. "https://<bucket-endpoint>/dogus/official/cas/<commit>.json"
+     * @param doguNamespace Namespace of the dogu, e.g. "official"
+     * @param doguName Name of the dogu, e.g. "cas"
+     * @param commitHash Commit the scanned image was built from
+     * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanDogu" function, if it was set
+     * @param bucketUrl Base URL of the S3-compatible bucket
      * @param credentialsId Jenkins username/password credentials: access key as username, secret key as password
-     * @param awsSigV4 Provider and region for curl's --aws-sigv4, e.g. "aws:amz:fsn1:s3"
-     * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanImage" function, if it was set
+     * @param awsSigV4 Provider and region for curl's --aws-sigv4
      */
-    void archiveReport(String objectUrl, String credentialsId, String awsSigV4, String trivyReportFile = "trivy/trivyReport.json") {
+    void archiveDoguReport(String doguNamespace, String doguName, String commitHash,
+                           String trivyReportFile = "trivy/trivyReport.json",
+                           String bucketUrl = "https://trivy.fsn1.your-objectstorage.com",
+                           String credentialsId = "trivy-archive-s3-keys",
+                           String awsSigV4 = "aws:amz:fsn1:s3") {
+        String objectUrl = "${bucketUrl}/dogus/${doguNamespace}/${doguName}/${commitHash}.json"
         script.withCredentials([script.usernamePassword(credentialsId: credentialsId, usernameVariable: 'ACCESS_KEY', passwordVariable: 'SECRET_KEY')]) {
             script.withEnv(["TRIVY_ARCHIVE_URL=${objectUrl}", "TRIVY_ARCHIVE_SIGV4=${awsSigV4}", "TRIVY_REPORT_FILE=${trivyReportFile}"]) {
                 // --fail: a rejected upload (4xx/5xx) must fail the build instead of passing silently
