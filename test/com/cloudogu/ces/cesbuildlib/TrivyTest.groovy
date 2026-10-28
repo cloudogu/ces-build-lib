@@ -236,9 +236,11 @@ class TrivyTest {
     @Test
     void testArchiveDoguReport() {
         def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("jq -r .Name ./dogu.json", "official/cas\n")
+        scriptMock.expectedShRetValueForScript.put("git -C . rev-parse HEAD", "abc123\n")
         Trivy trivy = new Trivy(scriptMock)
 
-        trivy.archiveDoguReport("official", "cas", "abc123")
+        trivy.archiveDoguReport()
 
         assertEquals("trivy-archive-s3-keys", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
         assertEquals(["TRIVY_ARCHIVE_URL=https://trivy.fsn1.your-objectstorage.com/dogus/official/cas/abc123.json",

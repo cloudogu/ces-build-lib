@@ -1391,11 +1391,12 @@ trivy.saveFormattedTrivyReport(TrivyScanFormat.HTML)
 ## Archive a Trivy report
 
 `archiveDoguReport()` uploads a dogu's Trivy report to S3-compatible object storage, e.g. to retain scan results.
-It is stored as `<bucketUrl>/dogus/<namespace>/<name>/<commit>.json` and fails the build if the upload is rejected.
+It is stored as `<bucketUrl>/dogus/<dogu.json Name>/<commit>.json` (e.g. `.../dogus/official/cas/<commit>.json`),
+where the commit is the one checked out in the dogu directory. It fails the build if the upload is rejected.
 
 ```groovy
 trivy.scanDogu(".")
-trivy.archiveDoguReport("official", "cas", git.getCommitHash())
+trivy.archiveDoguReport(".")
 ```
 
 The bucket URL, credentials ID (`trivy-archive-s3-keys`) and signing region default to Cloudogu's archive
