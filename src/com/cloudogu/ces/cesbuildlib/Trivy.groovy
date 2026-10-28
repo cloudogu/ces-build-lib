@@ -172,6 +172,9 @@ class Trivy implements Serializable {
                            String bucketUrl = "https://trivy.fsn1.your-objectstorage.com",
                            String credentialsId = "trivy-archive-s3-keys",
                            String awsSigV4 = "aws:amz:fsn1:s3") {
+        if (!script.fileExists(trivyReportFile)) {
+            script.error("No Trivy report at ${trivyReportFile} - run scanDogu() before archiveDoguReport()")
+        }
         // dogu.json Name is "<namespace>/<name>"
         String doguFullName = script.sh(script: "jq -r .Name ${doguDir}/dogu.json", returnStdout: true).trim()
         String commit = script.sh(script: "git -C ${doguDir} rev-parse HEAD", returnStdout: true).trim()

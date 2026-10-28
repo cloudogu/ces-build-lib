@@ -238,6 +238,7 @@ class TrivyTest {
         def scriptMock = new ScriptMock()
         scriptMock.expectedShRetValueForScript.put("jq -r .Name ./dogu.json", "official/cas\n")
         scriptMock.expectedShRetValueForScript.put("git -C . rev-parse HEAD", "abc123\n")
+        scriptMock.files.put("trivy/trivyReport.json", "{}")
         Trivy trivy = new Trivy(scriptMock)
 
         trivy.archiveDoguReport()
@@ -250,5 +251,16 @@ class TrivyTest {
         assertTrue(curl.startsWith("curl --fail "))
         assertTrue(curl.contains('--upload-file "$TRIVY_REPORT_FILE"'))
         assertTrue(curl.contains('--user "$ACCESS_KEY:$SECRET_KEY"'))
+    }
+
+    @Test
+    void testArchiveDoguReport_failsWithoutReport() {
+        def scriptMock = new ScriptMock()
+        Trivy trivy = new Trivy(scriptMock)
+
+        def e = assertThrows(RuntimeException) { trivy.archiveDoguReport() }
+
+        assertTrue(e.message.contains("run scanDogu() before archiveDoguReport()"))
+        assertTrue(scriptMock.actualShStringArgs.isEmpty())
     }
 }
