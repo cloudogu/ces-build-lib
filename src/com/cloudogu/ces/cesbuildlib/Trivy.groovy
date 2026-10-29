@@ -156,6 +156,41 @@ class Trivy implements Serializable {
         script.archiveArtifacts artifacts: "${trivyDirectory}/*", allowEmptyArchive: true
     }
 
+    /**
+     * Uploads a dogu's Trivy report to S3-compatible object storage, e.g. to retain scan results.
+     * The report is stored as "<bucketUrl>/dogus/<dogu.json Name>/<commit>.json", e.g. ".../dogus/official/cas/<commit>.json",
+     * where commit is the commit checked out in doguDir.
+     *
+     * @param doguDir The directory the dogu code (dogu.json) is located
+     * @param trivyReportFile The "trivyReportFile" parameter you used in the "scanDogu" function, if it was set
+     * @param bucketUrl Base URL of the S3-compatible bucket
+     * @param credentialsId Jenkins username/password credentials: access key as username, secret key as password
+     * @param awsSigV4 Provider and region for curl's --aws-sigv4
+     */
+    void archiveDoguReport(String doguDir = ".",
+                           String trivyReportFile = "trivy/trivyReport.json",
+                           String bucketUrl = "https://trivy.fsn1.your-objectstorage.com",
+                           String credentialsId = "trivy-archive-s3-keys",
+                           String awsSigV4 = "aws:amz:fsn1:s3") {
+        if (!script.fileExists(trivyReportFile)) {
+            script.error("No Trivy report at ${trivyReportFile} - run scanDogu() before archiveDoguReport()")
+        }
+        // dogu.json Name is "<namespace>/<name>"
+        String doguFullName = script.sh(script: "jq -r .Name ${doguDir}/dogu.json", returnStdout: true).trim()
+        String commit = script.sh(script: "git -C ${doguDir} rev-parse HEAD", returnStdout: true).trim()
+        String objectUrl = "${bucketUrl}/dogus/${doguFullName}/${commit}.json"
+        script.withCredentials([script.usernamePassword(credentialsId: credentialsId, usernameVariable: 'ACCESS_KEY', passwordVariable: 'SECRET_KEY')]) {
+            script.withEnv(["TRIVY_ARCHIVE_URL=${objectUrl}", "TRIVY_ARCHIVE_SIGV4=${awsSigV4}", "TRIVY_REPORT_FILE=${trivyReportFile}"]) {
+                // --fail: a rejected upload (4xx/5xx) must fail the build instead of passing silently
+                script.sh '''curl --fail --silent --show-error "$TRIVY_ARCHIVE_URL" \
+  --upload-file "$TRIVY_REPORT_FILE" \
+  --user "$ACCESS_KEY:$SECRET_KEY" \
+  --aws-sigv4 "$TRIVY_ARCHIVE_SIGV4" \
+  --header "x-amz-content-sha256: UNSIGNED-PAYLOAD"'''
+            }
+        }
+    }
+
     private static String getFileExtension(String format) {
         return TrivyScanFormat.isStandardScanFormat(format) ? "." + format : ".txt"
     }

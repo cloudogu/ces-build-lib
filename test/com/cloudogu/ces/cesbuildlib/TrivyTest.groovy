@@ -232,4 +232,35 @@ class TrivyTest {
         Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
         return trivy
     }
+
+    @Test
+    void testArchiveDoguReport() {
+        def scriptMock = new ScriptMock()
+        scriptMock.expectedShRetValueForScript.put("jq -r .Name ./dogu.json", "official/cas\n")
+        scriptMock.expectedShRetValueForScript.put("git -C . rev-parse HEAD", "abc123\n")
+        scriptMock.files.put("trivy/trivyReport.json", "{}")
+        Trivy trivy = new Trivy(scriptMock)
+
+        trivy.archiveDoguReport()
+
+        assertEquals("trivy-archive-s3-keys", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
+        assertEquals(["TRIVY_ARCHIVE_URL=https://trivy.fsn1.your-objectstorage.com/dogus/official/cas/abc123.json",
+                      "TRIVY_ARCHIVE_SIGV4=aws:amz:fsn1:s3",
+                      "TRIVY_REPORT_FILE=trivy/trivyReport.json"], scriptMock.actualWithEnv.collect { it.toString() })
+        String curl = scriptMock.actualShStringArgs[0]
+        assertTrue(curl.startsWith("curl --fail "))
+        assertTrue(curl.contains('--upload-file "$TRIVY_REPORT_FILE"'))
+        assertTrue(curl.contains('--user "$ACCESS_KEY:$SECRET_KEY"'))
+    }
+
+    @Test
+    void testArchiveDoguReport_failsWithoutReport() {
+        def scriptMock = new ScriptMock()
+        Trivy trivy = new Trivy(scriptMock)
+
+        def e = assertThrows(RuntimeException) { trivy.archiveDoguReport() }
+
+        assertTrue(e.message.contains("run scanDogu() before archiveDoguReport()"))
+        assertTrue(scriptMock.actualShStringArgs.isEmpty())
+    }
 }
