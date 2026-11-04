@@ -95,9 +95,8 @@ class Trivy implements Serializable {
         String additionalFlags = "--db-repository public.ecr.aws/aquasecurity/trivy-db --java-db-repository public.ecr.aws/aquasecurity/trivy-java-db",
         String trivyReportFile = "trivy/trivyReport.json"
     ) {
-        String image = script.sh(script: "jq .Image ${doguDir}/dogu.json", returnStdout: true).trim()
-        String version = script.sh(script: "jq .Version ${doguDir}/dogu.json", returnStdout: true).trim()
-        return scanImage(image + ":" + version, severityLevel, strategy, additionalFlags, trivyReportFile)
+        def doguJson = script.readJSON file: "${doguDir}/dogu.json"
+        return scanImage("${doguJson.Image}:${doguJson.Version}", severityLevel, strategy, additionalFlags, trivyReportFile)
     }
 
     /**
@@ -176,7 +175,7 @@ class Trivy implements Serializable {
             script.error("No Trivy report at ${trivyReportFile} - run scanDogu() before archiveDoguReport()")
         }
         // dogu.json Name is "<namespace>/<name>"
-        String doguFullName = script.sh(script: "jq -r .Name ${doguDir}/dogu.json", returnStdout: true).trim()
+        String doguFullName = script.readJSON(file: "${doguDir}/dogu.json").Name
         String commit = script.sh(script: "git -C ${doguDir} rev-parse HEAD", returnStdout: true).trim()
         String objectUrl = "${bucketUrl}/dogus/${doguFullName}/${commit}.json"
         script.withCredentials([script.usernamePassword(credentialsId: credentialsId, usernameVariable: 'ACCESS_KEY', passwordVariable: 'SECRET_KEY')]) {
