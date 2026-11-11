@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- `Trivy.scanDogu()` and `Trivy.archiveDoguReport()` read dogu.json with readJSON instead of jq, so the Jenkins worker no longer needs jq
+- `Trivy.scanDogu()` and `Trivy.archiveDoguReport()` read dogu.json with readJSON instead of jq
 
 ## [6.1.0](https://github.com/cloudogu/ces-build-lib/releases/tag/6.1.0) - 2026-10-29
 ### Added
