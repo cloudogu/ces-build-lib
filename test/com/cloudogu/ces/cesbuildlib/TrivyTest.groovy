@@ -234,9 +234,33 @@ class TrivyTest {
     }
 
     @Test
+    void testScanDogu_scansImageAndVersionFromDoguJson() {
+        String expectedTrivyCommand = "trivy image --exit-code 10 --exit-on-eol 10 --format ${TrivyScanFormat.JSON} -o trivy/trivyReport.json " +
+            "--severity ${TrivySeverityLevel.CRITICAL} ${additionalFlags} registry.cloudogu.com/official/cas:7.0.5-1"
+        def scriptMock = new ScriptMock()
+        scriptMock.env.WORKSPACE = "/test"
+        scriptMock.jsonFiles.put("dogu/dogu.json", [Image: "registry.cloudogu.com/official/cas", Version: "7.0.5-1"])
+        Docker dockerMock = mock(Docker.class)
+        Docker.Image imageMock = mock(Docker.Image.class)
+        when(dockerMock.image(trivyImage)).thenReturn(imageMock)
+        when(imageMock.mountJenkinsUser()).thenReturn(imageMock)
+        when(imageMock.mountDockerSocket()).thenReturn(imageMock)
+        when(imageMock.inside(any(), any())).thenAnswer({ invocation ->
+            (invocation.getArgument(1) as Closure).call()
+            // ScriptMock.sh() returns Strings, so return trivy's exit code like doTestScan() does
+            return 0
+        })
+        Trivy trivy = new Trivy(scriptMock, Trivy.DEFAULT_TRIVY_VERSION, Trivy.DEFAULT_TRIVY_IMAGE, dockerMock)
+
+        assertTrue(trivy.scanDogu("dogu"))
+
+        assertEquals(expectedTrivyCommand, scriptMock.getActualShMapArgs().getLast())
+    }
+
+    @Test
     void testArchiveDoguReport() {
         def scriptMock = new ScriptMock()
-        scriptMock.expectedShRetValueForScript.put("jq -r .Name ./dogu.json", "official/cas\n")
+        scriptMock.jsonFiles.put("./dogu.json", [Name: "official/cas"])
         scriptMock.expectedShRetValueForScript.put("git -C . rev-parse HEAD", "abc123\n")
         scriptMock.files.put("trivy/trivyReport.json", "{}")
         Trivy trivy = new Trivy(scriptMock)
