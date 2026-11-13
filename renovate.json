@@ -3,5 +3,17 @@
   "timezone": "Europe/Berlin",
   "semanticCommits": "enabled",
   "minimumReleaseAge": "7 days",
-  "configMigration": true
+  "configMigration": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Version pins in the library classes",
+      "managerFilePatterns": [
+        "/^src/.+\\.groovy$/"
+      ],
+      "matchStrings": [
+        "// renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[^\\n]*?(?:_VERSION|Version) = \"(?<currentValue>[^\"]+)\""
+      ]
+    }
+  ]
 }
