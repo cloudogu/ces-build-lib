@@ -4,7 +4,7 @@ import com.cloudbees.groovy.cps.NonCPS
 
 class Trivy implements Serializable {
     // renovate: datasource=docker depName=aquasec/trivy
-    static final String DEFAULT_TRIVY_VERSION = "0.69.3"
+    static final String DEFAULT_TRIVY_VERSION = "0.76.2"
     static final String DEFAULT_TRIVY_IMAGE = "aquasec/trivy"
     private script
     private Docker docker
@@ -14,7 +14,7 @@ class Trivy implements Serializable {
 
     // Do not use DEFAULT_TRIVY_VERSION or DEFAULT_TRIVY_IMAGE variables here, as it will lead to java.lang.VerifyError
     // renovate: datasource=docker depName=aquasec/trivy
-    Trivy(script, String trivyVersion = "0.69.3", String trivyImage = "aquasec/trivy", Docker docker = new Docker(script)) {
+    Trivy(script, String trivyVersion = "0.76.2", String trivyImage = "aquasec/trivy", Docker docker = new Docker(script)) {
         this.script = script
         this.trivyVersion = trivyVersion
         this.trivyImage = trivyImage
