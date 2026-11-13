@@ -3,6 +3,7 @@ package com.cloudogu.ces.cesbuildlib
 import com.cloudbees.groovy.cps.NonCPS
 
 class Trivy implements Serializable {
+    // renovate: datasource=docker depName=aquasec/trivy
     static final String DEFAULT_TRIVY_VERSION = "0.69.3"
     static final String DEFAULT_TRIVY_IMAGE = "aquasec/trivy"
     private script
@@ -12,6 +13,7 @@ class Trivy implements Serializable {
     private String trivyDirectory = "trivy"
 
     // Do not use DEFAULT_TRIVY_VERSION or DEFAULT_TRIVY_IMAGE variables here, as it will lead to java.lang.VerifyError
+    // renovate: datasource=docker depName=aquasec/trivy
     Trivy(script, String trivyVersion = "0.69.3", String trivyImage = "aquasec/trivy", Docker docker = new Docker(script)) {
         this.script = script
         this.trivyVersion = trivyVersion
