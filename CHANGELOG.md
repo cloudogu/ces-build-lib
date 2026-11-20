@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/6.2.0) - 2026-11-20
+### Changed
+- `shellCheck()` uses the pinned `koalaman/shellcheck-alpine:v0.11.0` instead of `stable` (same version today); the file-list variant takes an optional image tag
+- Default Trivy version 0.76.2 (was 0.69.3)
+- Build: Renovate config, Maven wrapper, JaCoCo, jenkins-pipeline-unit and commons-io updates (no effect on library users)
+
 ## [6.1.1](https://github.com/cloudogu/ces-build-lib/releases/tag/6.1.1) - 2026-11-13
 ### Changed
 - `Trivy.scanDogu()` and `Trivy.archiveDoguReport()` read dogu.json with readJSON instead of jq
