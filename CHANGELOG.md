@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
+- `shellCheck()` uses the pinned `koalaman/shellcheck-alpine:v0.11.0` instead of `stable` (same version today); the file-list variant takes an optional image tag
 - Default Trivy version 0.76.2 (was 0.69.3)
 - Build: Renovate config, Maven wrapper, JaCoCo, jenkins-pipeline-unit and commons-io updates (no effect on library users)
 
