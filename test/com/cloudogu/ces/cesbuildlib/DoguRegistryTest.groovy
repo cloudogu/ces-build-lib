@@ -47,6 +47,37 @@ class DoguRegistryTest {
     }
 
     @Test
+    void testPushDoguWithImage() {
+        // given
+        String doguPath = "export/dogu.json"
+        String doguStr = '{"Name": "official/cockpit", "Image": "registry.cloudogu.com/official/cockpit", "Version": "2.5.0-2"}'
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedPwd = "/ws@tmp"
+        scriptMock.jsonFiles.put(doguPath, new JsonSlurper().parseText(doguStr))
+        scriptMock.expectedShRetValueForScript.put("cat ${doguPath}".toString(), doguStr)
+
+        def httpMock = mock(HttpClient.class)
+        when(httpMock.put('https://dogu.cloudogu.com/api/v2/dogus/official/cockpit', 'application/json', doguStr)).then({ invocation ->
+            return [httpCode: '200', body: '']
+        })
+
+        DoguRegistry sut = new DoguRegistry(scriptMock, "https://dogu.cloudogu.com", "harborrobotprerelease")
+        sut.doguRegistryHttpClient = httpMock
+
+        // when
+        sut.pushDoguWithImage("export")
+
+        // then
+        assertEquals("harborrobotprerelease", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
+        assertEquals(["DOCKER_CONFIG=/ws@tmp/docker-push-config",
+                      "IMAGE_REGISTRY=registry.cloudogu.com",
+                      "IMAGE=registry.cloudogu.com/official/cockpit:2.5.0-2"], scriptMock.actualWithEnv.collect { it.toString() })
+        assertEquals('echo "$REGISTRY_PASSWORD" | docker login "$IMAGE_REGISTRY" -u "$REGISTRY_USER" --password-stdin', scriptMock.allActualArgs.get(0))
+        assertEquals('docker push "$IMAGE"', scriptMock.allActualArgs.get(1))
+        assertEquals("cat export/dogu.json", scriptMock.allActualArgs.get(3))
+    }
+
+    @Test
     void testExitOnHttpErrorJson() {
         // given
         String doguPath = "dogu.json"

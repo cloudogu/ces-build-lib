@@ -47,6 +47,28 @@ class DoguRegistry {
     }
 
     /**
+     * Pushes a dogu's image to its image registry, then its dogu.json to the dogu registry.
+     * For a dogu built elsewhere, e.g. in a CES VM, whose image was loaded into the local docker daemon.
+     * Image, version and image registry are read from the dogu.json. Both pushes use the backend credentials.
+     *
+     * @param doguDir Directory of the dogu.json, relative to the workspace.
+     */
+    void pushDoguWithImage(String doguDir = ".") {
+        String pathToDoguJson = "${doguDir}/dogu.json"
+        def doguJson = script.readJSON file: pathToDoguJson
+        String image = "${doguJson.Image}:${doguJson.Version}"
+        String imageRegistry = doguJson.Image.tokenize('/')[0]
+        script.withCredentials([script.usernamePassword(credentialsId: backendCredentialsID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
+            // Own config dir, so the login doesn't touch the worker's docker config.
+            script.withEnv(["DOCKER_CONFIG=${script.pwd(tmp: true)}/docker-push-config", "IMAGE_REGISTRY=${imageRegistry}", "IMAGE=${image}"]) {
+                script.sh 'echo "$REGISTRY_PASSWORD" | docker login "$IMAGE_REGISTRY" -u "$REGISTRY_USER" --password-stdin'
+                script.sh 'docker push "$IMAGE"'
+            }
+        }
+        pushDogu(pathToDoguJson)
+    }
+
+    /**
      * Pushes a yaml tapestry to the dogu registry for k8s components.
      *
      * @param pathToYaml Path to the yaml containing the k8s component.
