@@ -266,6 +266,18 @@ class GitTest {
     }
 
     @Test
+    void checkoutWithSubmodules() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        scriptMock.files.put('.gitmodules', '')
+
+        new Git(scriptMock).checkoutWithSubmodules()
+
+        assert scriptMock.checkoutArgs == ['scm-of-the-job']
+        assert scriptMock.allActualArgs == ["git -c url.https://github.com/.insteadOf=git@github.com: submodule update --init --recursive"]
+    }
+
+    @Test
     void updateSubmodulesWithoutGitmodules() {
         ScriptMock scriptMock = new ScriptMock()
 

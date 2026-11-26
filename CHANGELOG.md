@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `Git.updateSubmodules()` to fetch git submodules after `checkout scm`, with the git credentials for GitHub SSH URLs
+- `Git.checkoutWithSubmodules()`: `checkout scm`, then `updateSubmodules()`
 
 ## [6.2.0](https://github.com/cloudogu/ces-build-lib/releases/tag/6.2.0) - 2026-11-20
 ### Changed

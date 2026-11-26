@@ -277,6 +277,14 @@ class Git implements Serializable {
     }
 
     /**
+     * Runs "checkout scm", then {@link #updateSubmodules()}.
+     */
+    void checkoutWithSubmodules() {
+        script.checkout script.scm
+        updateSubmodules()
+    }
+
+    /**
      * Switch branch of the local repository.
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
      * so you have to call {@link #fetch()} before checkout.
