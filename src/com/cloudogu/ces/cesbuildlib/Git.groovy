@@ -263,6 +263,20 @@ class Git implements Serializable {
     }
 
     /**
+     * Initializes and updates the submodules of the checked out repository, recursively.
+     * Jenkins' "checkout scm" skips submodules. Does nothing without a .gitmodules file.
+     *
+     * Submodule URLs on GitHub via SSH (git@github.com:...) are fetched via HTTPS, so the git credentials apply.
+     * The rewrite is passed with -c and doesn't change the git config, which matters on shared workers.
+     */
+    void updateSubmodules() {
+        if (!script.fileExists('.gitmodules')) {
+            return
+        }
+        executeGitWithCredentials '-c url.https://github.com/.insteadOf=git@github.com: submodule update --init --recursive'
+    }
+
+    /**
      * Switch branch of the local repository.
      * Note: In a multibranch pipeline Jenkins will only fetch the changed branch,
      * so you have to call {@link #fetch()} before checkout.
