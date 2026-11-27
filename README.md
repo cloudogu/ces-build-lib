@@ -582,6 +582,9 @@ the author. This behaviour is implemented by GitHub for example when committing 
 * `git.setTag('tag', 'message', 'Author', 'Author@mail.server)`
 * `git.setTag('tag', 'message')` - uses default author/committer (see above).
 * `git.fetch()`
+* `git.updateSubmodules()` - initializes and updates submodules recursively, which `checkout scm` skips. Does nothing
+   without a `.gitmodules`. GitHub SSH URLs (`git@github.com:...`) are fetched via HTTPS with the git credentials.
+* `git.checkoutWithSubmodules()` - `checkout scm`, then `git.updateSubmodules()`.
 * `git.pull()` - pulls, and in case of merge, uses default author/committer (see above).
 * `git.pull('refspec')` - pulls specific refspec (e.g. `origin master`), and in case of merge, uses the name and email 
    of the last committer as author and committer.

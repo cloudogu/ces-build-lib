@@ -255,6 +255,38 @@ class GitTest {
     }
 
     @Test
+    void updateSubmodules() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        scriptMock.files.put('.gitmodules', '')
+
+        new Git(scriptMock).updateSubmodules()
+
+        assert scriptMock.allActualArgs == ["git -c url.https://github.com/.insteadOf=git@github.com: submodule update --init --recursive"]
+    }
+
+    @Test
+    void checkoutWithSubmodules() {
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.expectedDefaultShRetValue = ""
+        scriptMock.files.put('.gitmodules', '')
+
+        new Git(scriptMock).checkoutWithSubmodules()
+
+        assert scriptMock.checkoutArgs == ['scm-of-the-job']
+        assert scriptMock.allActualArgs == ["git -c url.https://github.com/.insteadOf=git@github.com: submodule update --init --recursive"]
+    }
+
+    @Test
+    void updateSubmodulesWithoutGitmodules() {
+        ScriptMock scriptMock = new ScriptMock()
+
+        new Git(scriptMock).updateSubmodules()
+
+        assert scriptMock.allActualArgs.isEmpty()
+    }
+
+    @Test
     void pull() {
         def expectedGitCommandWithCredentials = 'git -c credential.helper="!f() { echo username=\'$GIT_AUTH_USR\'; echo password=\'$GIT_AUTH_PSW\'; }; f" pull --rebase'
         scriptMock.expectedShRetValueForScript.put(expectedGitCommandWithCredentials, 0)

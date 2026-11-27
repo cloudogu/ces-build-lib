@@ -147,6 +147,13 @@ class ScriptMock {
 
     String pwd() { expectedPwd }
 
+    def scm = 'scm-of-the-job'
+    List checkoutArgs = []
+
+    void checkout(def args) {
+        checkoutArgs.add(args)
+    }
+
     def git(def args) {
         actualGitArgs = args
         return args
