@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.*
 
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
+import static org.mockito.Mockito.verify
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.eq
 
 class DoguRegistryTest {
 
@@ -44,6 +47,33 @@ class DoguRegistryTest {
         // then
         assertEquals("echo 'Push Dogu:\n-Namespace/Name: testing/ldap\n-Version: 2.4.48-4'", scriptMock.allActualArgs.get(0))
         assertEquals("cat dogu.json", scriptMock.allActualArgs.get(1))
+    }
+
+    @Test
+    void testPushDoguWithImage() {
+        // given
+        String doguPath = "export/dogu.json"
+        String doguStr = '{"Name": "official/cockpit", "Image": "registry.cloudogu.com/official/cockpit", "Version": "2.5.0-2"}'
+        ScriptMock scriptMock = new ScriptMock()
+        scriptMock.jsonFiles.put(doguPath, new JsonSlurper().parseText(doguStr))
+        scriptMock.expectedShRetValueForScript.put("cat ${doguPath}".toString(), doguStr)
+
+        def httpMock = mock(HttpClient.class)
+        when(httpMock.put('https://dogu.cloudogu.com/api/v2/dogus/official/cockpit', 'application/json', doguStr)).then({ invocation ->
+            return [httpCode: '200', body: '']
+        })
+
+        DoguRegistry sut = new DoguRegistry(scriptMock, "https://dogu.cloudogu.com", "harborrobotprerelease")
+        sut.doguRegistryHttpClient = httpMock
+
+        // when
+        sut.pushDoguWithImage("export")
+
+        // then
+        verify(scriptMock.docker).withRegistry(eq("https://registry.cloudogu.com"), eq("harborrobotprerelease"), any())
+        verify(scriptMock.docker).image("registry.cloudogu.com/official/cockpit:2.5.0-2")
+        verify(scriptMock.docker.image("registry.cloudogu.com/official/cockpit:2.5.0-2")).push()
+        assertEquals("cat export/dogu.json", scriptMock.allActualArgs.get(1))
     }
 
     @Test

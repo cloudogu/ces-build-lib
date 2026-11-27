@@ -1175,6 +1175,10 @@ DoguRegistry registry = new DoguRegistry(this)
 // push dogu
 registry.pushDogu()
 
+// push a dogu built elsewhere (e.g. in a CES VM) whose image is in the local docker daemon:
+// image to its registry (from dogu.json's Image), then dogu.json
+registry.pushDoguWithImage('dir-with-dogu-json')
+
 // push k8s component
 registry.pushK8sYaml("pathToMyK8sYaml.yaml", "k8s-dogu-operator", "mynamespace", "0.9.0")
 ```
