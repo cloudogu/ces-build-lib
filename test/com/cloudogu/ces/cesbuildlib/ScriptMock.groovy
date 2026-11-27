@@ -147,8 +147,6 @@ class ScriptMock {
 
     String pwd() { expectedPwd }
 
-    String pwd(Map args) { expectedPwd }
-
     def git(def args) {
         actualGitArgs = args
         return args

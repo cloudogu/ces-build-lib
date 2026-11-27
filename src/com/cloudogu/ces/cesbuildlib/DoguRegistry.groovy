@@ -56,14 +56,8 @@ class DoguRegistry {
     void pushDoguWithImage(String doguDir = ".") {
         String pathToDoguJson = "${doguDir}/dogu.json"
         def doguJson = script.readJSON file: pathToDoguJson
-        String image = "${doguJson.Image}:${doguJson.Version}"
-        String imageRegistry = doguJson.Image.tokenize('/')[0]
-        script.withCredentials([script.usernamePassword(credentialsId: backendCredentialsID, usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')]) {
-            // Own config dir, so the login doesn't touch the worker's docker config.
-            script.withEnv(["DOCKER_CONFIG=${script.pwd(tmp: true)}/docker-push-config", "IMAGE_REGISTRY=${imageRegistry}", "IMAGE=${image}"]) {
-                script.sh 'echo "$REGISTRY_PASSWORD" | docker login "$IMAGE_REGISTRY" -u "$REGISTRY_USER" --password-stdin'
-                script.sh 'docker push "$IMAGE"'
-            }
+        script.docker.withRegistry("https://${doguJson.Image.tokenize('/')[0]}", backendCredentialsID) {
+            script.docker.image("${doguJson.Image}:${doguJson.Version}").push()
         }
         pushDogu(pathToDoguJson)
     }

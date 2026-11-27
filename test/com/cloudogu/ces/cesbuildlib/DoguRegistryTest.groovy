@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.*
 
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
+import static org.mockito.Mockito.verify
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.eq
 
 class DoguRegistryTest {
 
@@ -52,7 +55,6 @@ class DoguRegistryTest {
         String doguPath = "export/dogu.json"
         String doguStr = '{"Name": "official/cockpit", "Image": "registry.cloudogu.com/official/cockpit", "Version": "2.5.0-2"}'
         ScriptMock scriptMock = new ScriptMock()
-        scriptMock.expectedPwd = "/ws@tmp"
         scriptMock.jsonFiles.put(doguPath, new JsonSlurper().parseText(doguStr))
         scriptMock.expectedShRetValueForScript.put("cat ${doguPath}".toString(), doguStr)
 
@@ -68,13 +70,10 @@ class DoguRegistryTest {
         sut.pushDoguWithImage("export")
 
         // then
-        assertEquals("harborrobotprerelease", scriptMock.actualUsernamePasswordArgs[0].credentialsId)
-        assertEquals(["DOCKER_CONFIG=/ws@tmp/docker-push-config",
-                      "IMAGE_REGISTRY=registry.cloudogu.com",
-                      "IMAGE=registry.cloudogu.com/official/cockpit:2.5.0-2"], scriptMock.actualWithEnv.collect { it.toString() })
-        assertEquals('echo "$REGISTRY_PASSWORD" | docker login "$IMAGE_REGISTRY" -u "$REGISTRY_USER" --password-stdin', scriptMock.allActualArgs.get(0))
-        assertEquals('docker push "$IMAGE"', scriptMock.allActualArgs.get(1))
-        assertEquals("cat export/dogu.json", scriptMock.allActualArgs.get(3))
+        verify(scriptMock.docker).withRegistry(eq("https://registry.cloudogu.com"), eq("harborrobotprerelease"), any())
+        verify(scriptMock.docker).image("registry.cloudogu.com/official/cockpit:2.5.0-2")
+        verify(scriptMock.docker.image("registry.cloudogu.com/official/cockpit:2.5.0-2")).push()
+        assertEquals("cat export/dogu.json", scriptMock.allActualArgs.get(1))
     }
 
     @Test
